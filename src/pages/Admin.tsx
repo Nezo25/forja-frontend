@@ -141,7 +141,18 @@ function NewProductModal({ onClose, onSave }: { onClose: () => void; onSave: (p:
               <Field label="Tempo impressão (h)"><Input type="number" placeholder="18" value={form.printTimeH} onChange={e => setForm(f => ({ ...f, printTimeH: e.target.value }))} /></Field>
               <Field label="Filamento (g)"><Input type="number" placeholder="320" value={form.filamentG} onChange={e => setForm(f => ({ ...f, filamentG: e.target.value }))} /></Field>
             </div>
-            <Field label="URL da imagem"><Input type="url" placeholder="https://images.unsplash.com/..." value={form.image} onChange={e => setForm(f => ({ ...f, image: e.target.value }))} /></Field>
+            <Field label="Imagem do produto">
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={e => {
+                  if (e.target.files?.[0]) {
+                    setForm(f => ({ ...f, image: URL.createObjectURL(e.target.files![0]) }))
+                  }
+                }} 
+                className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1F2937] file:text-[#F9FAFB] hover:file:bg-[#374151]"
+              />
+            </Field>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded" />
               <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produto ativo</span>
@@ -159,6 +170,8 @@ function NewProductModal({ onClose, onSave }: { onClose: () => void; onSave: (p:
 export default function Admin() {
   const [section, setSection] = useState<Section>('catalogo');
   const [catalog, setCatalog] = useState(initialProducts);
+  const [orders, setOrders] = useState(MOCK_ORDERS);
+  const [orcamentos, setOrcamentos] = useState(MOCK_STL);
   const [showNewModal, setShowNewModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -295,13 +308,22 @@ export default function Admin() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <button
-                              onClick={() => toggleActive(p.id)}
-                              className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all"
-                              style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}
-                            >
-                              {p.active ? '⏸ Pausar' : '▶ Ativar'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleActive(p.id)}
+                                className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                                style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}
+                              >
+                                {p.active ? '⏸ Pausar' : '▶ Ativar'}
+                              </button>
+                              <button
+                                onClick={() => setCatalog(prev => prev.filter(x => x.id !== p.id))}
+                                className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
+                                style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
+                              >
+                                🗑 Deletar
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -353,13 +375,13 @@ export default function Admin() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: '#1F2937', borderBottom: '1px solid #374151' }}>
-                      {['Pedido','Cliente','Produto','Data','Valor','Status'].map(h => (
+                      {['Pedido','Cliente','Produto','Data','Valor','Status','Ações'].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {MOCK_ORDERS.map((o, i) => (
+                    {orders.map((o, i) => (
                       <tr key={o.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
                         <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#F97316' }}>{o.id}</td>
                         <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{o.cliente}</td>
@@ -367,6 +389,15 @@ export default function Admin() {
                         <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{o.data}</td>
                         <td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>R$ {o.valor}</td>
                         <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
+                        <td className="px-4 py-3">
+                            <button
+                                onClick={() => setOrders(prev => prev.filter(x => x.id !== o.id))}
+                                className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
+                                style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
+                              >
+                                🗑 Deletar
+                              </button>
+                          </td>
                       </tr>
                     ))}
                   </tbody>
@@ -388,7 +419,7 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {MOCK_STL.map((s, i) => (
+                    {orcamentos.map((s, i) => (
                       <tr key={s.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
                         <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#F97316' }}>{s.id}</td>
                         <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{s.cliente}</td>
@@ -396,7 +427,16 @@ export default function Admin() {
                         <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{s.data}</td>
                         <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
                         <td className="px-4 py-3">
-                          <button className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all" style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}>Responder</button>
+                          <div className="flex gap-2">
+                            <button className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-[#374151]" style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}>Responder</button>
+                            <button
+                                onClick={() => setOrcamentos(prev => prev.filter(x => x.id !== s.id))}
+                                className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
+                                style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
+                              >
+                                🗑
+                              </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
