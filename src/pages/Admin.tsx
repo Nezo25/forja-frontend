@@ -78,16 +78,24 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
-function NewProductModal({ onClose, onSave }: { onClose: () => void; onSave: (p: Partial<Product>) => void }) {
-  const [form, setForm] = useState({
-    name: '', category: 'Figures Pokémon' as Category, types: '' as string,
-    scale: '1:10', material: 'PLA', printTimeH: '', filamentG: '', basePrice: '', image: '', active: true,
+function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; onSave: (p: Partial<Product>) => void; initialData?: Product }) {
+    const [form, setForm] = useState({
+    name: initialData?.name || '', 
+    category: initialData?.category || 'Figures Pok�mon', 
+    types: initialData?.types.join(', ') || '',
+    scale: initialData?.scales[0] || '1:10', 
+    material: initialData?.materials[0] || 'PLA', 
+    printTimeH: initialData?.printTimeH?.toString() || '', 
+    filamentG: initialData?.filamentG?.toString() || '', 
+    basePrice: initialData?.basePrice?.toString() || '', 
+    image: initialData?.image || '', 
+    active: initialData ? initialData.active : true,
   });
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
     onSave({
-      id: `p${Date.now()}`,
+      id: initialData?.id || `p${Date.now()}`,
       name: form.name,
       category: form.category,
       types: form.types.split(',').map(t => t.trim()).filter(Boolean) as PokemonType[],
@@ -109,7 +117,7 @@ function NewProductModal({ onClose, onSave }: { onClose: () => void; onSave: (p:
       <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSave}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #374151' }}>
-            <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>Nova Figure / Produto</h2>
+            <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>{initialData ? 'Editar Produto' : 'Nova Figure / Produto'}</h2>
             <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}>✕</button>
           </div>
           <div className="p-5 flex flex-col gap-4">
@@ -157,9 +165,7 @@ function NewProductModal({ onClose, onSave }: { onClose: () => void; onSave: (p:
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded" />
               <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produto ativo</span>
             </label>
-            <button type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1" style={{ background: '#F97316', color: '#fff' }}>
-              Salvar Produto 🔩
-            </button>
+            <button type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1" style={{ background: '#F97316', color: '#fff' }}>{initialData ? "Atualizar Produto" : "Salvar Produto"} ???</button>
           </div>
         </form>
       </div>
@@ -173,6 +179,7 @@ export default function Admin() {
   const [orders, setOrders] = useState(MOCK_ORDERS);
   const [orcamentos, setOrcamentos] = useState(MOCK_STL);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   function toggleActive(id: string) {
@@ -309,6 +316,13 @@ export default function Admin() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setEditingProduct(p)}
+                                className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-[#374151]"
+                                style={{ background: '#1F2937', border: '1px solid #374151', color: '#60A5FA' }}
+                              >
+                                ?? Editar
+                              </button>
                               <button
                                 onClick={() => toggleActive(p.id)}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all"
@@ -506,7 +520,14 @@ export default function Admin() {
         </div>
       </main>
 
-      {showNewModal && <NewProductModal onClose={() => setShowNewModal(false)} onSave={addProduct} />}
+      {showNewModal && <ProductModal onClose={() => setShowNewModal(false)} onSave={addProduct} />}
+      {editingProduct && <ProductModal initialData={editingProduct} onClose={() => setEditingProduct(null)} onSave={(p) => { setCatalog(prev => prev.map(x => x.id === p.id ? p as Product : x)); setEditingProduct(null); }} />}
     </div>
   );
 }
+
+
+
+
+
+
