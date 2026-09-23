@@ -1,0 +1,10 @@
+{
+  "description": "Manage your expenses effortlessly with categorized tracking and spending alerts, helping users stay on budget and make informed financial decisions.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
