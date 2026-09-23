@@ -92,18 +92,43 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     active: initialData ? initialData.active : true,
   });
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    let finalImageUrl = form.image;
+    
+    if (form.imageFile) {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', form.imageFile);
+        formData.append('upload_preset', 'forja_preset');
+        
+        const res = await fetch('https://api.cloudinary.com/v1_1/hsxlmx8k/image/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.secure_url) {
+          finalImageUrl = data.secure_url;
+        }
+      } catch (err) {
+        console.error('Erro no upload da imagem', err);
+        alert('Erro ao enviar imagem. Verifique se o preset forja_preset está como Unsigned.');
+      } finally {
+        setIsUploading(false);
+      }
+    }
+
     onSave({
-      id: initialData?.id || `p${Date.now()}`,
+      id: initialData?.id || "p${Date.now()}",
       name: form.name,
       category: form.category,
       types: form.types.split(',').map(t => t.trim()).filter(Boolean) as PokemonType[],
       scales: [form.scale as any],
       materials: [form.material as any],
       basePrice: parseFloat(form.basePrice) || 0,
-      finishOptions: [{ label: 'PeÃ§a Crua', extra: 0 }, { label: 'Com Primer', extra: 25 }, { label: 'Pintado Ã  MÃ£o', extra: 85 }],
-      image: form.image || 'https://images.unsplash.com/photo-1613771404784-63a9eeed2e30?w=600&h=700&fit=crop&auto=format',
+      finishOptions: [{ label: 'Peça Crua', extra: 0 }, { label: 'Com Primer', extra: 25 }, { label: 'Pintado à Mão', extra: 85 }],
+      image: finalImageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
       printTimeH: parseInt(form.printTimeH) || 0,
       filamentG: parseInt(form.filamentG) || 0,
       active: form.active,
@@ -155,7 +180,8 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
                 accept="image/*" 
                 onChange={e => {
                   if (e.target.files?.[0]) {
-                    setForm(f => ({ ...f, image: URL.createObjectURL(e.target.files![0]) }))
+                    const file = e.target.files[0];
+                    setForm(f => ({ ...f, image: URL.createObjectURL(file), imageFile: file }))
                   }
                 }} 
                 className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1F2937] file:text-[#F9FAFB] hover:file:bg-[#374151]"
@@ -165,7 +191,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded" />
               <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produto ativo</span>
             </label>
-            <button type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1" style={{ background: '#F97316', color: '#fff' }}>{initialData ? "Atualizar Produto" : "Salvar Produto"} ???</button>
+            <button disabled={isUploading} type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: '#F97316', color: '#fff' }}>{isUploading ? "Enviando Imagem ??..." : (initialData ? "Atualizar Produto" : "Salvar Produto")} ???</button>
           </div>
         </form>
       </div>
@@ -507,9 +533,11 @@ export default function Admin() {
                         onFocus={e => (e.target.style.borderColor = '#F97316')}
                         onBlur={e => (e.target.style.borderColor = '#374151')}
                         onChange={e => {
-                          const val = parseFloat(e.target.value);
-                          if (!isNaN(val)) setCatalog(prev => prev.map(pr => pr.id === p.id ? { ...pr, basePrice: val } : pr));
-                        }}
+                  if (e.target.files?.[0]) {
+                    const file = e.target.files[0];
+                    setForm(f => ({ ...f, image: URL.createObjectURL(file), imageFile: file }))
+                  }
+                }}
                       />
                     </div>
                   </div>
@@ -525,6 +553,7 @@ export default function Admin() {
     </div>
   );
 }
+
 
 
 
