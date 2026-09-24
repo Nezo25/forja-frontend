@@ -10,6 +10,25 @@ import { OrcamentoModal } from '@/components/OrcamentoModal';
 import { products, type CartItem, type Product } from '@/data/products';
 
 export default function Home() {
+  const [products, setProducts] = useState(MOCK_PRODUCTS);
+  useEffect(() => {
+    fetchApi('/models').then((data: any) => {
+      if (Array.isArray(data) && data.length > 0) {
+        const formatted = data.map(m => ({
+          id: m.id.toString(),
+          name: m.name,
+          category: m.category,
+          types: m.types || [],
+          scales: m.scales || ['1:10'],
+          materials: m.materials || ['PLA'],
+          basePrice: m.basePrice,
+          finishOptions: [],
+          image: m.imageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
+        }));
+        setProducts(formatted);
+      }
+    }).catch(console.error);
+  }, []);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<Filters>({ categories: [], types: [], scales: [], finishes: [] });
   const [configProduct, setConfigProduct] = useState<Product | null>(null);
@@ -139,3 +158,4 @@ export default function Home() {
     </div>
   );
 }
+

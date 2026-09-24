@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchApi } from '../api/client';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { products as initialProducts, type Product, type Category, type PokemonType } from '@/data/products';
@@ -212,8 +213,33 @@ export default function Admin() {
     setCatalog(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
   }
 
-  function addProduct(p: Partial<Product>) {
-    setCatalog(prev => [p as Product, ...prev]);
+  async function addProduct(p: Partial<Product>) {
+    const isEdit = !p.id?.startsWith('p');
+    const payload = {
+      name: p.name,
+      category: p.category,
+      types: p.types,
+      scales: p.scales,
+      materials: p.materials,
+      basePrice: p.basePrice,
+      imageUrl: p.image,
+      printTimeH: p.printTimeH,
+      filamentG: p.filamentG,
+      active: p.active
+    };
+
+    try {
+      if (isEdit) {
+        await fetchApi(/models/${p.id}, { method: 'PUT', body: JSON.stringify(payload) });
+        setCatalog(prev => prev.map(x => x.id === p.id ? { ...x, ...p } as Product : x));
+      } else {
+        const created: any = await fetchApi('/models', { method: 'POST', body: JSON.stringify(payload) });
+        setCatalog(prev => [{ ...p, id: created.id.toString() } as Product, ...prev]);
+      }
+    } catch (err) {
+      console.error('Erro ao salvar no banco', err);
+      alert('Erro ao salvar no banco de dados!');
+    }
   }
 
   return (
@@ -357,7 +383,14 @@ export default function Admin() {
                                 {p.active ? '⏸ Pausar' : '▶ Ativar'}
                               </button>
                               <button
-                                onClick={() => setCatalog(prev => prev.filter(x => x.id !== p.id))}
+                                onClick={async () => {
+                                  if(confirm('Certeza que deseja deletar?')) {
+                                    try {
+                                      await fetchApi(/models/${p.id}, { method: 'DELETE' });
+                                      setCatalog(prev => prev.filter(x => x.id !== p.id));
+                                    } catch(e) { alert('Erro ao deletar!'); }
+                                  }
+                                }}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
@@ -553,6 +586,9 @@ export default function Admin() {
     </div>
   );
 }
+
+
+
 
 
 
