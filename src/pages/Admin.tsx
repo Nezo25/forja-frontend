@@ -80,20 +80,40 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    onSave({
-      id: initialData?.id || `p${Date.now()}`,
-      name: form.name,
-      category: form.category as any,
-      types: form.types.split(',').map(t => t.trim()).filter(Boolean) as PokemonType[],
-      scales: [form.scale as any],
-      materials: [form.material as any],
-      basePrice: parseFloat(form.basePrice) || 0,
-      finishOptions: [{ label: 'Peça Crua', extra: 0 }, { label: 'Com Primer', extra: 25 }, { label: 'Pintado à Mão', extra: 85 }],
-      image: form.image || 'https://images.unsplash.com/photo-1613771404784-63a9eeed2e30?w=600&h=700&fit=crop&auto=format',
-      printTimeH: parseInt(form.printTimeH) || 0,
-      filamentG: parseInt(form.filamentG) || 0,
-      active: form.active,
-    });
+    const payload = {
+        name: form.name,
+        pokedexNumber: 0,
+        generation: 1,
+        primaryType: form.types.split(',')[0]?.trim() || 'Normal',
+        secondaryType: form.types.split(',')[1]?.trim() || null,
+        scale: form.scale,
+        basePrintTimeMinutes: (parseInt(form.printTimeH) || 0) * 60,
+        defaultFilamentGrams: parseInt(form.filamentG) || 0,
+        imageUrl: form.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'
+      };
+      
+      const method = initialData ? 'PUT' : 'POST';
+      const url = initialData ? `/models/${initialData.id}` : '/models';
+      
+      fetchApi(url, {
+        method,
+        body: JSON.stringify(payload)
+      }).then((saved: any) => {
+        onSave({
+          id: saved.id.toString(),
+          name: saved.name,
+          category: saved.category || form.category as any,
+          types: [saved.primaryType, saved.secondaryType].filter(Boolean) as PokemonType[],
+          scales: [saved.scale as any],
+          materials: [form.material as any],
+          basePrice: parseFloat(form.basePrice) || 0,
+          finishOptions: [],
+          image: saved.imageUrl,
+          printTimeH: Math.floor((saved.basePrintTimeMinutes || 0) / 60),
+          filamentG: saved.defaultFilamentGrams || 0,
+          active: saved.isActive !== false
+        });
+      }).catch(console.error);
     onClose();
   }
 
@@ -164,8 +184,9 @@ export default function Admin() {
   const [catalog, setCatalog] = useState<Product[]>([]);
   useEffect(() => {
     fetchApi('/models').then((data: any) => {
-      if (Array.isArray(data)) {
-        const formatted = data.map((m: any) => ({
+      const items = data.content || data || [];
+      if (Array.isArray(items)) {
+        const formatted = items.map((m: any) => ({
           id: m.id.toString(),
           name: m.name,
           category: m.category,
@@ -192,7 +213,21 @@ export default function Admin() {
     }).catch(console.error);
   }, []);
   const [orders, setOrders] = useState<any[]>([]);
-  const [orcamentos, setOrcamentos] = useState(MOCK_STL);
+  const [orcamentos, setOrcamentos] = useState<any[]>([]);
+  useEffect(() => {
+    fetchApi('/quotes').then((data: any) => {
+      if(Array.isArray(data)) {
+        setOrcamentos(data.map((q: any) => ({
+          id: '#S' + q.id.toString().padStart(3, '0'),
+          realId: q.id,
+          cliente: q.customerName || 'Cliente',
+          arquivo: q.fileName || 'arquivo.stl',
+          status: q.status || 'Aguardando análise',
+          data: new Date(q.createdAt).toLocaleDateString('pt-BR')
+        })));
+      }
+    }).catch(console.error);
+  }, []);
   const [filamentos, setFilamentos] = useState<any[]>([]);
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -347,7 +382,13 @@ export default function Admin() {
                                 {p.active ? '⏸ Pausar' : '▶ Ativar'}
                               </button>
                               <button
-                                onClick={() => setCatalog(prev => prev.filter(x => x.id !== p.id))}
+                                onClick={() => {
+                                  if(confirm('Tem certeza?')) {
+                                    fetchApi(`/models/${p.id}`, { method: 'DELETE' }).then(() => {
+                                      setCatalog(prev => prev.filter(x => x.id !== p.id));
+                                    }).catch(console.error);
+                                  }
+                                }}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
@@ -460,7 +501,13 @@ export default function Admin() {
                           <div className="flex gap-2">
                             <button className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-[#374151]" style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}>Responder</button>
                             <button
-                                onClick={() => setOrcamentos(prev => prev.filter(x => x.id !== s.id))}
+                                onClick={() => {
+                            if(confirm('Deletar orçamento?')) {
+                              fetchApi(`/quotes/${s.realId || s.id.replace('#S0', '')}`, { method: 'DELETE' }).then(() => {
+                                setOrcamentos(prev => prev.filter(x => x.id !== s.id));
+                              }).catch(console.error);
+                            }
+                          }}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >

@@ -2,7 +2,7 @@
 let c = fs.readFileSync('src/pages/Admin.tsx', 'utf8');
 
 c = c.replace(/fetchApi\('\/models'\)\.then\(\(data: any\) => \{[\s\S]*?\}\)\.catch\(console\.error\);/,
-etchApi('/models').then((data: any) => {
+`fetchApi('/models').then((data: any) => {
       const items = data.content || data || [];
       if (Array.isArray(items)) {
         const formatted = items.map((m: any) => ({
@@ -21,10 +21,10 @@ c = c.replace(/fetchApi\('\/models'\)\.then\(\(data: any\) => \{[\s\S]*?\}\)\.ca
         }));
         setCatalog(formatted);
       }
-    }).catch(console.error););
+    }).catch(console.error);`);
 
 c = c.replace(/const \[orcamentos, setOrcamentos\] = useState\(MOCK_STL\);/,
-const [orcamentos, setOrcamentos] = useState<any[]>([]);
+`const [orcamentos, setOrcamentos] = useState<any[]>([]);
   useEffect(() => {
     fetchApi('/quotes').then((data: any) => {
       if(Array.isArray(data)) {
@@ -38,10 +38,10 @@ const [orcamentos, setOrcamentos] = useState<any[]>([]);
         })));
       }
     }).catch(console.error);
-  }, []););
+  }, []);`);
 
 c = c.replace(/onSave\(\{[\s\S]*?active: form\.active,[\s\S]*?\}\);/g,
-const payload = {
+`const payload = {
         name: form.name,
         pokedexNumber: 0,
         generation: 1,
@@ -54,7 +54,7 @@ const payload = {
       };
       
       const method = initialData ? 'PUT' : 'POST';
-      const url = initialData ? \/models/\\ : '/models';
+      const url = initialData ? \`/models/\${initialData.id}\` : '/models';
       
       fetchApi(url, {
         method,
@@ -74,24 +74,24 @@ const payload = {
           filamentG: saved.defaultFilamentGrams || 0,
           active: saved.isActive !== false
         });
-      }).catch(console.error););
+      }).catch(console.error);`);
 
 c = c.replace(/onClick=\{\(\) => setCatalog\(prev => prev\.filter\(x => x\.id !== p\.id\)\)\}/g,
-onClick={() => {
+`onClick={() => {
                                   if(confirm('Tem certeza?')) {
-                                    fetchApi(\/models/\\, { method: 'DELETE' }).then(() => {
+                                    fetchApi(\`/models/\${p.id}\`, { method: 'DELETE' }).then(() => {
                                       setCatalog(prev => prev.filter(x => x.id !== p.id));
                                     }).catch(console.error);
                                   }
-                                }});
+                                }}`);
 
 c = c.replace(/onClick=\{\(\) => setOrcamentos\(prev => prev\.filter\(x => x\.id !== s\.id\)\)\}/g,
-onClick={() => {
+`onClick={() => {
                             if(confirm('Deletar orçamento?')) {
-                              fetchApi(\/quotes/\\, { method: 'DELETE' }).then(() => {
+                              fetchApi(\`/quotes/\${s.realId || s.id.replace('#S0', '')}\`, { method: 'DELETE' }).then(() => {
                                 setOrcamentos(prev => prev.filter(x => x.id !== s.id));
                               }).catch(console.error);
                             }
-                          }});
+                          }}`);
 
 fs.writeFileSync('src/pages/Admin.tsx', c, 'utf8');
