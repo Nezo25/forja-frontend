@@ -94,7 +94,7 @@ export default function Home() {
       <main id="catalogo" className="max-w-[1440px] mx-auto px-4 md:px-8 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-extrabold" style={{ color: '#F9FAFB' }}>CatÃ¡logo</h2>
+            <h2 className="text-xl font-extrabold" style={{ color: '#F9FAFB' }}>Catálogo</h2>
             <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>
               {activeProducts.length} {activeProducts.length === 1 ? 'produto' : 'produtos'} encontrados
             </p>
@@ -124,10 +124,10 @@ export default function Home() {
           <div className="flex-1 min-w-0">
             <div className="text-2xl mb-2">ðŸ”©</div>
             <h3 className="text-xl font-extrabold mb-1" style={{ color: '#F9FAFB' }}>
-              Tem um arquivo STL prÃ³prio?
+              Tem um arquivo STL próprio?
             </h3>
             <p className="text-sm" style={{ color: '#9CA3AF' }}>
-              Envie seu modelo e faÃ§a um orÃ§amento personalizado em tempo real. Imprimimos qualquer design â€” da PokÃ©dex Ã  sua criaÃ§Ã£o original.
+              Envie seu modelo e faça um orçamento personalizado em tempo real. Imprimimos qualquer design â€” da Pokédex Ã  sua criação original.
             </p>
           </div>
           <button

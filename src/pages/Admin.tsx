@@ -16,7 +16,7 @@ const NAV: { id: Section; icon: string; label: string }[] = [
 ];
 
 const MOCK_STL = [
-  { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardand✕ análise', data: '23/09/2025' },
+  { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardando análise', data: '23/09/2025' },
   { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Orçament✕ enviado', data: '22/09/2025' },
 ];
 
@@ -31,10 +31,10 @@ const CHART_DATA = [
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   'Em impressão':      { bg: 'rgba(234,179,8,0.15)', text: '#EAB308' },
-  'Aguardand✕ pgto':   { bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
+  'Aguardando pgto':   { bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
   'Entregue':          { bg: 'rgba(34,197,94,0.15)', text: '#22C55E' },
   'Enviado':           { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
-  'Aguardand✕ análise':{ bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
+  'Aguardando análise':{ bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
   'Orçament✕ enviado': { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
 };
 
