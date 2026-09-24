@@ -373,7 +373,7 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-[#374151]"
                                 style={{ background: '#1F2937', border: '1px solid #374151', color: '#60A5FA' }}
                               >
-                                ?? Editar
+                                ✏️ Editar
                               </button>
                               <button
                                 onClick={() => toggleActive(p.id)}
