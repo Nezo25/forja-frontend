@@ -146,9 +146,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
         <form onSubmit={handleSave}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #374151' }}>
             <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>{initialData ? 'Editar Produto' : 'Nova Figure / Produto'}</h2>
-            <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}>Ã¢Å“â€¢</button>
-          </div>
-          <div className="p-5 flex flex-col gap-4">
+            <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}>✕</button></div><div className="p-5 flex flex-col gap-4">
             <Field label="Nome do produto *"><Input required placeholder="Charizard Stance" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Categoria">
@@ -375,14 +373,13 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-[#374151]"
                                 style={{ background: '#1F2937', border: '1px solid #374151', color: '#60A5FA' }}
                               >
-                                ✏️ Editar
-                              </button>
+ ✏️ Editar</button>
                               <button
                                 onClick={() => toggleActive(p.id)}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all"
                                 style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}
                               >
-                                {p.active ? 'Ã¢ÂÂ¸ Pausar' : 'Ã¢â€“Â¶ Ativar'}
+ {p.active ? "⏸ Pausar" : "▶ Ativar"}
                               </button>
                               <button
                                 onClick={async () => {
@@ -396,8 +393,7 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
-                                Ã°Å¸â€”â€˜ Deletar
-                              </button>
+ 🗑 Deletar</button>
                             </div>
                           </td>
                         </tr>
@@ -470,8 +466,7 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
-                                Ã°Å¸â€”â€˜ Deletar
-                              </button>
+ 🗑 Deletar</button>
                           </td>
                       </tr>
                     ))}
