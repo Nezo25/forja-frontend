@@ -17,7 +17,7 @@ const NAV: { id: Section; icon: string; label: string }[] = [
 
 const MOCK_STL = [
   { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardando análise', data: '23/09/2025' },
-  { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Orçament✕ enviado', data: '22/09/2025' },
+  { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Orçamento enviado', data: '22/09/2025' },
 ];
 
 const CHART_DATA = [
@@ -35,7 +35,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   'Entregue':          { bg: 'rgba(34,197,94,0.15)', text: '#22C55E' },
   'Enviado':           { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
   'Aguardando análise':{ bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
-  'Orçament✕ enviado': { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
+  'Orçamento enviado': { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -100,14 +100,14 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }} />
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-aut✕ rounded-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSave}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #374151' }}>
             <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>{initialData ? 'Editar Produto' : 'Nova Figure / Produto'}</h2>
             <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}>✕</button>
           </div>
           <div className="p-5 flex flex-col gap-4">
-            <Field label="Nome d✕ produt✕ *"><Input required placeholder="Charizard Stance" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></Field>
+            <Field label="Nome do produto *"><Input required placeholder="Charizard Stance" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Categoria">
                 <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as Category }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
@@ -131,9 +131,9 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
               </Field>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <Field label="Preç✕ base (R$) *"><Input required type="number" placeholder="149" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: e.target.value }))} /></Field>
-              <Field label="Temp✕ impressã✕ (h)"><Input type="number" placeholder="18" value={form.printTimeH} onChange={e => setForm(f => ({ ...f, printTimeH: e.target.value }))} /></Field>
-              <Field label="Filament✕ (g)"><Input type="number" placeholder="320" value={form.filamentG} onChange={e => setForm(f => ({ ...f, filamentG: e.target.value }))} /></Field>
+              <Field label="Preço base (R$) *"><Input required type="number" placeholder="149" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: e.target.value }))} /></Field>
+              <Field label="Tempo impressão (h)"><Input type="number" placeholder="18" value={form.printTimeH} onChange={e => setForm(f => ({ ...f, printTimeH: e.target.value }))} /></Field>
+              <Field label="Filamento (g)"><Input type="number" placeholder="320" value={form.filamentG} onChange={e => setForm(f => ({ ...f, filamentG: e.target.value }))} /></Field>
             </div>
             <Field label="Imagem d✕ produto">
               <input 
@@ -149,7 +149,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             </Field>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded" />
-              <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produt✕ ativo</span>
+              <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produto ativo</span>
             </label>
             <button type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1" style={{ background: '#F97316', color: '#fff' }}>{initialData ? "Atualizar Produto" : "Salvar Produto"} ???</button>
           </div>
@@ -213,7 +213,7 @@ export default function Admin() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:sticky top-0 h-screen z-50 md:z-aut✕ flex-shrink-0 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        className={`fixed md:sticky top-0 h-screen z-50 md:z-auto flex-shrink-0 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         style={{ width: 220, background: '#111827', borderRight: '1px solid #1F2937' }}
       >
         <div className="flex items-center gap-2.5 px-4 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -259,7 +259,7 @@ export default function Admin() {
             {NAV.find(n => n.id === section)?.icon} {NAV.find(n => n.id === section)?.label}
           </h1>
           {section === 'catalogo' && (
-            <button onClick={() => setShowNewModal(true)} className="ml-aut✕ h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all" style={{ background: '#F97316', color: '#fff' }}>
+            <button onClick={() => setShowNewModal(true)} className="ml-auto h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all" style={{ background: '#F97316', color: '#fff' }}>
               + Nova Figure
             </button>
           )}
@@ -494,7 +494,7 @@ export default function Admin() {
                     <div className="h-2 rounded-full" style={{ background: '#111827' }}>
                       <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
                     </div>
-                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínim✕ recomendado: {f.minStockG} kg</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínimo recomendado: {f.minStockG} kg</div>
                   </div>
                 );
               })}
@@ -504,7 +504,7 @@ export default function Admin() {
           {/* ── PREÇOS ── */}
           {section === 'precos' && (
             <div className="flex flex-col gap-4">
-              <p className="text-sm" style={{ color: '#9CA3AF' }}>Ajuste ✕ preç✕ base de cada figura. Alterações refletem imediatamente n✕ catálogo.</p>
+              <p className="text-sm" style={{ color: '#9CA3AF' }}>Ajuste o preço base de cada figura. Alterações refletem imediatamente no catálogo.</p>
               <div className="flex flex-col gap-2">
                 {catalog.filter(p => p.active).map(p => (
                   <div key={p.id} className="flex items-center gap-4 p-4 rounded-xl" style={{ background: '#1F2937', border: '1px solid #374151' }}>
