@@ -184,11 +184,28 @@ export default function Admin() {
     }).catch(console.error);
 
     fetchApi('/orders').then((data: any) => {
-      if (Array.isArray(data)) setOrders(data);
+      if (Array.isArray(data)) {
+        setOrders(data.map((o: any) => ({
+          id: '#' + o.id.toString().padStart(4, '0'),
+          cliente: 'Cliente #' + o.customerId,
+          produto: o.items && o.items.length > 0 ? o.items[0].pokemonModelName : 'Vazio',
+          status: o.status,
+          valor: o.totalAmount,
+          data: new Date(o.createdAt).toLocaleDateString('pt-BR')
+        })));
+      }
     }).catch(console.error);
 
     fetchApi('/admin/filaments').then((data: any) => {
-      if (Array.isArray(data)) setFilamentos(data);
+      if (Array.isArray(data)) {
+        setFilamentos(data.map((f: any) => ({
+          id: f.id,
+          color: f.colorName,
+          material: f.materialType,
+          stockG: (f.stockGrams / 1000).toFixed(2),
+          minStockG: 1
+        })));
+      }
     }).catch(console.error);
   }, []);
   const [orders, setOrders] = useState<any[]>([]);
@@ -323,8 +340,8 @@ export default function Admin() {
                               ))}
                             </div>
                           </td>
-                          <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{p.printTimeH}h</td>
-                          <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{p.filamentG}g</td>
+                          <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{p.printTimeH}h</td>
+                          <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{p.filamentG}g</td>
                           <td className="px-4 py-3">
                             <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={p.active ? { background: 'rgba(34,197,94,0.15)', color: '#22C55E' } : { background: '#1F2937', color: '#6B7280' }}>
                               {p.active ? 'Ativo' : 'Pausado'}
@@ -351,7 +368,7 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
-                                🗑 Deletar
+                                �🗑 Deletar
                               </button>
                             </div>
                           </td>
@@ -413,10 +430,10 @@ export default function Admin() {
                   <tbody>
                     {orders.map((o, i) => (
                       <tr key={o.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#F97316' }}>{o.id}</td>
+                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#F97316' }}>{o.id}</td>
                         <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{o.cliente}</td>
                         <td className="px-4 py-3" style={{ color: '#D1D5DB' }}>{o.produto}</td>
-                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{o.data}</td>
+                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{o.data}</td>
                         <td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>R$ {o.valor}</td>
                         <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
                         <td className="px-4 py-3">
@@ -425,7 +442,7 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
-                                🗑 Deletar
+                                �🗑 Deletar
                               </button>
                           </td>
                       </tr>
@@ -451,10 +468,10 @@ export default function Admin() {
                   <tbody>
                     {orcamentos.map((s, i) => (
                       <tr key={s.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#F97316' }}>{s.id}</td>
+                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#F97316' }}>{s.id}</td>
                         <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{s.cliente}</td>
-                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{s.arquivo}</td>
-                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{s.data}</td>
+                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{s.arquivo}</td>
+                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{s.data}</td>
                         <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
@@ -488,7 +505,7 @@ export default function Admin() {
                       <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>{f.color} <span className="text-[11px] font-normal" style={{ color: '#9CA3AF' }}>({f.material})</span></div>
                       <div className="flex items-center gap-2">
                         {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>⚠ Estoque baixo</span>}
-                        <span className="font-bold font-mon✕ text-[13px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.stockG} kg</span>
+                        <span className="font-bold font-mono text-[13px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.stockG} kg</span>
                       </div>
                     </div>
                     <div className="h-2 rounded-full" style={{ background: '#111827' }}>
