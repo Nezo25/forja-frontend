@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchApi } from '../api/client';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { products as initialProducts, type Product, type Category, type PokemonType } from '@/data/products';
@@ -77,7 +78,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     active: initialData ? initialData.active : true,
   });
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     onSave({
       id: initialData?.id || `p${Date.now()}`,
@@ -160,7 +161,36 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 
 export default function Admin() {
   const [section, setSection] = useState<Section>('catalogo');
-  const [catalog, setCatalog] = useState(initialProducts);
+  const [catalog, setCatalog] = useState<Product[]>([]);
+  useEffect(() => {
+    fetchApi('/models').then((data: any) => {
+      if (Array.isArray(data)) {
+        const formatted = data.map((m: any) => ({
+          id: m.id.toString(),
+          name: m.name,
+          category: m.category,
+          types: m.types || [],
+          scales: m.scales || ['1:10'],
+          materials: m.materials || ['PLA'],
+          basePrice: m.basePrice,
+          finishOptions: [],
+          image: m.imageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
+          printTimeH: m.printTimeH || 0,
+          filamentG: m.filamentG || 0,
+          active: m.active
+        }));
+        setCatalog(formatted);
+      }
+    }).catch(console.error);
+
+    fetchApi('/orders').then((data: any) => {
+      if (Array.isArray(data)) setOrders(data);
+    }).catch(console.error);
+
+    fetchApi('/admin/filaments').then((data: any) => {
+      if (Array.isArray(data)) setFilamentos(data);
+    }).catch(console.error);
+  }, []);
   const [orders, setOrders] = useState<any[]>([]);
   const [orcamentos, setOrcamentos] = useState(MOCK_STL);
   const [filamentos, setFilamentos] = useState<any[]>([]);
