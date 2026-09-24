@@ -1,4 +1,5 @@
-﻿import { useState, useMemo } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
+import { fetchApi } from '../api/client';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { FilterBar, type Filters } from '@/components/FilterBar';
@@ -7,7 +8,7 @@ import { ConfigModal } from '@/components/ConfigModal';
 import { CartDrawer } from '@/components/CartDrawer';
 import { CheckoutModal } from '@/components/CheckoutModal';
 import { OrcamentoModal } from '@/components/OrcamentoModal';
-import { products, type CartItem, type Product } from '@/data/products';
+import { products as MOCK_PRODUCTS, type CartItem, type Product } from '@/data/products';
 
 export default function Home() {
   const [products, setProducts] = useState(MOCK_PRODUCTS);
@@ -24,6 +25,9 @@ export default function Home() {
           basePrice: m.basePrice,
           finishOptions: [],
           image: m.imageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
+          printTimeH: m.printTimeH || 0,
+          filamentG: m.filamentG || 0,
+          active: m.active,
         }));
         setProducts(formatted);
       }
@@ -158,4 +162,6 @@ export default function Home() {
     </div>
   );
 }
+
+
 

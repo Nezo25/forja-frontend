@@ -82,7 +82,7 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
 function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; onSave: (p: Partial<Product>) => void; initialData?: Product }) {
     const [form, setForm] = useState({
     name: initialData?.name || '', 
-    category: initialData?.category || 'Figures PokÃ©mon', 
+    category: initialData?.category || 'Figures Pokémon', 
     types: initialData?.types?.join(', ') || '',
     scale: initialData?.scales?.[0] || '1:10', 
     material: initialData?.materials?.[0] || 'PLA', 
@@ -130,7 +130,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
       scales: [form.scale as any],
       materials: [form.material as any],
       basePrice: parseFloat(form.basePrice) || 0,
-      finishOptions: [{ label: 'PeÃ§a Crua', extra: 0 }, { label: 'Com Primer', extra: 25 }, { label: 'Pintado Ã  MÃ£o', extra: 85 }],
+      finishOptions: [{ label: 'Peça Crua', extra: 0 }, { label: 'Com Primer', extra: 25 }, { label: 'Pintado Ã  MÃ£o', extra: 85 }],
       image: finalImageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
       printTimeH: parseInt(form.printTimeH) || 0,
       filamentG: parseInt(form.filamentG) || 0,
@@ -178,14 +178,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             <Field label="Imagem do produto">
               <input 
                 type="file" 
-                accept="image/*" 
-                onChange={e => {
-                  if (e.target.files?.[0]) {
-                    const file = e.target.files[0];
-                    setForm(f => ({ ...f, image: URL.createObjectURL(file), imageFile: file }))
-                  }
-                }} 
-                className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1F2937] file:text-[#F9FAFB] hover:file:bg-[#374151]"
+                accept="image/*" onChange={e => { if (e.target.files?.[0]) { const file = e.target.files[0]; setForm(f => ({ ...f, image: URL.createObjectURL(file), imageFile: file })) } }} className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1F2937] file:text-[#F9FAFB] hover:file:bg-[#374151]"
               />
             </Field>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -562,12 +555,7 @@ export default function Admin() {
                         style={{ background: '#111827', border: '1px solid #374151', color: '#F97316' }}
                         onFocus={e => (e.target.style.borderColor = '#F97316')}
                         onBlur={e => (e.target.style.borderColor = '#374151')}
-                        onChange={e => {
-                  if (e.target.files?.[0]) {
-                    const file = e.target.files[0];
-                    setForm(f => ({ ...f, image: URL.createObjectURL(file), imageFile: file }))
-                  }
-                }}
+                        
                       />
                     </div>
                   </div>
@@ -583,6 +571,9 @@ export default function Admin() {
     </div>
   );
 }
+
+
+
 
 
 
