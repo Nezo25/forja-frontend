@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../api/client';
 import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { products as initialProducts, type Product, type Category, type PokemonType } from '@/data/products';
+import { BarChart, Bar, XAxis, 🧵Axis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { products as initialProducts, type Product, type Category, type PokémonType } from '@/data/products';
 import { TypeBadge } from '@/components/TypeBadge';
 
 type Section = 'catalogo' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos';
@@ -16,8 +16,8 @@ const NAV: { id: Section; icon: string; label: string }[] = [
 ];
 
 const MOCK_STL = [
-  { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardand✕ análise', data: '23/09/2025' },
-  { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Orçament✕ enviado', data: '22/09/2025' },
+  { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardando análise', data: '23/09/2025' },
+  { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Orçamento enviado', data: '22/09/2025' },
 ];
 
 const CHART_DATA = [
@@ -31,15 +31,15 @@ const CHART_DATA = [
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   'Em impressão':      { bg: 'rgba(234,179,8,0.15)', text: '#EAB308' },
-  'Aguardand✕ pgto':   { bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
+  'Aguardando pgto':   { bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
   'Entregue':          { bg: 'rgba(34,197,94,0.15)', text: '#22C55E' },
   'Enviado':           { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
-  'Aguardand✕ análise':{ bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
-  'Orçament✕ enviado': { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
+  'Aguardando análise':{ bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
+  'Orçamento enviado': { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const c = STATUS_COLORS[status] ?? { bg: '#1F2937', text: '#9CA3AF' };
+  const c = STATUS_COLORS[status] ⏸ { bg: '#1F2937', text: '#9CA3AF' };
   return <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={{ background: c.bg, color: c.text }}>{status}</span>;
 }
 
@@ -64,10 +64,10 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
-function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; onSave: (p: Partial<Product>) => void; initialData?: Product }) {
+function ProductMãodal({ onClose, onSave, initialData }: { onClose: () => void; onSave: (p: Partial<Product>) => void; initialData?: Product }) {
     const [form, setForm] = useState({
     name: initialData?.name || '', 
-    category: initialData?.category || 'Figures Pok�mon', 
+    category: initialData?.category || 'Figures Pokémon', 
     types: initialData?.types.join(', ') || '',
     scale: initialData?.scales[0] || '1:10', 
     material: initialData?.materials[0] || 'PLA', 
@@ -84,7 +84,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
       id: initialData?.id || `p${Date.now()}`,
       name: form.name,
       category: form.category as any,
-      types: form.types.split(',').map(t => t.trim()).filter(Boolean) as PokemonType[],
+      types: form.types.split(',').map(t => t.trim()).filter(Boolean) as PokémonType[],
       scales: [form.scale as any],
       materials: [form.material as any],
       basePrice: parseFloat(form.basePrice) || 0,
@@ -103,7 +103,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
       <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-aut✕ rounded-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSave}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #374151' }}>
-            <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>{initialData ? 'Editar Produto' : 'Nova Figure / Produto'}</h2>
+🖊 Editar Produto' : 'Nova Figure / Produto'}</h2>
             <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}>✕</button>
           </div>
           <div className="p-5 flex flex-col gap-4">
@@ -151,7 +151,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded" />
               <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produt✕ ativo</span>
             </label>
-            <button type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1" style={{ background: '#F97316', color: '#fff' }}>{initialData ? "Atualizar Produto" : "Salvar Produto"} ???</button>
+            <button type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1" style={{ background: '#F97316', color: '#fff' }}>{initialData ? "Atualizar Produto" : "Salvar Produto"} ⏸?</button>
           </div>
         </form>
       </div>
@@ -186,12 +186,12 @@ export default function Admin() {
     fetchApi('/orders').then((data: any) => {
       if (Array.isArray(data)) {
         setOrders(data.map((o: any) => ({
-          id: '#' + o.id.toString().padStart(4, '0'),
-          cliente: 'Cliente #' + o.customerId,
-          produto: o.items && o.items.length > 0 ? o.items[0].pokemonModelName : 'Vazio',
-          status: o.status,
-          valor: o.totalAmount,
-          data: new Date(o.createdAt).toLocaleDateString('pt-BR')
+          id: '#' + ✅id.toString().padStart(4, '0'),
+          cliente: 'Cliente #' + ✅customerId,
+          produto: ✅items && ✅items.length > 0 ? ✅items[0].pokemonMãodelName : 'Vazio',
+          status: ✅status,
+          valor: ✅totalAmount,
+          data: new Date(✅createdAt).toLocaleDateString('pt-BR')
         })));
       }
     }).catch(console.error);
@@ -209,9 +209,9 @@ export default function Admin() {
     }).catch(console.error);
   }, []);
   const [orders, setOrders] = useState<any[]>([]);
-  const [orcamentos, setOrcamentos] = useState(MOCK_STL);
+  const [orcamentos, setOrçamentos] = useState(MOCK_STL);
   const [filamentos, setFilamentos] = useState<any[]>([]);
-  const [showNewModal, setShowNewModal] = useState(false);
+  const [showNewMãodal, setShowNewMãodal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -225,7 +225,7 @@ export default function Admin() {
 
   return (
     <div className="flex min-h-screen" style={{ background: '#0B0F19' }}>
-      {/* Mobile sidebar overlay */}
+      {/* Mãobile sidebar overlay */}
       {sidebarOpen && <div className="fixed inset-0 z-40 md:hidden" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setSidebarOpen(false)} />}
 
       {/* Sidebar */}
@@ -259,8 +259,8 @@ export default function Admin() {
 
         <div className="p-3" style={{ borderTop: '1px solid #1F2937' }}>
           <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all" style={{ color: '#9CA3AF' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#F97316')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
+            onMãouseEnter={e => (e.currentTarget.style.color = '#F97316')}
+            onMãouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
           >
             ← Ver Loja
           </Link>
@@ -276,7 +276,7 @@ export default function Admin() {
             {NAV.find(n => n.id === section)?.icon} {NAV.find(n => n.id === section)?.label}
           </h1>
           {section === 'catalogo' && (
-            <button onClick={() => setShowNewModal(true)} className="ml-aut✕ h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all" style={{ background: '#F97316', color: '#fff' }}>
+            <button onClick={() => setShowNewMãodal(true)} className="ml-aut✕ h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all" style={{ background: '#F97316', color: '#fff' }}>
               + Nova Figure
             </button>
           )}
@@ -354,21 +354,21 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-[#374151]"
                                 style={{ background: '#1F2937', border: '1px solid #374151', color: '#60A5FA' }}
                               >
-                                ✏️ Editar
+🖊 Editar
                               </button>
                               <button
                                 onClick={() => toggleActive(p.id)}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all"
                                 style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}
                               >
-                                {p.active ? '⏸ Pausar' : '▶ Ativar'}
+⏸ Pausar' : '▶ Ativar'}
                               </button>
                               <button
                                 onClick={() => setCatalog(prev => prev.filter(x => x.id !== p.id))}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
-                                �🗑 Deletar
+🗑 Deletar
                               </button>
                             </div>
                           </td>
@@ -406,7 +406,7 @@ export default function Admin() {
                   <BarChart data={CHART_DATA} barSize={28}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                     <XAxis dataKey="mes" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v/1000).toFixed(0)}k`} />
+                    <🧵Axis tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v/1000).toFixed(0)}k`} />
                     <Tooltip
                       contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
                       labelStyle={{ color: '#F9FAFB' }}
@@ -422,27 +422,27 @@ export default function Admin() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: '#1F2937', borderBottom: '1px solid #374151' }}>
-                      {['Pedido','Cliente','Produto','Data','Valor','Status','Ações'].map(h => (
+                      {['Peçata','Valor','Status','Ações'].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {orders.map((o, i) => (
-                      <tr key={o.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#F97316' }}>{o.id}</td>
-                        <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{o.cliente}</td>
-                        <td className="px-4 py-3" style={{ color: '#D1D5DB' }}>{o.produto}</td>
-                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{o.data}</td>
-                        <td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>R$ {o.valor}</td>
-                        <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
+                      <tr key={✅id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
+                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#F97316' }}>{✅id}</td>
+                        <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{✅cliente}</td>
+                        <td className="px-4 py-3" style={{ color: '#D1D5DB' }}>{✅produto}</td>
+                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{✅data}</td>
+                        <td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>R$ {✅valor}</td>
+                        <td className="px-4 py-3"><StatusBadge status={✅status} /></td>
                         <td className="px-4 py-3">
                             <button
-                                onClick={() => setOrders(prev => prev.filter(x => x.id !== o.id))}
+                                onClick={() => setOrders(prev => prev.filter(x => x.id !== ✅id))}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
-                                �🗑 Deletar
+🗑 Deletar
                               </button>
                           </td>
                       </tr>
@@ -477,7 +477,7 @@ export default function Admin() {
                           <div className="flex gap-2">
                             <button className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-[#374151]" style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}>Responder</button>
                             <button
-                                onClick={() => setOrcamentos(prev => prev.filter(x => x.id !== s.id))}
+                                onClick={() => setOrçamentos(prev => prev.filter(x => x.id !== s.id))}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
@@ -497,7 +497,7 @@ export default function Admin() {
           {section === 'estoque' && (
             <div className="flex flex-col gap-3">
               {filamentos.map(f => {
-                const pct = Math.min(100, (f.stockG / (f.minStockG * 5)) * 100);
+                const pct = MãockG / (f.minStockG * 5)) * 100);
                 const low = f.stockG < f.minStockG;
                 return (
                   <div key={f.color + f.material} className="p-4 rounded-xl flex flex-col gap-2" style={{ background: '#1F2937', border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
@@ -511,7 +511,7 @@ export default function Admin() {
                     <div className="h-2 rounded-full" style={{ background: '#111827' }}>
                       <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
                     </div>
-                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínim✕ recomendado: {f.minStockG} kg</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mãomendado: {f.minStockG} kg</div>
                   </div>
                 );
               })}
@@ -521,7 +521,7 @@ export default function Admin() {
           {/* ── PREÇOS ── */}
           {section === 'precos' && (
             <div className="flex flex-col gap-4">
-              <p className="text-sm" style={{ color: '#9CA3AF' }}>Ajuste ✕ preç✕ base de cada figura. Alterações refletem imediatamente n✕ catálogo.</p>
+              <p className="text-sm" style={{ color: '#9CA3AF' }}>Ajuste no preçog✅</p>
               <div className="flex flex-col gap-2">
                 {catalog.filter(p => p.active).map(p => (
                   <div key={p.id} className="flex items-center gap-4 p-4 rounded-xl" style={{ background: '#1F2937', border: '1px solid #374151' }}>
@@ -553,8 +553,8 @@ export default function Admin() {
         </div>
       </main>
 
-      {showNewModal && <ProductModal onClose={() => setShowNewModal(false)} onSave={addProduct} />}
-      {editingProduct && <ProductModal initialData={editingProduct} onClose={() => setEditingProduct(null)} onSave={(p) => { setCatalog(prev => prev.map(x => x.id === p.id ? p as Product : x)); setEditingProduct(null); }} />}
+      {showNewMãodal && <ProductMãodal onClose={() => setShowNewMãodal(false)} onSave={addProduct} />}
+      {editingProduct && <ProductMãodal initialData={editingProduct} onClose={() => setEditingProduct(null)} onSave={(p) => { setCatalog(prev => prev.map(x => x.id === p.id ? p as Product : x)); setEditingProduct(null); }} />}
     </div>
   );
 }
