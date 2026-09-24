@@ -159,12 +159,12 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Escala">
-                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
                   {['1:10','1:1','Chibi','Diorama'].map(s => <option key={s}>{s}</option>)}
                 </select>
               </Field>
               <Field label="Material">
-                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
                   {['PLA','Resina'].map(m => <option key={m}>{m}</option>)}
                 </select>
               </Field>

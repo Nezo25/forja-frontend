@@ -7,23 +7,23 @@ import { TypeBadge } from '@/components/TypeBadge';
 type Section = 'catalogo' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos';
 
 const NAV: { id: Section; icon: string; label: string }[] = [
-  { id: 'catalogo', icon: '📦', label: 'Catálogo' },
-  { id: 'pedidos', icon: '🛒', label: 'Pedidos' },
-  { id: 'orcamentos', icon: '📐', label: 'Orçamentos STL' },
-  { id: 'estoque', icon: '🧵', label: 'Estoque Filamento' },
-  { id: 'precos', icon: '💰', label: 'Ajuste de Preços' },
+  { id: 'catalogo', icon: '', label: 'Catlogo' },
+  { id: 'pedidos', icon: '', label: 'Pedidos' },
+  { id: 'orcamentos', icon: '', label: 'Oramentos STL' },
+  { id: 'estoque', icon: '', label: 'Estoque Filamento' },
+  { id: 'precos', icon: '', label: 'Ajuste de Preos' },
 ];
 
 const MOCK_ORDERS = [
-  { id: '#0042', cliente: 'Ash Ketchum', produto: 'Charizard Stance', status: 'Em impressão', valor: 234, data: '23/09/2025' },
+  { id: '#0042', cliente: 'Ash Ketchum', produto: 'Charizard Stance', status: 'Em impresso', valor: 234, data: '23/09/2025' },
   { id: '#0041', cliente: 'Misty Waterflower', produto: 'Gengar Sorridente', status: 'Aguardando pgto', valor: 89, data: '22/09/2025' },
   { id: '#0040', cliente: 'Brock Takeshi', produto: 'Gyarados Diorama', status: 'Entregue', valor: 434, data: '21/09/2025' },
   { id: '#0039', cliente: 'Gary Oak', produto: 'Mewtwo Armadura', status: 'Enviado', valor: 314, data: '20/09/2025' },
 ];
 
 const MOCK_STL = [
-  { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardando análise', data: '23/09/2025' },
-  { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Orçamento enviado', data: '22/09/2025' },
+  { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardando anlise', data: '23/09/2025' },
+  { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Oramento enviado', data: '22/09/2025' },
 ];
 
 const FILAMENTO = [
@@ -44,12 +44,12 @@ const CHART_DATA = [
 ];
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  'Em impressão':      { bg: 'rgba(234,179,8,0.15)', text: '#EAB308' },
+  'Em impresso':      { bg: 'rgba(234,179,8,0.15)', text: '#EAB308' },
   'Aguardando pgto':   { bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
   'Entregue':          { bg: 'rgba(34,197,94,0.15)', text: '#22C55E' },
   'Enviado':           { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
-  'Aguardando análise':{ bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
-  'Orçamento enviado': { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
+  'Aguardando anlise':{ bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
+  'Oramento enviado': { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -81,7 +81,7 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
 function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; onSave: (p: Partial<Product>) => void; initialData?: Product }) {
     const [form, setForm] = useState({
     name: initialData?.name || '', 
-    category: initialData?.category || 'Figures Pok�mon', 
+    category: initialData?.category || 'Figures Pokmon', 
     types: initialData?.types.join(', ') || '',
     scale: initialData?.scales[0] || '1:10', 
     material: initialData?.materials[0] || 'PLA', 
@@ -113,7 +113,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
         }
       } catch (err) {
         console.error('Erro no upload da imagem', err);
-        alert('Erro ao enviar imagem. Verifique se o preset forja_preset est� como Unsigned.');
+        alert('Erro ao enviar imagem. Verifique se o preset forja_preset est como Unsigned.');
       } finally {
         setIsUploading(false);
       }
@@ -127,7 +127,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
       scales: [form.scale as any],
       materials: [form.material as any],
       basePrice: parseFloat(form.basePrice) || 0,
-      finishOptions: [{ label: 'Pe�a Crua', extra: 0 }, { label: 'Com Primer', extra: 25 }, { label: 'Pintado � M�o', extra: 85 }],
+      finishOptions: [{ label: 'Pea Crua', extra: 0 }, { label: 'Com Primer', extra: 25 }, { label: 'Pintado  Mo', extra: 85 }],
       image: finalImageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
       printTimeH: parseInt(form.printTimeH) || 0,
       filamentG: parseInt(form.filamentG) || 0,
@@ -143,35 +143,35 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
         <form onSubmit={handleSave}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #374151' }}>
             <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>{initialData ? 'Editar Produto' : 'Nova Figure / Produto'}</h2>
-            <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}>✕</button>
+            <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}></button>
           </div>
           <div className="p-5 flex flex-col gap-4">
             <Field label="Nome do produto *"><Input required placeholder="Charizard Stance" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Categoria">
                 <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as Category }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
-                  {['Figures Pokémon','Dioramas','Chibis','Acessórios'].map(c => <option key={c}>{c}</option>)}
+                  {['Figures Pokmon','Dioramas','Chibis','Acessrios'].map(c => <option key={c}>{c}</option>)}
                 </select>
               </Field>
-              <Field label="Tipos (separados por vírgula)">
-                <Input placeholder="Fogo, Dragão" value={form.types} onChange={e => setForm(f => ({ ...f, types: e.target.value }))} />
+              <Field label="Tipos (separados por vrgula)">
+                <Input placeholder="Fogo, Drago" value={form.types} onChange={e => setForm(f => ({ ...f, types: e.target.value }))} />
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Escala">
-                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
                   {['1:10','1:1','Chibi','Diorama'].map(s => <option key={s}>{s}</option>)}
                 </select>
               </Field>
               <Field label="Material">
-                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
                   {['PLA','Resina'].map(m => <option key={m}>{m}</option>)}
                 </select>
               </Field>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <Field label="Preço base (R$) *"><Input required type="number" placeholder="149" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: e.target.value }))} /></Field>
-              <Field label="Tempo impressão (h)"><Input type="number" placeholder="18" value={form.printTimeH} onChange={e => setForm(f => ({ ...f, printTimeH: e.target.value }))} /></Field>
+              <Field label="Preo base (R$) *"><Input required type="number" placeholder="149" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: e.target.value }))} /></Field>
+              <Field label="Tempo impresso (h)"><Input type="number" placeholder="18" value={form.printTimeH} onChange={e => setForm(f => ({ ...f, printTimeH: e.target.value }))} /></Field>
               <Field label="Filamento (g)"><Input type="number" placeholder="320" value={form.filamentG} onChange={e => setForm(f => ({ ...f, filamentG: e.target.value }))} /></Field>
             </div>
             <Field label="Imagem do produto">
@@ -227,7 +227,7 @@ export default function Admin() {
         style={{ width: 220, background: '#111827', borderRight: '1px solid #1F2937' }}
       >
         <div className="flex items-center gap-2.5 px-4 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style={{ background: 'linear-gradient(135deg,#F97316,#EA580C)' }}>🔩</div>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style={{ background: 'linear-gradient(135deg,#F97316,#EA580C)' }}></div>
           <div>
             <div className="font-extrabold text-[13px]" style={{ color: '#F9FAFB' }}>Forja Admin</div>
             <div className="text-[10px]" style={{ color: '#6B7280' }}>Painel de Controle</div>
@@ -255,7 +255,7 @@ export default function Admin() {
             onMouseEnter={e => (e.currentTarget.style.color = '#F97316')}
             onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
           >
-            ← Ver Loja
+             Ver Loja
           </Link>
         </div>
       </aside>
@@ -264,7 +264,7 @@ export default function Admin() {
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Top bar */}
         <div className="flex items-center gap-3 px-4 md:px-8 py-4" style={{ borderBottom: '1px solid #1F2937', background: '#111827' }}>
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: '#1F2937', color: '#9CA3AF' }}>☰</button>
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: '#1F2937', color: '#9CA3AF' }}></button>
           <h1 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>
             {NAV.find(n => n.id === section)?.icon} {NAV.find(n => n.id === section)?.label}
           </h1>
@@ -277,16 +277,16 @@ export default function Admin() {
 
         <div className="flex-1 p-4 md:p-8 overflow-auto">
 
-          {/* ── CATÁLOGO ── */}
+          {/*  CATLOGO  */}
           {section === 'catalogo' && (
             <div className="flex flex-col gap-4">
               {/* KPIs */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
                 {[
-                  { label: 'Total de figures', value: catalog.length, icon: '📦' },
-                  { label: 'Ativos', value: catalog.filter(p => p.active).length, icon: '✅' },
-                  { label: 'Pausados', value: catalog.filter(p => !p.active).length, icon: '⏸️' },
-                  { label: 'Categorias', value: new Set(catalog.map(p => p.category)).size, icon: '🗂️' },
+                  { label: 'Total de figures', value: catalog.length, icon: '' },
+                  { label: 'Ativos', value: catalog.filter(p => p.active).length, icon: '' },
+                  { label: 'Pausados', value: catalog.filter(p => !p.active).length, icon: '' },
+                  { label: 'Categorias', value: new Set(catalog.map(p => p.category)).size, icon: '' },
                 ].map(k => (
                   <div key={k.label} className="p-4 rounded-xl flex flex-col gap-1" style={{ background: '#1F2937', border: '1px solid #374151' }}>
                     <div className="text-xl">{k.icon}</div>
@@ -302,7 +302,7 @@ export default function Admin() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr style={{ background: '#1F2937', borderBottom: '1px solid #374151' }}>
-                        {['Produto','Categoria','Tipos','Escalas','Tempo','Filamento','Status','Ações'].map(h => (
+                        {['Produto','Categoria','Tipos','Escalas','Tempo','Filamento','Status','Aes'].map(h => (
                           <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>{h}</th>
                         ))}
                       </tr>
@@ -323,7 +323,7 @@ export default function Admin() {
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap gap-1">
                               {p.types.map(t => <TypeBadge key={t} type={t} />)}
-                              {p.types.length === 0 && <span className="text-[11px]" style={{ color: '#6B7280' }}>—</span>}
+                              {p.types.length === 0 && <span className="text-[11px]" style={{ color: '#6B7280' }}></span>}
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -354,14 +354,14 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all"
                                 style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}
                               >
-                                {p.active ? '⏸ Pausar' : '▶ Ativar'}
+                                {p.active ? ' Pausar' : ' Ativar'}
                               </button>
                               <button
                                 onClick={() => setCatalog(prev => prev.filter(x => x.id !== p.id))}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
-                                🗑 Deletar
+                                 Deletar
                               </button>
                             </div>
                           </td>
@@ -374,15 +374,15 @@ export default function Admin() {
             </div>
           )}
 
-          {/* ── PEDIDOS ── */}
+          {/*  PEDIDOS  */}
           {section === 'pedidos' && (
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
                 {[
-                  { label: 'Total mês', value: 'R$ 9.200', icon: '💰' },
-                  { label: 'Em impressão', value: '3', icon: '🖨️' },
-                  { label: 'Enviados', value: '12', icon: '📬' },
-                  { label: 'Ticket médio', value: 'R$ 218', icon: '📊' },
+                  { label: 'Total ms', value: 'R$ 9.200', icon: '' },
+                  { label: 'Em impresso', value: '3', icon: '' },
+                  { label: 'Enviados', value: '12', icon: '' },
+                  { label: 'Ticket mdio', value: 'R$ 218', icon: '' },
                 ].map(k => (
                   <div key={k.label} className="p-4 rounded-xl" style={{ background: '#1F2937', border: '1px solid #374151' }}>
                     <div className="text-xl mb-1">{k.icon}</div>
@@ -415,7 +415,7 @@ export default function Admin() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: '#1F2937', borderBottom: '1px solid #374151' }}>
-                      {['Pedido','Cliente','Produto','Data','Valor','Status','Ações'].map(h => (
+                      {['Pedido','Cliente','Produto','Data','Valor','Status','Aes'].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>{h}</th>
                       ))}
                     </tr>
@@ -435,7 +435,7 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
-                                🗑 Deletar
+                                 Deletar
                               </button>
                           </td>
                       </tr>
@@ -446,14 +446,14 @@ export default function Admin() {
             </div>
           )}
 
-          {/* ── ORÇAMENTOS STL ── */}
+          {/*  ORAMENTOS STL  */}
           {section === 'orcamentos' && (
             <div className="flex flex-col gap-4">
               <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #374151' }}>
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: '#1F2937', borderBottom: '1px solid #374151' }}>
-                      {['ID','Cliente','Arquivo STL','Data','Status','Ação'].map(h => (
+                      {['ID','Cliente','Arquivo STL','Data','Status','Ao'].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>{h}</th>
                       ))}
                     </tr>
@@ -474,7 +474,7 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50"
                                 style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
                               >
-                                🗑
+                                
                               </button>
                           </div>
                         </td>
@@ -486,7 +486,7 @@ export default function Admin() {
             </div>
           )}
 
-          {/* ── ESTOQUE ── */}
+          {/*  ESTOQUE  */}
           {section === 'estoque' && (
             <div className="flex flex-col gap-3">
               {FILAMENTO.map(f => {
@@ -497,24 +497,24 @@ export default function Admin() {
                     <div className="flex items-center justify-between">
                       <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>{f.cor} <span className="text-[11px] font-normal" style={{ color: '#9CA3AF' }}>({f.material})</span></div>
                       <div className="flex items-center gap-2">
-                        {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>⚠ Estoque baixo</span>}
+                        {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}> Estoque baixo</span>}
                         <span className="font-bold font-mono text-[13px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.estoque} kg</span>
                       </div>
                     </div>
                     <div className="h-2 rounded-full" style={{ background: '#111827' }}>
                       <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
                     </div>
-                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínimo recomendado: {f.min} kg</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mnimo recomendado: {f.min} kg</div>
                   </div>
                 );
               })}
             </div>
           )}
 
-          {/* ── PREÇOS ── */}
+          {/*  PREOS  */}
           {section === 'precos' && (
             <div className="flex flex-col gap-4">
-              <p className="text-sm" style={{ color: '#9CA3AF' }}>Ajuste o preço base de cada figura. Alterações refletem imediatamente no catálogo.</p>
+              <p className="text-sm" style={{ color: '#9CA3AF' }}>Ajuste o preo base de cada figura. Alteraes refletem imediatamente no catlogo.</p>
               <div className="flex flex-col gap-2">
                 {catalog.filter(p => p.active).map(p => (
                   <div key={p.id} className="flex items-center gap-4 p-4 rounded-xl" style={{ background: '#1F2937', border: '1px solid #374151' }}>
