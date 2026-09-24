@@ -91,7 +91,9 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     basePrice: initialData?.basePrice?.toString() || '', 
     image: initialData?.image || '', 
     active: initialData ? initialData.active : true,
+    imageFile: null as File | null,
   });
+  const [isUploading, setIsUploading] = useState(false);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -586,6 +588,7 @@ export default function Admin() {
     </div>
   );
 }
+
 
 
 
