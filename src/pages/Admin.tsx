@@ -16,14 +16,14 @@ const NAV: { id: Section; icon: string; label: string }[] = [
 
 const MOCK_ORDERS = [
   { id: '#0042', cliente: 'Ash Ketchum', produto: 'Charizard Stance', status: 'Em impressão', valor: 234, data: '23/09/2025' },
-  { id: '#0041', cliente: 'Misty Waterflower', produto: 'Gengar Sorridente', status: 'Aguardando pgto', valor: 89, data: '22/09/2025' },
+  { id: '#0041', cliente: 'Misty Waterflower', produto: 'Gengar Sorridente', status: 'Aguardand✕ pgto', valor: 89, data: '22/09/2025' },
   { id: '#0040', cliente: 'Brock Takeshi', produto: 'Gyarados Diorama', status: 'Entregue', valor: 434, data: '21/09/2025' },
-  { id: '#0039', cliente: 'Gary Oak', produto: 'Mewtwo Armadura', status: 'Enviado', valor: 314, data: '20/09/2025' },
+  { id: '#0039', cliente: 'Gary Oak', produto: 'Mewtw✕ Armadura', status: 'Enviado', valor: 314, data: '20/09/2025' },
 ];
 
 const MOCK_STL = [
-  { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardando análise', data: '23/09/2025' },
-  { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Orçamento enviado', data: '22/09/2025' },
+  { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardand✕ análise', data: '23/09/2025' },
+  { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Orçament✕ enviado', data: '22/09/2025' },
 ];
 
 const FILAMENTO = [
@@ -45,11 +45,11 @@ const CHART_DATA = [
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   'Em impressão':      { bg: 'rgba(234,179,8,0.15)', text: '#EAB308' },
-  'Aguardando pgto':   { bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
+  'Aguardand✕ pgto':   { bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
   'Entregue':          { bg: 'rgba(34,197,94,0.15)', text: '#22C55E' },
   'Enviado':           { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
-  'Aguardando análise':{ bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
-  'Orçamento enviado': { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
+  'Aguardand✕ análise':{ bg: 'rgba(249,115,22,0.15)', text: '#F97316' },
+  'Orçament✕ enviado': { bg: 'rgba(96,165,250,0.15)', text: '#60A5FA' },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -92,43 +92,18 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     active: initialData ? initialData.active : true,
   });
 
-  async function handleSave(e: React.FormEvent) {
+  function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    let finalImageUrl = form.image;
-    
-    if (form.imageFile) {
-      setIsUploading(true);
-      try {
-        const formData = new FormData();
-        formData.append('file', form.imageFile);
-        formData.append('upload_preset', 'forja_preset');
-        
-        const res = await fetch('https://api.cloudinary.com/v1_1/hsxlmx8k/image/upload', {
-          method: 'POST',
-          body: formData
-        });
-        const data = await res.json();
-        if (data.secure_url) {
-          finalImageUrl = data.secure_url;
-        }
-      } catch (err) {
-        console.error('Erro no upload da imagem', err);
-        alert('Erro ao enviar imagem. Verifique se o preset forja_preset est� como Unsigned.');
-      } finally {
-        setIsUploading(false);
-      }
-    }
-
     onSave({
-      id: initialData?.id || "p${Date.now()}",
+      id: initialData?.id || `p${Date.now()}`,
       name: form.name,
       category: form.category,
       types: form.types.split(',').map(t => t.trim()).filter(Boolean) as PokemonType[],
       scales: [form.scale as any],
       materials: [form.material as any],
       basePrice: parseFloat(form.basePrice) || 0,
-      finishOptions: [{ label: 'Pe�a Crua', extra: 0 }, { label: 'Com Primer', extra: 25 }, { label: 'Pintado � M�o', extra: 85 }],
-      image: finalImageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
+      finishOptions: [{ label: 'Peça Crua', extra: 0 }, { label: 'Com Primer', extra: 25 }, { label: 'Pintado à Mão', extra: 85 }],
+      image: form.image || 'https://images.unsplash.com/photo-1613771404784-63a9eeed2e30?w=600&h=700&fit=crop&auto=format',
       printTimeH: parseInt(form.printTimeH) || 0,
       filamentG: parseInt(form.filamentG) || 0,
       active: form.active,
@@ -139,14 +114,14 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }} />
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-aut✕ rounded-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSave}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #374151' }}>
             <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>{initialData ? 'Editar Produto' : 'Nova Figure / Produto'}</h2>
             <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}>✕</button>
           </div>
           <div className="p-5 flex flex-col gap-4">
-            <Field label="Nome do produto *"><Input required placeholder="Charizard Stance" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></Field>
+            <Field label="Nome d✕ produt✕ *"><Input required placeholder="Charizard Stance" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Categoria">
                 <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as Category }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
@@ -159,29 +134,28 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Escala">
-                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
                   {['1:10','1:1','Chibi','Diorama'].map(s => <option key={s}>{s}</option>)}
                 </select>
               </Field>
               <Field label="Material">
-                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
                   {['PLA','Resina'].map(m => <option key={m}>{m}</option>)}
                 </select>
               </Field>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <Field label="Preço base (R$) *"><Input required type="number" placeholder="149" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: e.target.value }))} /></Field>
-              <Field label="Tempo impressão (h)"><Input type="number" placeholder="18" value={form.printTimeH} onChange={e => setForm(f => ({ ...f, printTimeH: e.target.value }))} /></Field>
-              <Field label="Filamento (g)"><Input type="number" placeholder="320" value={form.filamentG} onChange={e => setForm(f => ({ ...f, filamentG: e.target.value }))} /></Field>
+              <Field label="Preç✕ base (R$) *"><Input required type="number" placeholder="149" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: e.target.value }))} /></Field>
+              <Field label="Temp✕ impressã✕ (h)"><Input type="number" placeholder="18" value={form.printTimeH} onChange={e => setForm(f => ({ ...f, printTimeH: e.target.value }))} /></Field>
+              <Field label="Filament✕ (g)"><Input type="number" placeholder="320" value={form.filamentG} onChange={e => setForm(f => ({ ...f, filamentG: e.target.value }))} /></Field>
             </div>
-            <Field label="Imagem do produto">
+            <Field label="Imagem d✕ produto">
               <input 
                 type="file" 
                 accept="image/*" 
                 onChange={e => {
                   if (e.target.files?.[0]) {
-                    const file = e.target.files[0];
-                    setForm(f => ({ ...f, image: URL.createObjectURL(file), imageFile: file }))
+                    setForm(f => ({ ...f, image: URL.createObjectURL(e.target.files![0]) }))
                   }
                 }} 
                 className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1F2937] file:text-[#F9FAFB] hover:file:bg-[#374151]"
@@ -189,9 +163,9 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             </Field>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded" />
-              <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produto ativo</span>
+              <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produt✕ ativo</span>
             </label>
-            <button disabled={isUploading} type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: '#F97316', color: '#fff' }}>{isUploading ? "Enviando Imagem ??..." : (initialData ? "Atualizar Produto" : "Salvar Produto")} ???</button>
+            <button type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1" style={{ background: '#F97316', color: '#fff' }}>{initialData ? "Atualizar Produto" : "Salvar Produto"} ???</button>
           </div>
         </form>
       </div>
@@ -223,7 +197,7 @@ export default function Admin() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:sticky top-0 h-screen z-50 md:z-auto flex-shrink-0 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        className={`fixed md:sticky top-0 h-screen z-50 md:z-aut✕ flex-shrink-0 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         style={{ width: 220, background: '#111827', borderRight: '1px solid #1F2937' }}
       >
         <div className="flex items-center gap-2.5 px-4 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -269,7 +243,7 @@ export default function Admin() {
             {NAV.find(n => n.id === section)?.icon} {NAV.find(n => n.id === section)?.label}
           </h1>
           {section === 'catalogo' && (
-            <button onClick={() => setShowNewModal(true)} className="ml-auto h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all" style={{ background: '#F97316', color: '#fff' }}>
+            <button onClick={() => setShowNewModal(true)} className="ml-aut✕ h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all" style={{ background: '#F97316', color: '#fff' }}>
               + Nova Figure
             </button>
           )}
@@ -333,8 +307,8 @@ export default function Admin() {
                               ))}
                             </div>
                           </td>
-                          <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{p.printTimeH}h</td>
-                          <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{p.filamentG}g</td>
+                          <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{p.printTimeH}h</td>
+                          <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{p.filamentG}g</td>
                           <td className="px-4 py-3">
                             <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={p.active ? { background: 'rgba(34,197,94,0.15)', color: '#22C55E' } : { background: '#1F2937', color: '#6B7280' }}>
                               {p.active ? 'Ativo' : 'Pausado'}
@@ -347,7 +321,7 @@ export default function Admin() {
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-[#374151]"
                                 style={{ background: '#1F2937', border: '1px solid #374151', color: '#60A5FA' }}
                               >
-                                ?? Editar
+                                ✏️ Editar
                               </button>
                               <button
                                 onClick={() => toggleActive(p.id)}
@@ -423,10 +397,10 @@ export default function Admin() {
                   <tbody>
                     {orders.map((o, i) => (
                       <tr key={o.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#F97316' }}>{o.id}</td>
+                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#F97316' }}>{o.id}</td>
                         <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{o.cliente}</td>
                         <td className="px-4 py-3" style={{ color: '#D1D5DB' }}>{o.produto}</td>
-                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{o.data}</td>
+                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{o.data}</td>
                         <td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>R$ {o.valor}</td>
                         <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
                         <td className="px-4 py-3">
@@ -453,7 +427,7 @@ export default function Admin() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: '#1F2937', borderBottom: '1px solid #374151' }}>
-                      {['ID','Cliente','Arquivo STL','Data','Status','Ação'].map(h => (
+                      {['ID','Cliente','Arquiv✕ STL','Data','Status','Ação'].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>{h}</th>
                       ))}
                     </tr>
@@ -461,10 +435,10 @@ export default function Admin() {
                   <tbody>
                     {orcamentos.map((s, i) => (
                       <tr key={s.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#F97316' }}>{s.id}</td>
+                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#F97316' }}>{s.id}</td>
                         <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{s.cliente}</td>
-                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{s.arquivo}</td>
-                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{s.data}</td>
+                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{s.arquivo}</td>
+                        <td className="px-4 py-3 font-mon✕ text-[12px]" style={{ color: '#9CA3AF' }}>{s.data}</td>
                         <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
@@ -498,13 +472,13 @@ export default function Admin() {
                       <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>{f.cor} <span className="text-[11px] font-normal" style={{ color: '#9CA3AF' }}>({f.material})</span></div>
                       <div className="flex items-center gap-2">
                         {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>⚠ Estoque baixo</span>}
-                        <span className="font-bold font-mono text-[13px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.estoque} kg</span>
+                        <span className="font-bold font-mon✕ text-[13px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.estoque} kg</span>
                       </div>
                     </div>
                     <div className="h-2 rounded-full" style={{ background: '#111827' }}>
                       <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
                     </div>
-                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínimo recomendado: {f.min} kg</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínim✕ recomendado: {f.min} kg</div>
                   </div>
                 );
               })}
@@ -514,7 +488,7 @@ export default function Admin() {
           {/* ── PREÇOS ── */}
           {section === 'precos' && (
             <div className="flex flex-col gap-4">
-              <p className="text-sm" style={{ color: '#9CA3AF' }}>Ajuste o preço base de cada figura. Alterações refletem imediatamente no catálogo.</p>
+              <p className="text-sm" style={{ color: '#9CA3AF' }}>Ajuste ✕ preç✕ base de cada figura. Alterações refletem imediatamente n✕ catálogo.</p>
               <div className="flex flex-col gap-2">
                 {catalog.filter(p => p.active).map(p => (
                   <div key={p.id} className="flex items-center gap-4 p-4 rounded-xl" style={{ background: '#1F2937', border: '1px solid #374151' }}>
@@ -533,11 +507,9 @@ export default function Admin() {
                         onFocus={e => (e.target.style.borderColor = '#F97316')}
                         onBlur={e => (e.target.style.borderColor = '#374151')}
                         onChange={e => {
-                  if (e.target.files?.[0]) {
-                    const file = e.target.files[0];
-                    setForm(f => ({ ...f, image: URL.createObjectURL(file), imageFile: file }))
-                  }
-                }}
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val)) setCatalog(prev => prev.map(pr => pr.id === p.id ? { ...pr, basePrice: val } : pr));
+                        }}
                       />
                     </div>
                   </div>
@@ -553,7 +525,6 @@ export default function Admin() {
     </div>
   );
 }
-
 
 
 
