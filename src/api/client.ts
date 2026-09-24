@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com/api/v1';
+﻿const API_URL = import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com/api/v1';
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(\\\\, {

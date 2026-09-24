@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { FilterBar, type Filters } from '@/components/FilterBar';
@@ -90,7 +90,7 @@ export default function Home() {
       <main id="catalogo" className="max-w-[1440px] mx-auto px-4 md:px-8 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-extrabold" style={{ color: '#F9FAFB' }}>Catálogo</h2>
+            <h2 className="text-xl font-extrabold" style={{ color: '#F9FAFB' }}>CatÃ¡logo</h2>
             <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>
               {activeProducts.length} {activeProducts.length === 1 ? 'produto' : 'produtos'} encontrados
             </p>
@@ -99,7 +99,7 @@ export default function Home() {
 
         {activeProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ color: '#6B7280' }}>
-            <div className="text-5xl">🔍</div>
+            <div className="text-5xl">ðŸ”</div>
             <div className="text-base font-semibold">Nenhum produto encontrado</div>
             <div className="text-sm">Tente ajustar os filtros ou a busca</div>
           </div>
@@ -118,25 +118,25 @@ export default function Home() {
           onClick={() => setOrcamentoOpen(true)}
         >
           <div className="flex-1 min-w-0">
-            <div className="text-2xl mb-2">🔩</div>
+            <div className="text-2xl mb-2">ðŸ”©</div>
             <h3 className="text-xl font-extrabold mb-1" style={{ color: '#F9FAFB' }}>
-              Tem um arquivo STL próprio?
+              Tem um arquivo STL prÃ³prio?
             </h3>
             <p className="text-sm" style={{ color: '#9CA3AF' }}>
-              Envie seu modelo e faça um orçamento personalizado em tempo real. Imprimimos qualquer design — da Pokédex à sua criação original.
+              Envie seu modelo e faÃ§a um orÃ§amento personalizado em tempo real. Imprimimos qualquer design â€” da PokÃ©dex Ã  sua criaÃ§Ã£o original.
             </p>
           </div>
           <button
             className="shrink-0 h-11 px-7 rounded-xl font-extrabold text-sm transition-all"
             style={{ background: '#F97316', color: '#fff' }}
           >
-            Enviar meu STL →
+            Enviar meu STL â†’
           </button>
         </div>
       </main>
 
       <footer className="text-center py-8 text-xs" style={{ color: '#374151', borderTop: '1px solid #1F2937' }}>
-        © 2025 Forja do Chico · Impressão 3D Artesanal · Todos os direitos reservados
+        Â© 2025 Forja do Chico Â· ImpressÃ£o 3D Artesanal Â· Todos os direitos reservados
       </footer>
 
       {/* Modals */}
