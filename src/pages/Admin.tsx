@@ -179,6 +179,40 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
   );
 }
 
+
+function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: any) => void }) {
+  const [form, setForm] = useState({ color: '', material: 'PLA', stockG: '', minStockG: '300' });
+  function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    onSave({
+      color: form.color,
+      material: form.material,
+      stockGrams: parseFloat(form.stockG) || 0,
+      minStockGrams: parseFloat(form.minStockG) || 0
+    });
+  }
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }} />
+      <div className="relative w-full max-w-sm overflow-y-auto rounded-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
+        <form onSubmit={handleSave}>
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #374151' }}>
+            <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>Nova Bobina</h2>
+            <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}>✕</button>
+          </div>
+          <div className="p-5 flex flex-col gap-4">
+            <Field label="Cor *"><Input required placeholder="Ex: Vermelho Fogo" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} /></Field>
+            <Field label="Material *"><Input required placeholder="Ex: PLA" value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))} /></Field>
+            <Field label="Estoque Atual (g) *"><Input required type="number" placeholder="1000" value={form.stockG} onChange={e => setForm(f => ({ ...f, stockG: e.target.value }))} /></Field>
+            <Field label="Mínimo Recomendado (g) *"><Input required type="number" placeholder="300" value={form.minStockG} onChange={e => setForm(f => ({ ...f, minStockG: e.target.value }))} /></Field>
+            <button type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1" style={{ background: '#F97316', color: '#fff' }}>Salvar Filamento</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const [section, setSection] = useState<Section>('catalogo');
   const [catalog, setCatalog] = useState<Product[]>([]);
@@ -230,6 +264,7 @@ export default function Admin() {
   }, []);
   const [filamentos, setFilamentos] = useState<any[]>([]);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showNewFilamentModal, setShowNewFilamentModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -525,23 +560,28 @@ export default function Admin() {
 
           {/* ── ESTOQUE ── */}
           {section === 'estoque' && (
+            <button onClick={() => setShowNewFilamentModal(true)} className="ml-auto h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all" style={{ background: '#F97316', color: '#fff' }}>
+              + Nova Bobina
+            </button>
+          )}
+          {section === 'estoque' && (
             <div className="flex flex-col gap-3">
               {filamentos.map(f => {
-                const pct = Math.min(100, (f.stockG / (f.minStockG * 5)) * 100);
-                const low = f.stockG < f.minStockG;
+                const currentStock = f.stockGrams || f.stockG || 0; const minStock = f.minStockGrams || f.minStockG || 0; const pct = Math.min(100, minStock > 0 ? (currentStock / (minStock * 5)) * 100 : 0);
+                const low = currentStock < minStock;
                 return (
                   <div key={f.color + f.material} className="p-4 rounded-xl flex flex-col gap-2" style={{ background: '#1F2937', border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
                     <div className="flex items-center justify-between">
                       <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>{f.color} <span className="text-[11px] font-normal" style={{ color: '#9CA3AF' }}>({f.material})</span></div>
                       <div className="flex items-center gap-2">
                         {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>⚠ Estoque baixo</span>}
-                        <span className="font-bold font-mon✕ text-[13px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.stockG} kg</span>
+                        <span className="font-bold font-mon✕ text-[13px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.stockGrams || f.stockG} g</span>
                       </div>
                     </div>
                     <div className="h-2 rounded-full" style={{ background: '#111827' }}>
                       <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
                     </div>
-                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínimo recomendado: {f.minStockG} kg</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínimo recomendado: {minStock} g</div>
                   </div>
                 );
               })}
@@ -585,6 +625,13 @@ export default function Admin() {
 
       {showNewModal && <ProductModal onClose={() => setShowNewModal(false)} onSave={addProduct} />}
       {editingProduct && <ProductModal initialData={editingProduct} onClose={() => setEditingProduct(null)} onSave={(p) => { setCatalog(prev => prev.map(x => x.id === p.id ? p as Product : x)); setEditingProduct(null); }} />}
+      {showNewFilamentModal && <FilamentModal onClose={() => setShowNewFilamentModal(false)} onSave={(f) => {
+        fetchApi('/admin/filaments', { method: 'POST', body: JSON.stringify(f) })
+          .then((saved) => {
+            setFilamentos(prev => [...prev, saved]);
+            setShowNewFilamentModal(false);
+          }).catch(console.error);
+      }} />}
     </div>
   );
 }
