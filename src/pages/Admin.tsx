@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchApi } from '../api/client';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -121,7 +121,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     }
 
     onSave({
-      id: initialData?.id || "p${Date.now()}",
+      id: initialData?.id || `p${Date.now()}`,
       name: form.name,
       category: form.category,
       types: form.types.split(',').map(t => t.trim()).filter(Boolean) as PokemonType[],
@@ -230,7 +230,7 @@ export default function Admin() {
 
     try {
       if (isEdit) {
-        await fetchApi(/models/${p.id}, { method: 'PUT', body: JSON.stringify(payload) });
+        await fetchApi(`/models/${p.id}`, { method: 'PUT', body: JSON.stringify(payload) });
         setCatalog(prev => prev.map(x => x.id === p.id ? { ...x, ...p } as Product : x));
       } else {
         const created: any = await fetchApi('/models', { method: 'POST', body: JSON.stringify(payload) });
@@ -386,7 +386,7 @@ export default function Admin() {
                                 onClick={async () => {
                                   if(confirm('Certeza que deseja deletar?')) {
                                     try {
-                                      await fetchApi(/models/${p.id}, { method: 'DELETE' });
+                                      await fetchApi(`/models/${p.id}`, { method: 'DELETE' });
                                       setCatalog(prev => prev.filter(x => x.id !== p.id));
                                     } catch(e) { alert('Erro ao deletar!'); }
                                   }

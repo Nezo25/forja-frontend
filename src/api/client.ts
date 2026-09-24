@@ -1,7 +1,7 @@
 ﻿const API_URL = import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com/api/v1';
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(\\\\, {
+  const response = await fetch(API_URL + endpoint, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -10,10 +10,9 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   });
 
   if (!response.ok) {
-    throw new Error(\Erro na API: \\);
+    throw new Error('Erro na API: ' + response.statusText);
   }
 
-  // Handle empty responses (like 204 No Content for deletes)
   const text = await response.text();
   return text ? JSON.parse(text) : {} as T;
 }
