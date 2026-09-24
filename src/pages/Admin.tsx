@@ -14,24 +14,9 @@ const NAV: { id: Section; icon: string; label: string }[] = [
   { id: 'precos', icon: '💰', label: 'Ajuste de Preços' },
 ];
 
-const MOCK_ORDERS = [
-  { id: '#0042', cliente: 'Ash Ketchum', produto: 'Charizard Stance', status: 'Em impressão', valor: 234, data: '23/09/2025' },
-  { id: '#0041', cliente: 'Misty Waterflower', produto: 'Gengar Sorridente', status: 'Aguardand✕ pgto', valor: 89, data: '22/09/2025' },
-  { id: '#0040', cliente: 'Brock Takeshi', produto: 'Gyarados Diorama', status: 'Entregue', valor: 434, data: '21/09/2025' },
-  { id: '#0039', cliente: 'Gary Oak', produto: 'Mewtw✕ Armadura', status: 'Enviado', valor: 314, data: '20/09/2025' },
-];
-
 const MOCK_STL = [
   { id: '#S012', cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardand✕ análise', data: '23/09/2025' },
   { id: '#S011', cliente: 'Red', arquivo: 'pikachu_gigante.stl', status: 'Orçament✕ enviado', data: '22/09/2025' },
-];
-
-const FILAMENTO = [
-  { cor: 'Laranja', material: 'PLA', estoque: 2.1, min: 1 },
-  { cor: 'Branco', material: 'PLA', estoque: 4.5, min: 1 },
-  { cor: 'Preto', material: 'PLA', estoque: 0.7, min: 1 },
-  { cor: 'Transparente', material: 'Resina', estoque: 1.2, min: 0.5 },
-  { cor: 'Cinza', material: 'Resina', estoque: 2.8, min: 0.5 },
 ];
 
 const CHART_DATA = [
@@ -97,7 +82,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     onSave({
       id: initialData?.id || `p${Date.now()}`,
       name: form.name,
-      category: form.category,
+      category: form.category as any,
       types: form.types.split(',').map(t => t.trim()).filter(Boolean) as PokemonType[],
       scales: [form.scale as any],
       materials: [form.material as any],
@@ -134,12 +119,12 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Escala">
-                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
                   {['1:10','1:1','Chibi','Diorama'].map(s => <option key={s}>{s}</option>)}
                 </select>
               </Field>
               <Field label="Material">
-                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
                   {['PLA','Resina'].map(m => <option key={m}>{m}</option>)}
                 </select>
               </Field>
@@ -176,8 +161,9 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 export default function Admin() {
   const [section, setSection] = useState<Section>('catalogo');
   const [catalog, setCatalog] = useState(initialProducts);
-  const [orders, setOrders] = useState(MOCK_ORDERS);
+  const [orders, setOrders] = useState<any[]>([]);
   const [orcamentos, setOrcamentos] = useState(MOCK_STL);
+  const [filamentos, setFilamentos] = useState<any[]>([]);
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -463,22 +449,22 @@ export default function Admin() {
           {/* ── ESTOQUE ── */}
           {section === 'estoque' && (
             <div className="flex flex-col gap-3">
-              {FILAMENTO.map(f => {
-                const pct = Math.min(100, (f.estoque / (f.min * 5)) * 100);
-                const low = f.estoque < f.min;
+              {filamentos.map(f => {
+                const pct = Math.min(100, (f.stockG / (f.minStockG * 5)) * 100);
+                const low = f.stockG < f.minStockG;
                 return (
-                  <div key={f.cor + f.material} className="p-4 rounded-xl flex flex-col gap-2" style={{ background: '#1F2937', border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
+                  <div key={f.color + f.material} className="p-4 rounded-xl flex flex-col gap-2" style={{ background: '#1F2937', border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
                     <div className="flex items-center justify-between">
-                      <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>{f.cor} <span className="text-[11px] font-normal" style={{ color: '#9CA3AF' }}>({f.material})</span></div>
+                      <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>{f.color} <span className="text-[11px] font-normal" style={{ color: '#9CA3AF' }}>({f.material})</span></div>
                       <div className="flex items-center gap-2">
                         {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>⚠ Estoque baixo</span>}
-                        <span className="font-bold font-mon✕ text-[13px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.estoque} kg</span>
+                        <span className="font-bold font-mon✕ text-[13px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.stockG} kg</span>
                       </div>
                     </div>
                     <div className="h-2 rounded-full" style={{ background: '#111827' }}>
                       <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
                     </div>
-                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínim✕ recomendado: {f.min} kg</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Mínim✕ recomendado: {f.minStockG} kg</div>
                   </div>
                 );
               })}
