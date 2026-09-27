@@ -65,56 +65,69 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
 }
 
 function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; onSave: (p: Partial<Product>) => void; initialData?: Product }) {
-    const [form, setForm] = useState({
+  const [form, setForm] = useState({
     name: initialData?.name || '', 
-    category: initialData?.category || 'Figures Pok�mon', 
-    types: initialData?.types.join(', ') || '',
-    scale: initialData?.scales[0] || '1:10', 
-    material: initialData?.materials[0] || 'PLA', 
+    category: initialData?.category || 'Figures Pokémon', 
+    types: initialData?.types?.join(', ') || '',
+    scale: initialData?.scales?.[0] || '1:10', 
+    material: initialData?.materials?.[0] || 'PLA', 
     printTimeH: initialData?.printTimeH?.toString() || '', 
     filamentG: initialData?.filamentG?.toString() || '', 
     basePrice: initialData?.basePrice?.toString() || '', 
     image: initialData?.image || '', 
     active: initialData ? initialData.active : true,
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    setIsSaving(true);
+    setErrorMessage(null);
+
     const payload = {
-        name: form.name,
-        pokedexNumber: 0,
-        generation: 1,
-        primaryType: form.types.split(',')[0]?.trim() || 'Normal',
-        secondaryType: form.types.split(',')[1]?.trim() || null,
-        scale: form.scale,
-        basePrintTimeMinutes: (parseInt(form.printTimeH) || 0) * 60,
-        defaultFilamentGrams: parseInt(form.filamentG) || 0,
-        imageUrl: form.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'
-      };
-      
-      const method = initialData ? 'PUT' : 'POST';
-      const url = initialData ? `/models/${initialData.id}` : '/models';
-      
-      fetchApi(url, {
+      name: form.name.trim(),
+      pokedexNumber: 0,
+      generation: 1,
+      primaryType: form.types.split(',')[0]?.trim() || 'Normal',
+      secondaryType: form.types.split(',')[1]?.trim() || null,
+      scale: form.scale,
+      basePrintTimeMinutes: (parseInt(form.printTimeH) || 0) * 60,
+      defaultFilamentGrams: parseInt(form.filamentG) || 0,
+      imageUrl: form.image.trim() || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'
+    };
+    
+    const method = initialData ? 'PUT' : 'POST';
+    const url = initialData ? `/models/${initialData.id}` : '/models';
+    
+    try {
+      const saved: any = await fetchApi(url, {
         method,
         body: JSON.stringify(payload)
-      }).then((saved: any) => {
-        onSave({
-          id: saved.id.toString(),
-          name: saved.name,
-          category: saved.category || form.category as any,
-          types: [saved.primaryType, saved.secondaryType].filter(Boolean) as PokemonType[],
-          scales: [saved.scale as any],
-          materials: [form.material as any],
-          basePrice: parseFloat(form.basePrice) || 0,
-          finishOptions: [],
-          image: saved.imageUrl,
-          printTimeH: Math.floor((saved.basePrintTimeMinutes || 0) / 60),
-          filamentG: saved.defaultFilamentGrams || 0,
-          active: saved.isActive !== false
-        });
-      }).catch(console.error);
-    onClose();
+      });
+
+      onSave({
+        id: (saved?.id || initialData?.id || Date.now()).toString(),
+        name: saved?.name || form.name,
+        category: saved?.category || (form.category as any),
+        types: [saved?.primaryType, saved?.secondaryType].filter(Boolean) as PokemonType[],
+        scales: [saved?.scale as any],
+        materials: [form.material as any],
+        basePrice: parseFloat(form.basePrice) || 0,
+        finishOptions: [],
+        image: saved?.imageUrl || form.image,
+        printTimeH: Math.floor((saved?.basePrintTimeMinutes || 0) / 60),
+        filamentG: saved?.defaultFilamentGrams || 0,
+        active: saved?.isActive !== false
+      });
+
+      onClose();
+    } catch (err: any) {
+      console.error('Erro ao salvar produto no backend:', err);
+      setErrorMessage(err.message || 'Erro ao conectar ou salvar na API.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -127,6 +140,11 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg" style={{ color: '#9CA3AF', background: '#1F2937' }}>✕</button>
           </div>
           <div className="p-5 flex flex-col gap-4">
+            {errorMessage && (
+              <div className="p-3 rounded-lg bg-red-900/40 border border-red-500/50 text-red-200 text-xs font-medium leading-relaxed">
+                <span className="font-bold text-red-400">⚠️ Erro ao salvar:</span> {errorMessage}
+              </div>
+            )}
             <Field label="Nome do produto *"><Input required placeholder="Charizard Stance" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Categoria">
@@ -155,7 +173,14 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
               <Field label="Tempo impressão (h)"><Input type="number" placeholder="18" value={form.printTimeH} onChange={e => setForm(f => ({ ...f, printTimeH: e.target.value }))} /></Field>
               <Field label="Filamento (g)"><Input type="number" placeholder="320" value={form.filamentG} onChange={e => setForm(f => ({ ...f, filamentG: e.target.value }))} /></Field>
             </div>
-            <Field label="Imagem d✕ produto">
+            <Field label="URL da Imagem">
+              <Input 
+                placeholder="https://exemplo.com/imagem.jpg" 
+                value={form.image} 
+                onChange={e => setForm(f => ({ ...f, image: e.target.value }))} 
+              />
+            </Field>
+            <Field label="Ou selecione um arquivo local">
               <input 
                 type="file" 
                 accept="image/*" 
@@ -167,11 +192,30 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
                 className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1F2937] file:text-[#F9FAFB] hover:file:bg-[#374151]"
               />
             </Field>
+            {form.image && (
+              <div className="flex items-center gap-3 p-2 rounded-lg bg-[#1F2937]/50 border border-[#374151]">
+                <img src={form.image} alt="Preview" className="w-12 h-12 object-cover rounded-md" />
+                <span className="text-xs text-gray-400 truncate max-w-[300px]">Prévia da imagem selecionada</span>
+              </div>
+            )}
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded" />
               <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produto ativo</span>
             </label>
-            <button type="submit" className="w-full h-11 rounded-xl font-extrabold text-sm mt-1" style={{ background: '#F97316', color: '#fff' }}>{initialData ? "Atualizar Produto" : "Salvar Produto"} ???</button>
+            <button 
+              disabled={isSaving} 
+              type="submit" 
+              className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
+              style={{ background: '#F97316', color: '#fff' }}
+            >
+              {isSaving ? (
+                <>
+                  <span className="animate-spin">⏳</span> Salvando no Banco de Dados...
+                </>
+              ) : (
+                <>{initialData ? "Atualizar Produto" : "Salvar Produto"} 💾</>
+              )}
+            </button>
           </div>
         </form>
       </div>

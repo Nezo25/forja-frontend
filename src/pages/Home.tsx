@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { fetchApi } from '../api/client';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
@@ -14,20 +14,21 @@ export default function Home() {
   const [products, setProducts] = useState(MOCK_PRODUCTS);
   useEffect(() => {
     fetchApi('/models').then((data: any) => {
-      if (Array.isArray(data) && data.length > 0) {
-        const formatted = data.map(m => ({
+      const items = data?.content || (Array.isArray(data) ? data : []);
+      if (Array.isArray(items) && items.length > 0) {
+        const formatted = items.map((m: any) => ({
           id: m.id.toString(),
           name: m.name,
-          category: m.category,
-          types: m.types || [],
-          scales: m.scales || ['1:10'],
+          category: m.category || 'Figures Pokémon',
+          types: ([m.primaryType, m.secondaryType].filter(Boolean) as PokemonType[]) || (Array.isArray(m.types) ? m.types : []),
+          scales: [m.scale || '1:10'],
           materials: m.materials || ['PLA'],
-          basePrice: m.basePrice,
+          basePrice: m.basePrice || 149,
           finishOptions: [],
           image: m.imageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
-          printTimeH: m.printTimeH || 0,
-          filamentG: m.filamentG || 0,
-          active: m.active,
+          printTimeH: Math.floor((m.basePrintTimeMinutes || 0) / 60),
+          filamentG: m.defaultFilamentGrams || 0,
+          active: m.isActive !== false,
         }));
         setProducts(formatted);
       }

@@ -1,4 +1,4 @@
-﻿const API_URL = import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com/api/v1';
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(API_URL + endpoint, {
@@ -10,7 +10,20 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   });
 
   if (!response.ok) {
-    throw new Error('Erro na API: ' + response.statusText);
+    let errorMsg = `Erro ${response.status}: ${response.statusText || 'Falha na requisição'}`;
+    try {
+      const text = await response.text();
+      try {
+        const json = JSON.parse(text);
+        if (json.message) errorMsg = json.message;
+        else if (json.error) errorMsg = json.error;
+      } catch {
+        if (text && text.length < 200) errorMsg += ` - ${text}`;
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(errorMsg);
   }
 
   const text = await response.text();
