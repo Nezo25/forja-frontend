@@ -35,25 +35,38 @@ export interface Filament {
 }
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'forja_products_v2',
-  ORDERS: 'forja_orders_v2',
-  QUOTES: 'forja_quotes_v2',
-  FILAMENTS: 'forja_filaments_v2',
+  PRODUCTS: 'forja_products_v3',
+  ORDERS: 'forja_orders_v3',
+  QUOTES: 'forja_quotes_v3',
+  FILAMENTS: 'forja_filaments_v3',
 };
 
-const DEFAULT_ORDERS: Order[] = [
-  { id: '#PED-1082', cliente: 'Lucas Silva', produto: 'Charizard Stance (1:10)', data: '27/09/2026', valor: '149,00', status: 'Em impressão' },
+export function parsePrice(val: string | number | undefined): number {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  const cleaned = val.toString().replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+  return parseFloat(cleaned) || 0;
+}
+
+export function formatPrice(num: number): string {
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+const INITIAL_ORDERS: Order[] = [
+  { id: '#PED-1082', cliente: 'Lucas Silva', produto: 'Charizard Stance (1:10)', data: '27/09/2026', valor: '389,00', status: 'Em impressão' },
   { id: '#PED-1081', cliente: 'Mariana Souza', produto: 'Mewtwo Psíquico (1:10)', data: '26/09/2026', valor: '349,00', status: 'Enviado' },
-  { id: '#PED-1080', cliente: 'Rafael Costa', produto: 'Gengar Sorridente (1:10)', data: '25/09/2026', valor: '89,00', status: 'Entregue' },
-  { id: '#PED-1079', cliente: 'Beatriz Lima', produto: 'Pikachu Chibi', data: '24/09/2026', valor: '59,00', status: 'Aguardando pgto' },
+  { id: '#PED-1080', cliente: 'Rafael Costa', produto: 'Gengar Sorridente (1:10)', data: '25/09/2026', valor: '289,00', status: 'Entregue' },
+  { id: '#PED-1079', cliente: 'Beatriz Lima', produto: 'Pikachu Chibi', data: '24/09/2026', valor: '149,00', status: 'Aguardando pgto' },
+  { id: '#PED-1078', cliente: 'Carlos Andrade', produto: 'Gyarados Diorama', data: '18/08/2026', valor: '520,00', status: 'Entregue' },
+  { id: '#PED-1077', cliente: 'Fernanda Rocha', produto: 'Rayquaza Custom', data: '12/07/2026', valor: '480,00', status: 'Entregue' },
 ];
 
-const DEFAULT_QUOTES: Quote[] = [
+const INITIAL_QUOTES: Quote[] = [
   { id: '#S012', realId: 12, cliente: 'Treinador Oculto', arquivo: 'snorlax_custom.stl', status: 'Aguardando análise', data: '26/09/2026', contato: '(11) 98888-1234', escala: '1:10', acabamento: 'Pintado à Mão', detalhes: 'Quero com detalhes de grama na base' },
   { id: '#S011', realId: 11, cliente: 'Red Pallet', arquivo: 'pikachu_gigante.stl', status: 'Orçamento enviado', data: '25/09/2026', contato: 'red@kanto.com', escala: '1:1', acabamento: 'Peça Crua', detalhes: 'Impressão sólida para pintura em casa', precoEstimado: 450 },
 ];
 
-const DEFAULT_FILAMENTS: Filament[] = [
+const INITIAL_FILAMENTS: Filament[] = [
   { id: 'f1', color: 'Preto Ônix', material: 'PLA', stockGrams: 850, minStockGrams: 300 },
   { id: 'f2', color: 'Branco Puro', material: 'PLA', stockGrams: 220, minStockGrams: 300 },
   { id: 'f3', color: 'Cinza Espacial', material: 'Resina', stockGrams: 1200, minStockGrams: 500 },
@@ -61,9 +74,9 @@ const DEFAULT_FILAMENTS: Filament[] = [
   { id: 'f5', color: 'Azul Celeste', material: 'PLA', stockGrams: 80, minStockGrams: 300 },
 ];
 
-/** Utilitário para comprimir e converter imagem local para Base64 persistente */
+/** Utilitário seguro para compactar imagem local para Base64 persistente */
 export function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
@@ -82,11 +95,11 @@ export function fileToBase64(file: File): Promise<string> {
             height = maxDim;
           }
         }
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = width || 400;
+        canvas.height = height || 400;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           resolve(canvas.toDataURL('image/jpeg', 0.82));
         } else {
           resolve(result);
@@ -95,7 +108,7 @@ export function fileToBase64(file: File): Promise<string> {
       img.onerror = () => resolve(result);
       img.src = result;
     };
-    reader.onerror = reject;
+    reader.onerror = () => resolve('https://placehold.co/600x700/1F2937/F97316?text=Figure');
     reader.readAsDataURL(file);
   });
 }
@@ -108,24 +121,37 @@ export function getStoredProducts(): Product[] {
     if (local) {
       const parsed = JSON.parse(local);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        return parsed.map(sanitizeProduct);
       }
     }
   } catch (e) {
     console.error('Erro ao ler produtos do localStorage:', e);
   }
-  // Se não existir, salva os produtos iniciais
-  try {
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(initialProducts));
-  } catch (e) {
-    // ignore
-  }
-  return initialProducts;
+  return initialProducts.map(sanitizeProduct);
+}
+
+function sanitizeProduct(p: any): Product {
+  return {
+    id: p?.id ? p.id.toString() : 'p_' + Math.random().toString(36).substring(2, 7),
+    name: p?.name || 'Figure Pokémon',
+    category: p?.category || 'Figures Pokémon',
+    types: Array.isArray(p?.types) ? p.types : [p?.primaryType || 'Normal'].filter(Boolean),
+    scales: Array.isArray(p?.scales) && p.scales.length ? p.scales : ['1:10'],
+    materials: Array.isArray(p?.materials) && p.materials.length ? p.materials : ['PLA'],
+    basePrice: typeof p?.basePrice === 'number' ? p.basePrice : parsePrice(p?.basePrice) || 149,
+    finishOptions: p?.finishOptions || [],
+    image: p?.image || p?.imageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
+    printTimeH: typeof p?.printTimeH === 'number' ? p.printTimeH : 14,
+    filamentG: typeof p?.filamentG === 'number' ? p.filamentG : 320,
+    active: p?.active !== false && p?.isActive !== false,
+    featured: Boolean(p?.featured),
+  };
 }
 
 export function saveProductsToStorage(products: Product[]): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    const sanitized = products.map(sanitizeProduct);
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(sanitized));
     window.dispatchEvent(new Event('forja_products_updated'));
   } catch (e) {
     console.error('Erro ao salvar produtos no localStorage:', e);
@@ -135,38 +161,28 @@ export function saveProductsToStorage(products: Product[]): void {
 export async function saveProduct(productData: Partial<Product>, initialId?: string): Promise<Product> {
   const current = getStoredProducts();
   const isEditing = Boolean(initialId);
-  const id = initialId || (productData.id && !productData.id.startsWith('p') ? productData.id : 'p_' + Date.now());
+  const id = initialId || (productData.id && !productData.id.startsWith('p_') ? productData.id : 'p_' + Date.now());
 
-  const fullProduct: Product = {
+  const fullProduct: Product = sanitizeProduct({
+    ...productData,
     id,
-    name: productData.name?.trim() || 'Nova Figure',
-    category: productData.category || 'Figures Pokémon',
-    types: productData.types || ['Normal' as PokemonType],
-    scales: productData.scales?.length ? productData.scales : ['1:10'],
-    materials: productData.materials?.length ? productData.materials : ['PLA'],
-    basePrice: Number(productData.basePrice) || 120,
-    finishOptions: productData.finishOptions || [],
-    image: productData.image?.trim() || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
-    printTimeH: Number(productData.printTimeH) || 12,
-    filamentG: Number(productData.filamentG) || 250,
-    active: productData.active !== false,
-    featured: productData.featured || false,
-  };
+  });
 
   let updatedList: Product[];
   if (isEditing) {
     updatedList = current.map(p => (p.id === id ? fullProduct : p));
   } else {
-    updatedList = [fullProduct, ...current];
+    // Evita duplicar se já existir
+    updatedList = [fullProduct, ...current.filter(p => p.id !== id)];
   }
 
   saveProductsToStorage(updatedList);
 
-  // Tentativa assíncrona em segundo plano no backend
+  // Tenta persistir diretamente no Backend Java Spring Boot
   try {
     const payload = {
-      name: fullProduct.name,
       pokedexNumber: 0,
+      name: fullProduct.name,
       generation: 1,
       primaryType: fullProduct.types[0] || 'Normal',
       secondaryType: fullProduct.types[1] || null,
@@ -175,22 +191,23 @@ export async function saveProduct(productData: Partial<Product>, initialId?: str
       defaultFilamentGrams: fullProduct.filamentG,
       imageUrl: fullProduct.image.startsWith('data:') ? 'https://placehold.co/600x700/1F2937/F97316?text=Figure' : fullProduct.image
     };
+
     const method = isEditing && !id.startsWith('p_') ? 'PUT' : 'POST';
     const url = isEditing && !id.startsWith('p_') ? `/models/${id}` : '/models';
-    
+
     fetchApi(url, { method, body: JSON.stringify(payload) })
       .then((saved: any) => {
-        if (saved?.id && !isEditing) {
-          // Atualiza id do backend se for novo
-          const refreshed = getStoredProducts().map(p => p.id === id ? { ...p, id: saved.id.toString() } : p);
+        if (saved?.id) {
+          const syncedId = saved.id.toString();
+          const refreshed = getStoredProducts().map(p => p.id === id ? { ...p, id: syncedId } : p);
           saveProductsToStorage(refreshed);
         }
       })
-      .catch(err => {
-        console.warn('Backend offline ou endpoint não disponível. Dado salvo localmente com sucesso.', err);
+      .catch((err) => {
+        console.warn('Backend API não respondeu:', err);
       });
   } catch (err) {
-    // ignore backend errors, local save is primary
+    // Silently proceed
   }
 
   return fullProduct;
@@ -201,7 +218,7 @@ export function deleteProduct(id: string): void {
   const updated = current.filter(p => p.id !== id);
   saveProductsToStorage(updated);
 
-  if (!id.startsWith('p_') && !id.startsWith('p')) {
+  if (!id.startsWith('p_')) {
     fetchApi(`/models/${id}`, { method: 'DELETE' }).catch(() => {});
   }
 }
@@ -233,15 +250,20 @@ export function getStoredFilaments(): Filament[] {
     const local = localStorage.getItem(STORAGE_KEYS.FILAMENTS);
     if (local) {
       const parsed = JSON.parse(local);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(f => ({
+          id: f.id || 'f_' + Math.random().toString(36).substring(2, 6),
+          color: f.color || 'Filamento',
+          material: f.material || 'PLA',
+          stockGrams: typeof f.stockGrams === 'number' ? f.stockGrams : (f.stockG || 0),
+          minStockGrams: typeof f.minStockGrams === 'number' ? f.minStockGrams : (f.minStockG || 300),
+        }));
+      }
     }
   } catch (e) {
-    console.error('Erro ao ler filamentos do localStorage:', e);
+    console.error('Erro ao ler filamentos:', e);
   }
-  try {
-    localStorage.setItem(STORAGE_KEYS.FILAMENTS, JSON.stringify(DEFAULT_FILAMENTS));
-  } catch (e) {}
-  return DEFAULT_FILAMENTS;
+  return INITIAL_FILAMENTS;
 }
 
 export function saveFilamentsToStorage(filaments: Filament[]): void {
@@ -257,7 +279,7 @@ export async function saveFilament(data: { color: string; material: string; stoc
     id: 'fil_' + Date.now(),
     color: data.color.trim(),
     material: data.material.trim(),
-    stockGrams: data.stockGrams,
+    stockGrams: data.stockGrams || 0,
     minStockGrams: data.minStockGrams || 300,
   };
 
@@ -274,7 +296,7 @@ export function updateFilamentStock(id: string, newStock: number): void {
   saveFilamentsToStorage(updated);
 }
 
-// ------------------- PEDIDOS -------------------
+// ------------------- PEDIDOS E DASHBOARD FINANCEIRO -------------------
 
 export function getStoredOrders(): Order[] {
   try {
@@ -284,10 +306,7 @@ export function getStoredOrders(): Order[] {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch (e) {}
-  try {
-    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(DEFAULT_ORDERS));
-  } catch (e) {}
-  return DEFAULT_ORDERS;
+  return INITIAL_ORDERS;
 }
 
 export function saveOrdersToStorage(orders: Order[]): void {
@@ -301,11 +320,11 @@ export function addOrder(order: Partial<Order>): Order {
   const current = getStoredOrders();
   const newOrder: Order = {
     id: '#PED-' + Math.floor(1000 + Math.random() * 9000),
-    cliente: order.cliente || 'Cliente Anônimo',
+    cliente: order.cliente || 'Cliente da Loja',
     produto: order.produto || 'Item da Forja',
     data: new Date().toLocaleDateString('pt-BR'),
-    valor: order.valor || '0,00',
-    status: order.status || 'Aguardando pgto',
+    valor: order.valor || '149,00',
+    status: order.status || 'Em impressão',
     email: order.email,
     telefone: order.telefone
   };
@@ -325,6 +344,41 @@ export function deleteOrder(id: string): void {
   saveOrdersToStorage(updated);
 }
 
+// Calcula dinamicamente o gráfico mensal baseado nos pedidos reais
+const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+export function calculateMonthlySales(orders: Order[]): { mes: string; vendas: number }[] {
+  const currentMonthIdx = new Date().getMonth();
+  const monthsWindow: { mes: string; monthNum: number; vendas: number }[] = [];
+
+  for (let i = 5; i >= 0; i--) {
+    const mIdx = (currentMonthIdx - i + 12) % 12;
+    monthsWindow.push({
+      mes: MONTH_NAMES[mIdx],
+      monthNum: mIdx + 1,
+      vendas: 0,
+    });
+  }
+
+  orders.forEach(o => {
+    let mNum = -1;
+    if (o.data && o.data.includes('/')) {
+      const parts = o.data.split('/');
+      mNum = parseInt(parts[1], 10);
+    }
+    const val = parsePrice(o.valor);
+    const found = monthsWindow.find(m => m.monthNum === mNum);
+    if (found) {
+      found.vendas += val;
+    } else if (monthsWindow.length > 0) {
+      // Atribui ao mês mais recente
+      monthsWindow[monthsWindow.length - 1].vendas += val;
+    }
+  });
+
+  return monthsWindow.map(m => ({ mes: m.mes, vendas: Math.round(m.vendas) }));
+}
+
 // ------------------- ORÇAMENTOS STL -------------------
 
 export function getStoredQuotes(): Quote[] {
@@ -335,10 +389,7 @@ export function getStoredQuotes(): Quote[] {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch (e) {}
-  try {
-    localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify(DEFAULT_QUOTES));
-  } catch (e) {}
-  return DEFAULT_QUOTES;
+  return INITIAL_QUOTES;
 }
 
 export function saveQuotesToStorage(quotes: Quote[]): void {
@@ -359,7 +410,8 @@ export function addQuote(quote: Partial<Quote>): Quote {
     contato: quote.contato,
     escala: quote.escala,
     acabamento: quote.acabamento,
-    detalhes: quote.detalhes
+    detalhes: quote.detalhes,
+    precoEstimado: quote.precoEstimado,
   };
   saveQuotesToStorage([newQuote, ...current]);
   return newQuote;

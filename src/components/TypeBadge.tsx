@@ -1,11 +1,17 @@
 import { type PokemonType, TYPE_COLORS } from '@/data/products';
 
-export function TypeBadge({ type }: { type: PokemonType }) {
-  const c = TYPE_COLORS[type];
+const DEFAULT_TYPE_COLOR = {
+  text: '#F97316',
+  bg: 'rgba(249, 115, 22, 0.15)',
+};
+
+export function TypeBadge({ type }: { type: PokemonType | string }) {
+  if (!type) return null;
+  const c = TYPE_COLORS[type as PokemonType] || DEFAULT_TYPE_COLOR;
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide"
-      style={{ color: c.text, background: c.bg }}
+      style={{ color: c?.text || '#F97316', background: c?.bg || 'rgba(249, 115, 22, 0.15)' }}
     >
       {type}
     </span>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { Product, Category, PokemonType } from '@/data/products';
@@ -14,12 +14,16 @@ import {
   saveFilament,
   updateFilamentStock,
   getStoredOrders,
+  addOrder,
   updateOrderStatus,
   deleteOrder,
   getStoredQuotes,
   updateQuote,
   deleteQuote,
   fileToBase64,
+  calculateMonthlySales,
+  parsePrice,
+  formatPrice,
   type Order,
   type Quote,
   type Filament
@@ -29,19 +33,10 @@ type Section = 'catalogo' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos';
 
 const NAV: { id: Section; icon: string; label: string }[] = [
   { id: 'catalogo', icon: '📦', label: 'Catálogo' },
-  { id: 'pedidos', icon: '🛒', label: 'Pedidos' },
+  { id: 'pedidos', icon: '🛒', label: 'Pedidos e Finanças' },
   { id: 'orcamentos', icon: '📐', label: 'Orçamentos STL' },
   { id: 'estoque', icon: '🧵', label: 'Estoque Filamento' },
   { id: 'precos', icon: '💰', label: 'Ajuste de Preços' },
-];
-
-const CHART_DATA = [
-  { mes: 'Abr', vendas: 4800 },
-  { mes: 'Mai', vendas: 6200 },
-  { mes: 'Jun', vendas: 5400 },
-  { mes: 'Jul', vendas: 8100 },
-  { mes: 'Ago', vendas: 7600 },
-  { mes: 'Set', vendas: 9200 },
 ];
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
@@ -81,6 +76,79 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
+// ------------------- MODAL: NOVO PEDIDO MANUAL -------------------
+function OrderModal({ onClose, onSave }: { onClose: () => void; onSave: (o: Order) => void }) {
+  const [form, setForm] = useState({ cliente: '', produto: '', valor: '249,00', status: 'Em impressão' });
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.cliente.trim()) return;
+    setIsSaving(true);
+    await new Promise(r => setTimeout(r, 350));
+
+    const saved = addOrder({
+      cliente: form.cliente.trim(),
+      produto: form.produto.trim() || 'Figure Personalizada',
+      valor: form.valor,
+      status: form.status,
+    });
+
+    toast.show({
+      title: 'Pedido registrado no Banco de Dados!',
+      message: `Pedido para "${saved.cliente}" no valor de R$ ${saved.valor} registrado. O gráfico foi recalculado.`,
+      type: 'success',
+      icon: '🛒',
+    });
+
+    onSave(saved);
+    onClose();
+    setIsSaving(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+      <div className="relative w-full max-w-sm overflow-y-auto rounded-2xl shadow-2xl p-5" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
+        <form onSubmit={handleSave} className="flex flex-col gap-4">
+          <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+            <h3 className="font-extrabold text-base text-gray-100">Registrar Novo Pedido</h3>
+            <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+          </div>
+          <Field label="Nome do Cliente *">
+            <Input required placeholder="Ex: Ash Ketchum" value={form.cliente} onChange={e => setForm(f => ({ ...f, cliente: e.target.value }))} />
+          </Field>
+          <Field label="Produto ou Figure *">
+            <Input required placeholder="Ex: Rayquaza Shiny 1:10" value={form.produto} onChange={e => setForm(f => ({ ...f, produto: e.target.value }))} />
+          </Field>
+          <Field label="Valor da Venda (R$) *">
+            <Input required placeholder="350,00" value={form.valor} onChange={e => setForm(f => ({ ...f, valor: e.target.value }))} />
+          </Field>
+          <Field label="Status Inicial">
+            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
+              {['Em impressão', 'Aguardando pgto', 'Enviado', 'Entregue'].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </Field>
+          <button 
+            disabled={isSaving} 
+            type="submit" 
+            className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 transition-all flex items-center justify-center gap-2 cursor-pointer" 
+            style={{ background: '#F97316', color: '#fff' }}
+          >
+            {isSaving ? (
+              <>
+                <span className="animate-spin text-sm">⏳</span> Salvando no Banco de Dados...
+              </>
+            ) : (
+              <>Salvar Pedido 💾</>
+            )}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ------------------- MODAL: PRODUTO -------------------
 function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; onSave: (p: Product) => void; initialData?: Product }) {
   const [form, setForm] = useState({
@@ -89,9 +157,9 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     types: initialData?.types?.join(', ') || '',
     scale: initialData?.scales?.[0] || '1:10', 
     material: initialData?.materials?.[0] || 'PLA', 
-    printTimeH: initialData?.printTimeH?.toString() || '14', 
-    filamentG: initialData?.filamentG?.toString() || '320', 
-    basePrice: initialData?.basePrice?.toString() || '149', 
+    printTimeH: (initialData?.printTimeH ?? 14).toString(), 
+    filamentG: (initialData?.filamentG ?? 320).toString(), 
+    basePrice: (initialData?.basePrice ?? 149).toString(), 
     image: initialData?.image || '', 
     active: initialData ? initialData.active : true,
   });
@@ -117,26 +185,28 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     if (!form.name.trim()) return;
 
     setIsSaving(true);
-
-    // Micro delay agradável para o usuário ver o feedback "Salvando no Banco de Dados..." que ele gostou
     await new Promise(r => setTimeout(r, 450));
 
     try {
+      const parsedTypes = form.types
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean) as PokemonType[];
+
       const saved = await saveProduct({
         id: initialData?.id,
         name: form.name.trim(),
         category: form.category as Category,
-        types: form.types.split(',').map(t => t.trim()).filter(Boolean) as PokemonType[],
+        types: parsedTypes.length > 0 ? parsedTypes : ['Normal' as PokemonType],
         scales: [form.scale as any],
         materials: [form.material as any],
-        basePrice: parseFloat(form.basePrice) || 0,
-        printTimeH: parseInt(form.printTimeH) || 0,
-        filamentG: parseInt(form.filamentG) || 0,
+        basePrice: parseFloat(form.basePrice) || 149,
+        printTimeH: parseInt(form.printTimeH, 10) || 14,
+        filamentG: parseInt(form.filamentG, 10) || 320,
         image: form.image.trim() || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
         active: form.active,
       }, initialData?.id);
 
-      // Notificação no canto superior direito
       toast.show({
         title: initialData ? 'Produto atualizado!' : 'Produto salvo no Banco de Dados!',
         message: `Figure "${saved.name}" foi salva com sucesso no catálogo.`,
@@ -161,15 +231,15 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)' }} />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
       <div className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSave}>
-          <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#111827]/90 backdrop-blur-md" style={{ borderBottom: '1px solid #374151' }}>
+          <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#111827]/95 backdrop-blur-md" style={{ borderBottom: '1px solid #374151' }}>
             <div>
-              <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>{initialData ? 'Editar Produto' : 'Nova Figure / Produto'}</h2>
+              <h2 className="font-extrabold text-lg text-gray-100">{initialData ? 'Editar Produto' : 'Nova Figure / Produto'}</h2>
               <p className="text-xs text-gray-400">Preencha as especificações da peça</p>
             </div>
-            <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors" style={{ background: '#1F2937' }}>✕</button>
+            <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg text-gray-400 hover:text-white" style={{ background: '#1F2937' }}>✕</button>
           </div>
 
           <div className="p-5 flex flex-col gap-4">
@@ -179,7 +249,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Categoria">
-                <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as Category }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as Category }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
                   {['Figures Pokémon','Dioramas','Chibis','Acessórios'].map(c => <option key={c}>{c}</option>)}
                 </select>
               </Field>
@@ -190,12 +260,12 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Escala">
-                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
                   {['1:10','1:1','Chibi','Diorama'].map(s => <option key={s}>{s}</option>)}
                 </select>
               </Field>
               <Field label="Material">
-                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+                <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
                   {['PLA','Resina'].map(m => <option key={m}>{m}</option>)}
                 </select>
               </Field>
@@ -239,13 +309,13 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 
             <label className="flex items-center gap-2 cursor-pointer pt-1">
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded accent-orange-500 cursor-pointer" />
-              <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>Produto ativo na vitrine da loja</span>
+              <span className="text-sm font-semibold text-gray-300">Produto ativo na vitrine da loja</span>
             </label>
 
             <button 
               disabled={isSaving || isProcessingImage} 
               type="submit" 
-              className="w-full h-12 rounded-xl font-extrabold text-sm mt-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-orange-950/40 hover:opacity-90 active:scale-[0.99]" 
+              className="w-full h-12 rounded-xl font-extrabold text-sm mt-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-orange-950/40 hover:opacity-90 active:scale-[0.99] cursor-pointer" 
               style={{ background: '#F97316', color: '#fff' }}
             >
               {isSaving ? (
@@ -284,8 +354,8 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
       });
 
       toast.show({
-        title: 'Filamento salvo no Estoque!',
-        message: `Bobina "${saved.color} (${saved.material})" foi adicionada com sucesso.`,
+        title: 'Filamento salvo no Banco de Dados!',
+        message: `Bobina "${saved.color} (${saved.material})" foi adicionada ao estoque.`,
         type: 'success',
         icon: '🧵',
       });
@@ -301,20 +371,20 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)' }} />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
       <div className="relative w-full max-w-sm overflow-y-auto rounded-2xl shadow-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSave}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #374151' }}>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
             <div>
-              <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>Nova Bobina de Filamento</h2>
-              <p className="text-xs text-gray-400">Cadastrar no estoque de matéria-prima</p>
+              <h2 className="font-extrabold text-lg text-gray-100">Nova Bobina de Filamento</h2>
+              <p className="text-xs text-gray-400">Cadastrar no estoque</p>
             </div>
             <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg text-gray-400 hover:text-white" style={{ background: '#1F2937' }}>✕</button>
           </div>
           <div className="p-5 flex flex-col gap-4">
             <Field label="Cor *"><Input required placeholder="Ex: Vermelho Charizard" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} /></Field>
             <Field label="Material *">
-              <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+              <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
                 {['PLA','Resina','PETG','ABS'].map(m => <option key={m}>{m}</option>)}
               </select>
             </Field>
@@ -324,7 +394,7 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
             <button 
               disabled={isSaving} 
               type="submit" 
-              className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 transition-all flex items-center justify-center gap-2" 
+              className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 transition-all flex items-center justify-center gap-2 cursor-pointer" 
               style={{ background: '#F97316', color: '#fff' }}
             >
               {isSaving ? (
@@ -345,7 +415,7 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
 // ------------------- MODAL: RESPONDER ORÇAMENTO -------------------
 function QuoteModal({ quote, onClose, onSave }: { quote: Quote; onClose: () => void; onSave: (updated: Quote) => void }) {
   const [status, setStatus] = useState(quote.status || 'Orçamento enviado');
-  const [price, setPrice] = useState(quote.precoEstimado?.toString() || '180');
+  const [price, setPrice] = useState((quote.precoEstimado ?? 180).toString());
   const [notes, setNotes] = useState(quote.detalhes || '');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -377,12 +447,12 @@ function QuoteModal({ quote, onClose, onSave }: { quote: Quote; onClose: () => v
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)' }} />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
       <div className="relative w-full max-w-md overflow-y-auto rounded-2xl shadow-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSave}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #374151' }}>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
             <div>
-              <h2 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>Responder Orçamento {quote.id}</h2>
+              <h2 className="font-extrabold text-lg text-gray-100">Responder Orçamento {quote.id}</h2>
               <p className="text-xs text-gray-400">Cliente: {quote.cliente}</p>
             </div>
             <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg text-gray-400 hover:text-white" style={{ background: '#1F2937' }}>✕</button>
@@ -396,7 +466,7 @@ function QuoteModal({ quote, onClose, onSave }: { quote: Quote; onClose: () => v
             </div>
 
             <Field label="Status do Orçamento">
-              <select value={status} onChange={e => setStatus(e.target.value)} className="w-full h-9 px-3 rounded-lg text-sm outline-none" style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}>
+              <select value={status} onChange={e => setStatus(e.target.value)} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
                 {['Aguardando análise','Orçamento enviado','Aprovado','Recusado'].map(s => <option key={s}>{s}</option>)}
               </select>
             </Field>
@@ -411,15 +481,14 @@ function QuoteModal({ quote, onClose, onSave }: { quote: Quote; onClose: () => v
                 onChange={e => setNotes(e.target.value)}
                 rows={3}
                 placeholder="Ex: Tempo estimado 14h, filamento cinza primer incluído..."
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
-                style={{ background: '#111827', border: '1px solid #374151', color: '#F9FAFB' }}
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none bg-gray-900 border border-gray-700 text-gray-100"
               />
             </Field>
 
             <button 
               disabled={isSaving} 
               type="submit" 
-              className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 transition-all flex items-center justify-center gap-2" 
+              className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 transition-all flex items-center justify-center gap-2 cursor-pointer" 
               style={{ background: '#F97316', color: '#fff' }}
             >
               {isSaving ? (
@@ -446,12 +515,13 @@ export default function Admin() {
   const [filamentos, setFilamentos] = useState<Filament[]>([]);
 
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [showNewFilamentModal, setShowNewFilamentModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [answeringQuote, setAnsweringQuote] = useState<Quote | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Carrega e sincroniza dados locais e remotos
+  // Carrega e sincroniza dados
   useEffect(() => {
     setCatalog(getStoredProducts());
     setOrders(getStoredOrders());
@@ -477,6 +547,21 @@ export default function Admin() {
       window.removeEventListener('forja_filaments_updated', handleStorageUpdate);
     };
   }, []);
+
+  // Gráfico financeiro 100% dinâmico baseado nos pedidos reais
+  const chartData = useMemo(() => {
+    return calculateMonthlySales(orders);
+  }, [orders]);
+
+  // KPIs dinâmicos calculados em tempo real
+  const totalFaturamento = useMemo(() => {
+    return orders.reduce((sum, o) => sum + parsePrice(o.valor), 0);
+  }, [orders]);
+
+  const ticketMedio = useMemo(() => {
+    if (orders.length === 0) return 0;
+    return totalFaturamento / orders.length;
+  }, [orders, totalFaturamento]);
 
   // Catálogo: Toggle Ativo / Pausado
   function handleToggleActive(p: Product) {
@@ -546,7 +631,7 @@ export default function Admin() {
 
   // Estoque: Ajuste Rápido de Filamento
   function handleFilamentStockChange(f: Filament, delta: number) {
-    const newStock = Math.max(0, f.stockGrams + delta);
+    const newStock = Math.max(0, (f.stockGrams || 0) + delta);
     updateFilamentStock(f.id, newStock);
     setFilamentos(prev => prev.map(x => x.id === f.id ? { ...x, stockGrams: newStock } : x));
     toast.show({
@@ -572,19 +657,19 @@ export default function Admin() {
   return (
     <div className="flex min-h-screen" style={{ background: '#0B0F19' }}>
       {/* Mobile sidebar overlay */}
-      {sidebarOpen && <div className="fixed inset-0 z-40 md:hidden" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <div className="fixed inset-0 z-40 md:hidden bg-black/60" onClick={() => setSidebarOpen(false)} />}
 
       {/* Sidebar */}
       <aside
         className={`fixed md:sticky top-0 h-screen z-50 md:z-auto flex-shrink-0 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         style={{ width: 220, background: '#111827', borderRight: '1px solid #1F2937' }}
       >
-        <div className="flex items-center gap-2.5 px-4 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-800">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base shadow-lg shadow-orange-950/50" style={{ background: 'linear-gradient(135deg,#F97316,#EA580C)' }}>🔩</div>
           <div>
-            <div className="font-extrabold text-[14px]" style={{ color: '#F9FAFB' }}>Forja Admin</div>
+            <div className="font-extrabold text-[14px] text-gray-100">Forja Admin</div>
             <div className="text-[10px] text-orange-400 font-semibold flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Sincronizado
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Banco Ativo
             </div>
           </div>
         </div>
@@ -605,12 +690,9 @@ export default function Admin() {
           ))}
         </nav>
 
-        <div className="p-3" style={{ borderTop: '1px solid #1F2937' }}>
-          <Link to="/" className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all hover:bg-gray-800/60" style={{ color: '#9CA3AF' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#F97316')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
-          >
-            ← Voltar para a Loja
+        <div className="p-3 border-t border-gray-800">
+          <Link to="/" className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all text-gray-400 hover:text-orange-400 hover:bg-gray-800/60">
+            ← Ver Vitrine da Loja
           </Link>
         </div>
       </aside>
@@ -618,11 +700,11 @@ export default function Admin() {
       {/* Main */}
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Top bar */}
-        <div className="flex items-center gap-3 px-4 md:px-8 py-4 sticky top-0 z-30 shadow-md backdrop-blur-md" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(17, 24, 39, 0.95)' }}>
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: '#1F2937', color: '#9CA3AF' }}>☰</button>
+        <div className="flex items-center gap-3 px-4 md:px-8 py-4 sticky top-0 z-30 shadow-md backdrop-blur-md bg-gray-900/95 border-b border-gray-800">
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-sm bg-gray-800 text-gray-400">☰</button>
           <div className="flex items-center gap-2.5">
             <span className="text-xl">{NAV.find(n => n.id === section)?.icon}</span>
-            <h1 className="font-extrabold text-lg" style={{ color: '#F9FAFB' }}>
+            <h1 className="font-extrabold text-lg text-gray-100">
               {NAV.find(n => n.id === section)?.label}
             </h1>
           </div>
@@ -635,6 +717,15 @@ export default function Admin() {
                 style={{ background: '#F97316', color: '#fff' }}
               >
                 + Nova Figure
+              </button>
+            )}
+            {section === 'pedidos' && (
+              <button 
+                onClick={() => setShowNewOrderModal(true)} 
+                className="h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:opacity-90 shadow-md shadow-orange-950/40 cursor-pointer" 
+                style={{ background: '#F97316', color: '#fff' }}
+              >
+                + Novo Pedido
               </button>
             )}
             {section === 'estoque' && (
@@ -658,26 +749,26 @@ export default function Admin() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
                 {[
                   { label: 'Total de figures', value: catalog.length, icon: '📦' },
-                  { label: 'Ativos', value: catalog.filter(p => p.active).length, icon: '✅' },
+                  { label: 'Ativos na vitrine', value: catalog.filter(p => p.active).length, icon: '✅' },
                   { label: 'Pausados', value: catalog.filter(p => !p.active).length, icon: '⏸️' },
                   { label: 'Categorias', value: new Set(catalog.map(p => p.category)).size, icon: '🗂️' },
                 ].map(k => (
-                  <div key={k.label} className="p-4 rounded-xl flex flex-col gap-1" style={{ background: '#1F2937', border: '1px solid #374151' }}>
+                  <div key={k.label} className="p-4 rounded-xl flex flex-col gap-1 bg-gray-800/80 border border-gray-700/60">
                     <div className="text-xl">{k.icon}</div>
-                    <div className="text-2xl font-extrabold" style={{ color: '#F9FAFB' }}>{k.value}</div>
-                    <div className="text-[11px]" style={{ color: '#9CA3AF' }}>{k.label}</div>
+                    <div className="text-2xl font-extrabold text-gray-100">{k.value}</div>
+                    <div className="text-[11px] text-gray-400">{k.label}</div>
                   </div>
                 ))}
               </div>
 
               {/* Table */}
-              <div className="rounded-xl overflow-hidden shadow-xl" style={{ border: '1px solid #374151' }}>
+              <div className="rounded-xl overflow-hidden shadow-xl border border-gray-700/80">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr style={{ background: '#1F2937', borderBottom: '1px solid #374151' }}>
-                        {['Produto','Categoria','Tipos','Escalas','Tempo','Filamento','Status','Ações'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>{h}</th>
+                      <tr className="bg-gray-800 border-b border-gray-700">
+                        {['Produto','Categoria','Tipos','Escalas','Tempo','Filamento','Preço','Status','Ações'].map(h => (
+                          <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -686,29 +777,30 @@ export default function Admin() {
                         <tr key={p.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <img src={p.image} alt={p.name} className="w-10 h-12 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
+                              <img src={p.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'} alt={p.name} className="w-10 h-12 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
                               <div>
-                                <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>{p.name}</div>
+                                <div className="font-semibold text-sm text-gray-100">{p.name}</div>
                                 <div className="text-[10px] font-mono text-gray-500">{p.id}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-[12px]" style={{ color: '#D1D5DB' }}>{p.category}</td>
+                          <td className="px-4 py-3 text-[12px] text-gray-300">{p.category}</td>
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap gap-1">
-                              {p.types?.map(t => <TypeBadge key={t} type={t} />)}
-                              {(!p.types || p.types.length === 0) && <span className="text-[11px]" style={{ color: '#6B7280' }}>—</span>}
+                              {(p.types || []).map((t, idx) => <TypeBadge key={t + idx} type={t} />)}
+                              {(!p.types || p.types.length === 0) && <span className="text-[11px] text-gray-500">—</span>}
                             </div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap gap-1">
-                              {p.scales?.map(s => (
-                                <span key={s} className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: '#1F2937', color: '#9CA3AF', border: '1px solid #374151' }}>{s}</span>
+                              {(p.scales || ['1:10']).map((s, idx) => (
+                                <span key={s + idx} className="px-1.5 py-0.5 rounded text-[10px] bg-gray-800 text-gray-400 border border-gray-700">{s}</span>
                               ))}
                             </div>
                           </td>
-                          <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{p.printTimeH}h</td>
-                          <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{p.filamentG}g</td>
+                          <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.printTimeH ?? 0}h</td>
+                          <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.filamentG ?? 0}g</td>
+                          <td className="px-4 py-3 font-bold text-sm text-orange-400">R$ {formatPrice(p.basePrice ?? 0)}</td>
                           <td className="px-4 py-3">
                             <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={p.active ? { background: 'rgba(34,197,94,0.15)', color: '#22C55E' } : { background: '#1F2937', color: '#6B7280' }}>
                               {p.active ? 'Ativo' : 'Pausado'}
@@ -718,15 +810,13 @@ export default function Admin() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => setEditingProduct(p)}
-                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-[#374151] cursor-pointer"
-                                style={{ background: '#1F2937', border: '1px solid #374151', color: '#60A5FA' }}
+                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-gray-700 bg-gray-800 border border-gray-700 text-blue-400 cursor-pointer"
                               >
                                 ✏️ Editar
                               </button>
                               <button
                                 onClick={() => handleToggleActive(p)}
-                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-gray-800 cursor-pointer"
-                                style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}
+                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-gray-800 bg-gray-800 border border-gray-700 text-gray-400 cursor-pointer"
                               >
                                 {p.active ? '⏸ Pausar' : '▶ Ativar'}
                               </button>
@@ -748,70 +838,83 @@ export default function Admin() {
             </div>
           )}
 
-          {/* ── PEDIDOS ── */}
+          {/* ── PEDIDOS E FINANÇAS (DASHBOARD DINÂMICO) ── */}
           {section === 'pedidos' && (
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+            <div className="flex flex-col gap-5">
+              {/* KPIs 100% dinâmicos */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { label: 'Total cadastrado', value: orders.length, icon: '📋' },
-                  { label: 'Em impressão', value: orders.filter(o => o.status === 'Em impressão').length, icon: '🖨️' },
-                  { label: 'Enviados', value: orders.filter(o => o.status === 'Enviado').length, icon: '📬' },
-                  { label: 'Entregues', value: orders.filter(o => o.status === 'Entregue').length, icon: '✅' },
+                  { label: 'Faturamento Total', value: `R$ ${formatPrice(totalFaturamento)}`, icon: '💰', highlight: true },
+                  { label: 'Total de Pedidos', value: orders.length.toString(), icon: '📋' },
+                  { label: 'Em impressão ativa', value: orders.filter(o => o.status === 'Em impressão').length.toString(), icon: '🖨️' },
+                  { label: 'Ticket Médio', value: `R$ ${formatPrice(ticketMedio)}`, icon: '📊' },
                 ].map(k => (
-                  <div key={k.label} className="p-4 rounded-xl" style={{ background: '#1F2937', border: '1px solid #374151' }}>
+                  <div key={k.label} className="p-4 rounded-xl bg-gray-800/80 border border-gray-700/60 shadow-lg">
                     <div className="text-xl mb-1">{k.icon}</div>
-                    <div className="text-2xl font-extrabold" style={{ color: '#F97316' }}>{k.value}</div>
-                    <div className="text-[11px]" style={{ color: '#9CA3AF' }}>{k.label}</div>
+                    <div className={`text-2xl font-extrabold ${k.highlight ? 'text-orange-400' : 'text-gray-100'}`}>{k.value}</div>
+                    <div className="text-[11px] text-gray-400">{k.label}</div>
                   </div>
                 ))}
               </div>
 
-              {/* Chart */}
-              <div className="p-5 rounded-xl shadow-xl" style={{ background: '#1F2937', border: '1px solid #374151' }}>
-                <div className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>Vendas mensais da Forja (R$)</div>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={CHART_DATA} barSize={28}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-                    <XAxis dataKey="mes" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v/1000).toFixed(0)}k`} />
-                    <Tooltip
-                      contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
-                      labelStyle={{ color: '#F9FAFB' }}
-                      itemStyle={{ color: '#F97316' }}
-                      formatter={(v) => [`R$ ${Number(v).toLocaleString('pt-BR')}`, 'Vendas']}
-                    />
-                    <Bar dataKey="vendas" fill="#F97316" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              {/* Gráfico Dinâmico de Vendas */}
+              <div className="p-5 rounded-xl shadow-xl bg-gray-800/90 border border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-100">Vendas Mensais Dinâmicas (R$)</h3>
+                    <p className="text-xs text-gray-400">As colunas sobem e descem em tempo real conforme pedidos cadastrados e alterados.</p>
+                  </div>
+                  <span className="text-xs font-mono text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-800/40">
+                    ● Gráfico Vivo
+                  </span>
+                </div>
+
+                <div className="h-48 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} barSize={32}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                      <XAxis dataKey="mes" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
+                      <Tooltip
+                        contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
+                        labelStyle={{ color: '#F9FAFB' }}
+                        itemStyle={{ color: '#F97316' }}
+                        formatter={(v) => [`R$ ${Number(v).toLocaleString('pt-BR')}`, 'Total de Vendas']}
+                      />
+                      <Bar dataKey="vendas" fill="#F97316" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
 
-              <div className="rounded-xl overflow-hidden shadow-xl" style={{ border: '1px solid #374151' }}>
+              {/* Tabela de Pedidos */}
+              <div className="rounded-xl overflow-hidden shadow-xl border border-gray-700">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
+                  <span className="font-bold text-sm text-gray-200">Lista Geral de Pedidos</span>
+                  <span className="text-xs text-gray-400">Altere o status ou adicione novos pedidos</span>
+                </div>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ background: '#1F2937', borderBottom: '1px solid #374151' }}>
+                    <tr className="bg-gray-800/60 border-b border-gray-700">
                       {['Pedido','Cliente','Produto','Data','Valor','Status','Ações'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>{h}</th>
+                        <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {orders.map((o, i) => (
                       <tr key={o.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                        <td className="px-4 py-3 font-mono text-[12px] font-bold" style={{ color: '#F97316' }}>{o.id}</td>
-                        <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{o.cliente}</td>
-                        <td className="px-4 py-3 text-sm" style={{ color: '#D1D5DB' }}>{o.produto}</td>
-                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{o.data}</td>
-                        <td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>R$ {o.valor}</td>
+                        <td className="px-4 py-3 font-mono text-[12px] font-bold text-orange-400">{o.id}</td>
+                        <td className="px-4 py-3 font-medium text-gray-100">{o.cliente}</td>
+                        <td className="px-4 py-3 text-sm text-gray-300">{o.produto}</td>
+                        <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{o.data}</td>
+                        <td className="px-4 py-3 font-bold text-gray-100">R$ {o.valor}</td>
                         <td className="px-4 py-3">
                           <select
                             value={o.status}
                             onChange={e => handleOrderStatusChange(o, e.target.value)}
-                            className="text-xs px-2.5 py-1 rounded-lg font-semibold outline-none cursor-pointer border"
-                            style={{
-                              background: '#1F2937',
-                              borderColor: '#374151',
-                              color: STATUS_COLORS[o.status]?.text || '#F9FAFB'
-                            }}
+                            className="text-xs px-2.5 py-1 rounded-lg font-semibold outline-none cursor-pointer border bg-gray-800 border-gray-700"
+                            style={{ color: STATUS_COLORS[o.status]?.text || '#F9FAFB' }}
                           >
                             {['Aguardando pgto','Em impressão','Enviado','Entregue'].map(st => (
                               <option key={st} value={st}>{st}</option>
@@ -838,34 +941,33 @@ export default function Admin() {
           {/* ── ORÇAMENTOS STL ── */}
           {section === 'orcamentos' && (
             <div className="flex flex-col gap-4">
-              <div className="rounded-xl overflow-hidden shadow-xl" style={{ border: '1px solid #374151' }}>
+              <div className="rounded-xl overflow-hidden shadow-xl border border-gray-700">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ background: '#1F2937', borderBottom: '1px solid #374151' }}>
+                    <tr className="bg-gray-800 border-b border-gray-700">
                       {['ID','Cliente','Arquivo STL','Data','Valor Estimado','Status','Ações'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>{h}</th>
+                        <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {orcamentos.map((s, i) => (
                       <tr key={s.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                        <td className="px-4 py-3 font-mono text-[12px] font-bold" style={{ color: '#F97316' }}>{s.id}</td>
-                        <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{s.cliente}</td>
+                        <td className="px-4 py-3 font-mono text-[12px] font-bold text-orange-400">{s.id}</td>
+                        <td className="px-4 py-3 font-medium text-gray-100">{s.cliente}</td>
                         <td className="px-4 py-3 font-mono text-[12px] text-gray-300">
                           📁 {s.arquivo}
                         </td>
-                        <td className="px-4 py-3 font-mono text-[12px]" style={{ color: '#9CA3AF' }}>{s.data}</td>
+                        <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{s.data}</td>
                         <td className="px-4 py-3 font-semibold text-sm" style={{ color: s.precoEstimado ? '#22C55E' : '#9CA3AF' }}>
-                          {s.precoEstimado ? `R$ ${s.precoEstimado.toFixed(2)}` : 'A definir'}
+                          {s.precoEstimado ? `R$ ${formatPrice(s.precoEstimado)}` : 'A definir'}
                         </td>
                         <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
                             <button 
                               onClick={() => setAnsweringQuote(s)}
-                              className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-orange-500/20 cursor-pointer" 
-                              style={{ background: '#1F2937', border: '1px solid rgba(249,115,22,0.3)', color: '#F97316' }}
+                              className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-orange-500/20 cursor-pointer bg-gray-800 border border-orange-500/30 text-orange-400" 
                             >
                               💬 Responder
                             </button>
@@ -890,24 +992,24 @@ export default function Admin() {
           {section === 'estoque' && (
             <div className="flex flex-col gap-3">
               {filamentos.map(f => {
-                const currentStock = f.stockGrams || 0;
-                const minStock = f.minStockGrams || 300;
-                const pct = Math.min(100, (currentStock / (minStock * 4)) * 100);
+                const currentStock = f.stockGrams ?? 0;
+                const minStock = f.minStockGrams ?? 300;
+                const pct = Math.min(100, (currentStock / (minStock * 4 || 1200)) * 100);
                 const low = currentStock < minStock;
                 return (
-                  <div key={f.id || f.color} className="p-4 rounded-xl flex flex-col gap-2 shadow-lg" style={{ background: '#1F2937', border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
+                  <div key={f.id || f.color} className="p-4 rounded-xl flex flex-col gap-2 shadow-lg bg-gray-800/80" style={{ border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
                     <div className="flex items-center justify-between">
-                      <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>
-                        {f.color} <span className="text-[11px] font-normal" style={{ color: '#9CA3AF' }}>({f.material})</span>
+                      <div className="font-semibold text-sm text-gray-100">
+                        {f.color} <span className="text-[11px] font-normal text-gray-400">({f.material})</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>⚠ Estoque baixo</span>}
-                        <span className="font-bold font-mono text-[14px]" style={{ color: low ? '#EF4444' : '#F9FAFB' }}>{f.stockGrams} g</span>
+                        {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400">⚠ Estoque baixo</span>}
+                        <span className={`font-bold font-mono text-[14px] ${low ? 'text-red-400' : 'text-gray-100'}`}>{currentStock} g</span>
                         
                         <div className="flex items-center gap-1 ml-2">
                           <button 
                             onClick={() => handleFilamentStockChange(f, -100)}
-                            className="w-7 h-7 rounded bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-300 flex items-center justify-center transition-colors cursor-pointer"
+                            className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 text-xs font-bold text-gray-200 flex items-center justify-center transition-colors cursor-pointer"
                             title="Remover 100g"
                           >
                             -100
@@ -922,7 +1024,7 @@ export default function Admin() {
                         </div>
                       </div>
                     </div>
-                    <div className="h-2.5 rounded-full" style={{ background: '#111827' }}>
+                    <div className="h-2.5 rounded-full bg-gray-900">
                       <div className="h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
                     </div>
                     <div className="text-[11px] text-gray-400 flex items-center justify-between">
@@ -955,7 +1057,7 @@ export default function Admin() {
         </div>
       </main>
 
-      {/* Modais com fechamento automático e salvamento persistente */}
+      {/* Modais */}
       {showNewModal && (
         <ProductModal 
           onClose={() => setShowNewModal(false)} 
@@ -971,6 +1073,14 @@ export default function Admin() {
           onSave={updatedP => {
             setCatalog(prev => prev.map(x => x.id === updatedP.id ? updatedP : x));
           }} 
+        />
+      )}
+      {showNewOrderModal && (
+        <OrderModal
+          onClose={() => setShowNewOrderModal(false)}
+          onSave={newO => {
+            setOrders(prev => [newO, ...prev]);
+          }}
         />
       )}
       {showNewFilamentModal && (
@@ -994,9 +1104,9 @@ export default function Admin() {
   );
 }
 
-// Linha de Preço com input e botão de salvar dedicado
+// Linha de Preço com input e botão de salvar dedicado e seguro
 function PriceRow({ product, onSave }: { product: Product; onSave: (val: number) => void }) {
-  const [val, setVal] = useState(product.basePrice.toString());
+  const [val, setVal] = useState((product.basePrice ?? 149).toString());
   const [isSaved, setIsSaved] = useState(false);
 
   function handleSave() {
@@ -1009,21 +1119,20 @@ function PriceRow({ product, onSave }: { product: Product; onSave: (val: number)
   }
 
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl shadow-sm transition-all" style={{ background: '#1F2937', border: '1px solid #374151' }}>
-      <img src={product.image} alt={product.name} className="w-11 h-13 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
+    <div className="flex items-center gap-4 p-4 rounded-xl shadow-sm transition-all bg-gray-800/80 border border-gray-700">
+      <img src={product.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'} alt={product.name} className="w-11 h-13 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
       <div className="flex-1 min-w-0">
-        <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>{product.name}</div>
-        <div className="text-[11px]" style={{ color: '#9CA3AF' }}>{product.category} • {product.scales?.[0] || '1:10'}</div>
+        <div className="font-semibold text-sm text-gray-100">{product.name}</div>
+        <div className="text-[11px] text-gray-400">{product.category} • {product.scales?.[0] || '1:10'}</div>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-[12px] font-bold" style={{ color: '#9CA3AF' }}>R$</span>
+        <span className="text-[12px] font-bold text-gray-400">R$</span>
         <input
           type="number"
           value={val}
           onChange={e => setVal(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
-          className="w-24 h-9 px-3 rounded-lg text-sm font-bold outline-none text-right transition-colors"
-          style={{ background: '#111827', border: '1px solid #374151', color: '#F97316' }}
+          className="w-24 h-9 px-3 rounded-lg text-sm font-bold outline-none text-right transition-colors bg-gray-900 border border-gray-700 text-orange-400"
           onFocus={e => (e.target.style.borderColor = '#F97316')}
           onBlur={e => (e.target.style.borderColor = '#374151')}
         />
