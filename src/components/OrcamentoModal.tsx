@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { addQuote } from '@/services/storage';
+import { toast } from '@/components/Toast';
 
 interface Props {
   open: boolean;
@@ -14,8 +16,22 @@ export function OrcamentoModal({ open, onClose }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    addQuote({
+      cliente: form.nome,
+      contato: form.contato,
+      arquivo: file || 'modelo_custom.stl',
+      escala: form.escala,
+      acabamento: form.acabamento,
+      detalhes: form.descricao,
+    });
+    toast.show({
+      title: 'Orçamento enviado com sucesso!',
+      message: 'Recebemos seu modelo 3D. Entraremos em contato em até 24h.',
+      type: 'success',
+      icon: '📐'
+    });
     setSent(true);
-    setTimeout(() => { setSent(false); onClose(); }, 2000);
+    setTimeout(() => { setSent(false); onClose(); }, 1800);
   }
 
   return (

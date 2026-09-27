@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { CartItem } from '@/data/products';
+import { addOrder } from '@/services/storage';
+import { toast } from '@/components/Toast';
 
 interface Props {
   open: boolean;
@@ -23,11 +25,29 @@ export function CheckoutModal({ open, cart, onClose, onSuccess }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+
+    const itemsDescription = cart.map(i => `${i.product.name} (${i.scale})`).join(', ');
+    addOrder({
+      cliente: form.nome || 'Cliente da Loja',
+      produto: itemsDescription || 'Figure Pokémon',
+      valor: subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+      status: 'Aguardando pgto',
+      email: form.contato,
+      telefone: form.contato
+    });
+
+    toast.show({
+      title: 'Pedido registrado com sucesso!',
+      message: `Novo pedido de R$ ${subtotal.toFixed(2)} registrado no sistema da Forja.`,
+      type: 'success',
+      icon: '🛒'
+    });
+
     setTimeout(() => {
       setLoading(false);
       setStep('success');
       setTimeout(() => { onSuccess(); setStep('form'); }, 2000);
-    }, 1400);
+    }, 1200);
   }
 
   const payOptions: { id: PayMethod; icon: string; label: string; desc: string }[] = [

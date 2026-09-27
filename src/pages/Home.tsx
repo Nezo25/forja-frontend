@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react';
-import { fetchApi } from '../api/client';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { FilterBar, type Filters } from '@/components/FilterBar';
@@ -8,31 +7,18 @@ import { ConfigModal } from '@/components/ConfigModal';
 import { CartDrawer } from '@/components/CartDrawer';
 import { CheckoutModal } from '@/components/CheckoutModal';
 import { OrcamentoModal } from '@/components/OrcamentoModal';
-import { products as MOCK_PRODUCTS, type CartItem, type Product } from '@/data/products';
+import { type CartItem, type Product } from '@/data/products';
+import { getStoredProducts } from '@/services/storage';
 
 export default function Home() {
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>(getStoredProducts);
+
   useEffect(() => {
-    fetchApi('/models').then((data: any) => {
-      const items = data?.content || (Array.isArray(data) ? data : []);
-      if (Array.isArray(items) && items.length > 0) {
-        const formatted = items.map((m: any) => ({
-          id: m.id.toString(),
-          name: m.name,
-          category: m.category || 'Figures Pokémon',
-          types: ([m.primaryType, m.secondaryType].filter(Boolean) as PokemonType[]) || (Array.isArray(m.types) ? m.types : []),
-          scales: [m.scale || '1:10'],
-          materials: m.materials || ['PLA'],
-          basePrice: m.basePrice || 149,
-          finishOptions: [],
-          image: m.imageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
-          printTimeH: Math.floor((m.basePrintTimeMinutes || 0) / 60),
-          filamentG: m.defaultFilamentGrams || 0,
-          active: m.isActive !== false,
-        }));
-        setProducts(formatted);
-      }
-    }).catch(console.error);
+    const handleUpdate = () => {
+      setProducts(getStoredProducts());
+    };
+    window.addEventListener('forja_products_updated', handleUpdate);
+    return () => window.removeEventListener('forja_products_updated', handleUpdate);
   }, []);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<Filters>({ categories: [], types: [], scales: [], finishes: [] });
