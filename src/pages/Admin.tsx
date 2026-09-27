@@ -4,20 +4,26 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import type { Product, Category, PokemonType } from '@/data/products';
 import { TypeBadge } from '@/components/TypeBadge';
 import { toast } from '@/components/Toast';
+import { fetchApi } from '@/api/client';
 import {
   getStoredProducts,
+  fetchRemoteProducts,
   saveProduct,
   deleteProduct,
   toggleProductActive,
   updateProductPrice,
   getStoredFilaments,
+  fetchRemoteFilaments,
   saveFilament,
   updateFilamentStock,
+  deleteFilament,
   getStoredOrders,
+  fetchRemoteOrders,
   addOrder,
   updateOrderStatus,
   deleteOrder,
   getStoredQuotes,
+  fetchRemoteQuotes,
   updateQuote,
   deleteQuote,
   fileToBase64,
@@ -58,7 +64,7 @@ function StatusBadge({ status }: { status: string }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[11px] font-semibold mb-1" style={{ color: '#9CA3AF' }}>{label}</label>
+      <label className="block text-[11px] font-semibold mb-1 text-gray-400">{label}</label>
       {children}
     </div>
   );
@@ -76,9 +82,97 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
+// ------------------- MODAL: CONFIGURAÇÃO DE CONEXÃO COM O BANCO -------------------
+function ApiConfigModal({ onClose }: { onClose: () => void }) {
+  const currentUrl = localStorage.getItem('forja_api_url') || import.meta.env.VITE_API_URL || 'https://forja-api.onrender.com/api/v1';
+  const [url, setUrl] = useState(currentUrl);
+  const [testing, setTesting] = useState(false);
+  const [statusResult, setStatusResult] = useState<string | null>(null);
+
+  async function handleTest() {
+    setTesting(true);
+    setStatusResult(null);
+    try {
+      const clean = url.replace(/\/+$/, '');
+      const res = await fetch(`${clean}/models`);
+      if (res.ok) {
+        setStatusResult('🟢 Conexão com o banco de dados realizada com sucesso!');
+      } else if (res.status === 503) {
+        setStatusResult('🔴 Erro 503: O serviço no Render está suspenso ou desligado. Reative-o no dashboard do Render.');
+      } else if (res.status === 404) {
+        setStatusResult('🔴 Erro 404: Rota não encontrada. Verifique se a URL termina com /api/v1');
+      } else {
+        setStatusResult(`⚠️ Servidor respondeu com código ${res.status}`);
+      }
+    } catch (e: any) {
+      setStatusResult(`🔴 Falha ao conectar: ${e.message}`);
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  function handleSave() {
+    localStorage.setItem('forja_api_url', url.trim());
+    toast.show({
+      title: 'URL da API atualizada!',
+      message: 'A nova URL será utilizada para todas as chamadas ao banco.',
+      type: 'success',
+      icon: '⚙️',
+    });
+    onClose();
+    window.location.reload();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+      <div className="relative w-full max-w-lg overflow-y-auto rounded-2xl shadow-2xl p-6" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+          <div>
+            <h3 className="font-extrabold text-base text-gray-100">⚙️ Configuração da API do Banco de Dados</h3>
+            <p className="text-xs text-gray-400">Ambiente de Produção (Java Spring Boot + MySQL)</p>
+          </div>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+        </div>
+
+        <div className="py-4 flex flex-col gap-4">
+          <Field label="URL do Backend / API">
+            <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://forja-api.onrender.com/api/v1" />
+          </Field>
+
+          {statusResult && (
+            <div className="p-3 rounded-lg bg-gray-900 border border-gray-800 text-xs font-mono">
+              {statusResult}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={testing}
+              onClick={handleTest}
+              className="flex-1 h-10 rounded-lg text-xs font-bold border border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 cursor-pointer"
+            >
+              {testing ? 'Testando Conexão...' : '🔍 Testar Conexão'}
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="flex-1 h-10 rounded-lg text-xs font-bold text-white cursor-pointer"
+              style={{ background: '#F97316' }}
+            >
+              💾 Salvar URL
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ------------------- MODAL: NOVO PEDIDO MANUAL -------------------
 function OrderModal({ onClose, onSave }: { onClose: () => void; onSave: (o: Order) => void }) {
-  const [form, setForm] = useState({ cliente: '', produto: '', valor: '249,00', status: 'Em impressão' });
+  const [form, setForm] = useState({ cliente: '', produto: '', valor: '149,00', status: 'Em impressão' });
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSave(e: React.FormEvent) {
@@ -87,7 +181,7 @@ function OrderModal({ onClose, onSave }: { onClose: () => void; onSave: (o: Orde
     setIsSaving(true);
     await new Promise(r => setTimeout(r, 350));
 
-    const saved = addOrder({
+    const saved = await addOrder({
       cliente: form.cliente.trim(),
       produto: form.produto.trim() || 'Figure Personalizada',
       valor: form.valor,
@@ -96,7 +190,7 @@ function OrderModal({ onClose, onSave }: { onClose: () => void; onSave: (o: Orde
 
     toast.show({
       title: 'Pedido registrado no Banco de Dados!',
-      message: `Pedido para "${saved.cliente}" no valor de R$ ${saved.valor} registrado. O gráfico foi recalculado.`,
+      message: `Pedido para "${saved.cliente}" no valor de R$ ${saved.valor} registrado.`,
       type: 'success',
       icon: '🛒',
     });
@@ -122,7 +216,7 @@ function OrderModal({ onClose, onSave }: { onClose: () => void; onSave: (o: Orde
             <Input required placeholder="Ex: Rayquaza Shiny 1:10" value={form.produto} onChange={e => setForm(f => ({ ...f, produto: e.target.value }))} />
           </Field>
           <Field label="Valor da Venda (R$) *">
-            <Input required placeholder="350,00" value={form.valor} onChange={e => setForm(f => ({ ...f, valor: e.target.value }))} />
+            <Input required placeholder="149,00" value={form.valor} onChange={e => setForm(f => ({ ...f, valor: e.target.value }))} />
           </Field>
           <Field label="Status Inicial">
             <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
@@ -200,9 +294,9 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
         types: parsedTypes.length > 0 ? parsedTypes : ['Normal' as PokemonType],
         scales: [form.scale as any],
         materials: [form.material as any],
-        basePrice: parseFloat(form.basePrice) || 149,
-        printTimeH: parseInt(form.printTimeH, 10) || 14,
-        filamentG: parseInt(form.filamentG, 10) || 320,
+        basePrice: parseFloat(form.basePrice) || 0,
+        printTimeH: parseInt(form.printTimeH, 10) || 0,
+        filamentG: parseInt(form.filamentG, 10) || 0,
         image: form.image.trim() || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
         active: form.active,
       }, initialData?.id);
@@ -215,15 +309,9 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
       });
 
       onSave(saved);
-      onClose(); // Tela de salvamento fecha automaticamente
+      onClose(); // Fecha automaticamente
     } catch (err) {
       console.error(err);
-      toast.show({
-        title: 'Erro ao salvar',
-        message: 'Não foi possível salvar os dados do produto.',
-        type: 'error',
-        icon: '⚠️'
-      });
     } finally {
       setIsSaving(false);
     }
@@ -431,7 +519,7 @@ function QuoteModal({ quote, onClose, onSave }: { quote: Quote; onClose: () => v
       detalhes: notes,
     };
 
-    updateQuote(quote.id, updated);
+    await updateQuote(quote.id, updated);
 
     toast.show({
       title: 'Orçamento respondido com sucesso!',
@@ -441,7 +529,7 @@ function QuoteModal({ quote, onClose, onSave }: { quote: Quote; onClose: () => v
     });
 
     onSave(updated);
-    onClose(); // Fecha tela automaticamente
+    onClose();
     setIsSaving(false);
   }
 
@@ -513,20 +601,32 @@ export default function Admin() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [orcamentos, setOrcamentos] = useState<Quote[]>([]);
   const [filamentos, setFilamentos] = useState<Filament[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [showNewModal, setShowNewModal] = useState(false);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [showNewFilamentModal, setShowNewFilamentModal] = useState(false);
+  const [showApiModal, setShowApiModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [answeringQuote, setAnsweringQuote] = useState<Quote | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Carrega e sincroniza dados
+  // Carrega diretamente da API em produção
   useEffect(() => {
-    setCatalog(getStoredProducts());
-    setOrders(getStoredOrders());
-    setOrcamentos(getStoredQuotes());
-    setFilamentos(getStoredFilaments());
+    setIsLoading(true);
+    Promise.all([
+      fetchRemoteProducts(),
+      fetchRemoteOrders(),
+      fetchRemoteFilaments(),
+      fetchRemoteQuotes(),
+    ]).then(([p, o, f, q]) => {
+      setCatalog(p);
+      setOrders(o);
+      setFilamentos(f);
+      setOrcamentos(q);
+    }).finally(() => {
+      setIsLoading(false);
+    });
 
     const handleStorageUpdate = () => {
       setCatalog(getStoredProducts());
@@ -564,11 +664,11 @@ export default function Admin() {
   }, [orders, totalFaturamento]);
 
   // Catálogo: Toggle Ativo / Pausado
-  function handleToggleActive(p: Product) {
-    const isNowActive = toggleProductActive(p.id);
+  async function handleToggleActive(p: Product) {
+    const isNowActive = await toggleProductActive(p.id);
     setCatalog(prev => prev.map(x => x.id === p.id ? { ...x, active: isNowActive } : x));
     toast.show({
-      title: isNowActive ? 'Figure ativada!' : 'Figure pausada!',
+      title: isNowActive ? 'Figure ativada no banco!' : 'Figure pausada no banco!',
       message: `"${p.name}" foi ${isNowActive ? 'ativada na loja' : 'pausada'}.`,
       type: 'info',
       icon: isNowActive ? '▶️' : '⏸️'
@@ -576,13 +676,13 @@ export default function Admin() {
   }
 
   // Catálogo: Deletar Figure
-  function handleDeleteProduct(p: Product) {
-    if (confirm(`Tem certeza que deseja deletar "${p.name}" do catálogo?`)) {
-      deleteProduct(p.id);
+  async function handleDeleteProduct(p: Product) {
+    if (confirm(`Tem certeza que deseja deletar "${p.name}" do banco de dados?`)) {
+      await deleteProduct(p.id);
       setCatalog(prev => prev.filter(x => x.id !== p.id));
       toast.show({
         title: 'Produto excluído!',
-        message: `Figure "${p.name}" foi removida do catálogo.`,
+        message: `Figure "${p.name}" foi removida definitivamente do banco.`,
         type: 'info',
         icon: '🗑️'
       });
@@ -590,8 +690,8 @@ export default function Admin() {
   }
 
   // Pedidos: Alterar Status
-  function handleOrderStatusChange(o: Order, newStatus: string) {
-    updateOrderStatus(o.id, newStatus);
+  async function handleOrderStatusChange(o: Order, newStatus: string) {
+    await updateOrderStatus(o.id, newStatus);
     setOrders(prev => prev.map(x => x.id === o.id ? { ...x, status: newStatus } : x));
     toast.show({
       title: 'Status do Pedido atualizado!',
@@ -602,9 +702,9 @@ export default function Admin() {
   }
 
   // Pedidos: Deletar
-  function handleDeleteOrder(o: Order) {
+  async function handleDeleteOrder(o: Order) {
     if (confirm(`Deletar pedido ${o.id}?`)) {
-      deleteOrder(o.id);
+      await deleteOrder(o.id);
       setOrders(prev => prev.filter(x => x.id !== o.id));
       toast.show({
         title: 'Pedido removido!',
@@ -616,9 +716,9 @@ export default function Admin() {
   }
 
   // Orçamentos: Deletar
-  function handleDeleteQuote(q: Quote) {
+  async function handleDeleteQuote(q: Quote) {
     if (confirm(`Deletar orçamento ${q.id}?`)) {
-      deleteQuote(q.id);
+      await deleteQuote(q.id);
       setOrcamentos(prev => prev.filter(x => x.id !== q.id));
       toast.show({
         title: 'Orçamento removido!',
@@ -630,21 +730,35 @@ export default function Admin() {
   }
 
   // Estoque: Ajuste Rápido de Filamento
-  function handleFilamentStockChange(f: Filament, delta: number) {
+  async function handleFilamentStockChange(f: Filament, delta: number) {
     const newStock = Math.max(0, (f.stockGrams || 0) + delta);
-    updateFilamentStock(f.id, newStock);
+    await updateFilamentStock(f.id, newStock);
     setFilamentos(prev => prev.map(x => x.id === f.id ? { ...x, stockGrams: newStock } : x));
     toast.show({
-      title: 'Estoque de Filamento atualizado!',
+      title: 'Estoque atualizado no banco!',
       message: `Bobina "${f.color}" ajustada para ${newStock}g.`,
       type: 'info',
       icon: '🧵'
     });
   }
 
+  // Estoque: Deletar Bobina
+  async function handleDeleteFilament(f: Filament) {
+    if (confirm(`Deletar bobina "${f.color}" do estoque?`)) {
+      await deleteFilament(f.id);
+      setFilamentos(prev => prev.filter(x => x.id !== f.id));
+      toast.show({
+        title: 'Bobina removida!',
+        message: `Filamento ${f.color} removido do estoque.`,
+        type: 'info',
+        icon: '🗑️'
+      });
+    }
+  }
+
   // Preços: Salvar Preço
-  function handleSavePrice(p: Product, newPrice: number) {
-    updateProductPrice(p.id, newPrice);
+  async function handleSavePrice(p: Product, newPrice: number) {
+    await updateProductPrice(p.id, newPrice);
     setCatalog(prev => prev.map(x => x.id === p.id ? { ...x, basePrice: newPrice } : x));
     toast.show({
       title: 'Preço salvo no Banco de Dados!',
@@ -668,9 +782,12 @@ export default function Admin() {
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base shadow-lg shadow-orange-950/50" style={{ background: 'linear-gradient(135deg,#F97316,#EA580C)' }}>🔩</div>
           <div>
             <div className="font-extrabold text-[14px] text-gray-100">Forja Admin</div>
-            <div className="text-[10px] text-orange-400 font-semibold flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Banco Ativo
-            </div>
+            <button 
+              onClick={() => setShowApiModal(true)} 
+              className="text-[10px] text-orange-400 font-semibold flex items-center gap-1.5 hover:underline cursor-pointer"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Banco de Dados ⚙️
+            </button>
           </div>
         </div>
 
@@ -690,8 +807,14 @@ export default function Admin() {
           ))}
         </nav>
 
-        <div className="p-3 border-t border-gray-800">
-          <Link to="/" className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all text-gray-400 hover:text-orange-400 hover:bg-gray-800/60">
+        <div className="p-3 border-t border-gray-800 flex flex-col gap-2">
+          <button 
+            onClick={() => setShowApiModal(true)} 
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-orange-400 hover:bg-gray-800/60 transition-all cursor-pointer"
+          >
+            ⚙️ Configurar API
+          </button>
+          <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-orange-400 hover:bg-gray-800/60 transition-all">
             ← Ver Vitrine da Loja
           </Link>
         </div>
@@ -748,7 +871,7 @@ export default function Admin() {
               {/* KPIs */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
                 {[
-                  { label: 'Total de figures', value: catalog.length, icon: '📦' },
+                  { label: 'Total no banco', value: catalog.length, icon: '📦' },
                   { label: 'Ativos na vitrine', value: catalog.filter(p => p.active).length, icon: '✅' },
                   { label: 'Pausados', value: catalog.filter(p => !p.active).length, icon: '⏸️' },
                   { label: 'Categorias', value: new Set(catalog.map(p => p.category)).size, icon: '🗂️' },
@@ -763,88 +886,103 @@ export default function Admin() {
 
               {/* Table */}
               <div className="rounded-xl overflow-hidden shadow-xl border border-gray-700/80">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-800 border-b border-gray-700">
-                        {['Produto','Categoria','Tipos','Escalas','Tempo','Filamento','Preço','Status','Ações'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {catalog.map((p, i) => (
-                        <tr key={p.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <img src={p.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'} alt={p.name} className="w-10 h-12 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
-                              <div>
-                                <div className="font-semibold text-sm text-gray-100">{p.name}</div>
-                                <div className="text-[10px] font-mono text-gray-500">{p.id}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-[12px] text-gray-300">{p.category}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-1">
-                              {(p.types || []).map((t, idx) => <TypeBadge key={t + idx} type={t} />)}
-                              {(!p.types || p.types.length === 0) && <span className="text-[11px] text-gray-500">—</span>}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-1">
-                              {(p.scales || ['1:10']).map((s, idx) => (
-                                <span key={s + idx} className="px-1.5 py-0.5 rounded text-[10px] bg-gray-800 text-gray-400 border border-gray-700">{s}</span>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.printTimeH ?? 0}h</td>
-                          <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.filamentG ?? 0}g</td>
-                          <td className="px-4 py-3 font-bold text-sm text-orange-400">R$ {formatPrice(p.basePrice ?? 0)}</td>
-                          <td className="px-4 py-3">
-                            <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={p.active ? { background: 'rgba(34,197,94,0.15)', color: '#22C55E' } : { background: '#1F2937', color: '#6B7280' }}>
-                              {p.active ? 'Ativo' : 'Pausado'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => setEditingProduct(p)}
-                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-gray-700 bg-gray-800 border border-gray-700 text-blue-400 cursor-pointer"
-                              >
-                                ✏️ Editar
-                              </button>
-                              <button
-                                onClick={() => handleToggleActive(p)}
-                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-gray-800 bg-gray-800 border border-gray-700 text-gray-400 cursor-pointer"
-                              >
-                                {p.active ? '⏸ Pausar' : '▶ Ativar'}
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProduct(p)}
-                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50 cursor-pointer"
-                                style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
-                              >
-                                🗑 Deletar
-                              </button>
-                            </div>
-                          </td>
+                {catalog.length === 0 ? (
+                  <div className="py-16 px-4 text-center flex flex-col items-center justify-center gap-3 bg-[#111827]">
+                    <div className="text-4xl">📦</div>
+                    <h3 className="font-extrabold text-base text-gray-200">Nenhum produto cadastrado no banco</h3>
+                    <p className="text-xs text-gray-400 max-w-md">Todos os dados mockados foram limpos. Seu banco está vazio e pronto para receber dados reais de produção.</p>
+                    <button
+                      onClick={() => setShowNewModal(true)}
+                      className="mt-2 h-9 px-4 rounded-lg text-xs font-bold text-white cursor-pointer"
+                      style={{ background: '#F97316' }}
+                    >
+                      + Cadastrar Primeira Figure
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-800 border-b border-gray-700">
+                          {['Produto','Categoria','Tipos','Escalas','Tempo','Filamento','Preço','Status','Ações'].map(h => (
+                            <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
+                          ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {catalog.map((p, i) => (
+                          <tr key={p.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <img src={p.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'} alt={p.name} className="w-10 h-12 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
+                                <div>
+                                  <div className="font-semibold text-sm text-gray-100">{p.name}</div>
+                                  <div className="text-[10px] font-mono text-gray-500">{p.id}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-[12px] text-gray-300">{p.category}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {(p.types || []).map((t, idx) => <TypeBadge key={t + idx} type={t} />)}
+                                {(!p.types || p.types.length === 0) && <span className="text-[11px] text-gray-500">—</span>}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {(p.scales || ['1:10']).map((s, idx) => (
+                                  <span key={s + idx} className="px-1.5 py-0.5 rounded text-[10px] bg-gray-800 text-gray-400 border border-gray-700">{s}</span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.printTimeH ?? 0}h</td>
+                            <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.filamentG ?? 0}g</td>
+                            <td className="px-4 py-3 font-bold text-sm text-orange-400">R$ {formatPrice(p.basePrice ?? 0)}</td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={p.active ? { background: 'rgba(34,197,94,0.15)', color: '#22C55E' } : { background: '#1F2937', color: '#6B7280' }}>
+                                {p.active ? 'Ativo' : 'Pausado'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setEditingProduct(p)}
+                                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-gray-700 bg-gray-800 border border-gray-700 text-blue-400 cursor-pointer"
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button
+                                  onClick={() => handleToggleActive(p)}
+                                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-gray-800 bg-gray-800 border border-gray-700 text-gray-400 cursor-pointer"
+                                >
+                                  {p.active ? '⏸ Pausar' : '▶ Ativar'}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(p)}
+                                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50 cursor-pointer"
+                                  style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
+                                >
+                                  🗑 Deletar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* ── PEDIDOS E FINANÇAS (DASHBOARD DINÂMICO) ── */}
+          {/* ── PEDIDOS E FINANÇAS ── */}
           {section === 'pedidos' && (
             <div className="flex flex-col gap-5">
               {/* KPIs 100% dinâmicos */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { label: 'Faturamento Total', value: `R$ ${formatPrice(totalFaturamento)}`, icon: '💰', highlight: true },
+                  { label: 'Faturamento Total Real', value: `R$ ${formatPrice(totalFaturamento)}`, icon: '💰', highlight: true },
                   { label: 'Total de Pedidos', value: orders.length.toString(), icon: '📋' },
                   { label: 'Em impressão ativa', value: orders.filter(o => o.status === 'Em impressão').length.toString(), icon: '🖨️' },
                   { label: 'Ticket Médio', value: `R$ ${formatPrice(ticketMedio)}`, icon: '📊' },
@@ -857,15 +995,15 @@ export default function Admin() {
                 ))}
               </div>
 
-              {/* Gráfico Dinâmico de Vendas */}
+              {/* Gráfico Dinâmico */}
               <div className="p-5 rounded-xl shadow-xl bg-gray-800/90 border border-gray-700">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-sm font-bold text-gray-100">Vendas Mensais Dinâmicas (R$)</h3>
-                    <p className="text-xs text-gray-400">As colunas sobem e descem em tempo real conforme pedidos cadastrados e alterados.</p>
+                    <p className="text-xs text-gray-400">As colunas sobem e descem em tempo real conforme vendas reais são cadastradas ou modificadas.</p>
                   </div>
                   <span className="text-xs font-mono text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-800/40">
-                    ● Gráfico Vivo
+                    ● Gráfico Real
                   </span>
                 </div>
 
@@ -890,50 +1028,56 @@ export default function Admin() {
               {/* Tabela de Pedidos */}
               <div className="rounded-xl overflow-hidden shadow-xl border border-gray-700">
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
-                  <span className="font-bold text-sm text-gray-200">Lista Geral de Pedidos</span>
-                  <span className="text-xs text-gray-400">Altere o status ou adicione novos pedidos</span>
+                  <span className="font-bold text-sm text-gray-200">Lista Real de Pedidos</span>
+                  <button onClick={() => setShowNewOrderModal(true)} className="text-xs text-orange-400 hover:underline font-bold cursor-pointer">+ Novo Pedido</button>
                 </div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-800/60 border-b border-gray-700">
-                      {['Pedido','Cliente','Produto','Data','Valor','Status','Ações'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((o, i) => (
-                      <tr key={o.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                        <td className="px-4 py-3 font-mono text-[12px] font-bold text-orange-400">{o.id}</td>
-                        <td className="px-4 py-3 font-medium text-gray-100">{o.cliente}</td>
-                        <td className="px-4 py-3 text-sm text-gray-300">{o.produto}</td>
-                        <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{o.data}</td>
-                        <td className="px-4 py-3 font-bold text-gray-100">R$ {o.valor}</td>
-                        <td className="px-4 py-3">
-                          <select
-                            value={o.status}
-                            onChange={e => handleOrderStatusChange(o, e.target.value)}
-                            className="text-xs px-2.5 py-1 rounded-lg font-semibold outline-none cursor-pointer border bg-gray-800 border-gray-700"
-                            style={{ color: STATUS_COLORS[o.status]?.text || '#F9FAFB' }}
-                          >
-                            {['Aguardando pgto','Em impressão','Enviado','Entregue'].map(st => (
-                              <option key={st} value={st}>{st}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => handleDeleteOrder(o)}
-                            className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50 cursor-pointer"
-                            style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
-                          >
-                            🗑 Deletar
-                          </button>
-                        </td>
+                {orders.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-gray-400 bg-[#111827]">
+                    Nenhum pedido registrado no banco de dados. Cadastre um novo pedido acima para testar o gráfico.
+                  </div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-800/60 border-b border-gray-700">
+                        {['Pedido','Cliente','Produto','Data','Valor','Status','Ações'].map(h => (
+                          <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {orders.map((o, i) => (
+                        <tr key={o.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
+                          <td className="px-4 py-3 font-mono text-[12px] font-bold text-orange-400">{o.id}</td>
+                          <td className="px-4 py-3 font-medium text-gray-100">{o.cliente}</td>
+                          <td className="px-4 py-3 text-sm text-gray-300">{o.produto}</td>
+                          <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{o.data}</td>
+                          <td className="px-4 py-3 font-bold text-gray-100">R$ {o.valor}</td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={o.status}
+                              onChange={e => handleOrderStatusChange(o, e.target.value)}
+                              className="text-xs px-2.5 py-1 rounded-lg font-semibold outline-none cursor-pointer border bg-gray-800 border-gray-700"
+                              style={{ color: STATUS_COLORS[o.status]?.text || '#F9FAFB' }}
+                            >
+                              {['Aguardando pgto','Em impressão','Enviado','Entregue'].map(st => (
+                                <option key={st} value={st}>{st}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => handleDeleteOrder(o)}
+                              className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50 cursor-pointer"
+                              style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
+                            >
+                              🗑 Deletar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           )}
@@ -942,48 +1086,54 @@ export default function Admin() {
           {section === 'orcamentos' && (
             <div className="flex flex-col gap-4">
               <div className="rounded-xl overflow-hidden shadow-xl border border-gray-700">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-800 border-b border-gray-700">
-                      {['ID','Cliente','Arquivo STL','Data','Valor Estimado','Status','Ações'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orcamentos.map((s, i) => (
-                      <tr key={s.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                        <td className="px-4 py-3 font-mono text-[12px] font-bold text-orange-400">{s.id}</td>
-                        <td className="px-4 py-3 font-medium text-gray-100">{s.cliente}</td>
-                        <td className="px-4 py-3 font-mono text-[12px] text-gray-300">
-                          📁 {s.arquivo}
-                        </td>
-                        <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{s.data}</td>
-                        <td className="px-4 py-3 font-semibold text-sm" style={{ color: s.precoEstimado ? '#22C55E' : '#9CA3AF' }}>
-                          {s.precoEstimado ? `R$ ${formatPrice(s.precoEstimado)}` : 'A definir'}
-                        </td>
-                        <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => setAnsweringQuote(s)}
-                              className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-orange-500/20 cursor-pointer bg-gray-800 border border-orange-500/30 text-orange-400" 
-                            >
-                              💬 Responder
-                            </button>
-                            <button
-                              onClick={() => handleDeleteQuote(s)}
-                              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50 cursor-pointer"
-                              style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
-                            >
-                              🗑
-                            </button>
-                          </div>
-                        </td>
+                {orcamentos.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-gray-400 bg-[#111827]">
+                    Nenhum orçamento STL pendente no banco de dados.
+                  </div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-800 border-b border-gray-700">
+                        {['ID','Cliente','Arquivo STL','Data','Valor Estimado','Status','Ações'].map(h => (
+                          <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {orcamentos.map((s, i) => (
+                        <tr key={s.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
+                          <td className="px-4 py-3 font-mono text-[12px] font-bold text-orange-400">{s.id}</td>
+                          <td className="px-4 py-3 font-medium text-gray-100">{s.cliente}</td>
+                          <td className="px-4 py-3 font-mono text-[12px] text-gray-300">
+                            📁 {s.arquivo}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{s.data}</td>
+                          <td className="px-4 py-3 font-semibold text-sm" style={{ color: s.precoEstimado ? '#22C55E' : '#9CA3AF' }}>
+                            {s.precoEstimado ? `R$ ${formatPrice(s.precoEstimado)}` : 'A definir'}
+                          </td>
+                          <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => setAnsweringQuote(s)}
+                                className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-orange-500/20 cursor-pointer bg-gray-800 border border-orange-500/30 text-orange-400" 
+                              >
+                                💬 Responder
+                              </button>
+                              <button
+                                onClick={() => handleDeleteQuote(s)}
+                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50 cursor-pointer"
+                                style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
+                              >
+                                🗑
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           )}
@@ -991,49 +1141,62 @@ export default function Admin() {
           {/* ── ESTOQUE ── */}
           {section === 'estoque' && (
             <div className="flex flex-col gap-3">
-              {filamentos.map(f => {
-                const currentStock = f.stockGrams ?? 0;
-                const minStock = f.minStockGrams ?? 300;
-                const pct = Math.min(100, (currentStock / (minStock * 4 || 1200)) * 100);
-                const low = currentStock < minStock;
-                return (
-                  <div key={f.id || f.color} className="p-4 rounded-xl flex flex-col gap-2 shadow-lg bg-gray-800/80" style={{ border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
-                    <div className="flex items-center justify-between">
-                      <div className="font-semibold text-sm text-gray-100">
-                        {f.color} <span className="text-[11px] font-normal text-gray-400">({f.material})</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400">⚠ Estoque baixo</span>}
-                        <span className={`font-bold font-mono text-[14px] ${low ? 'text-red-400' : 'text-gray-100'}`}>{currentStock} g</span>
-                        
-                        <div className="flex items-center gap-1 ml-2">
-                          <button 
-                            onClick={() => handleFilamentStockChange(f, -100)}
-                            className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 text-xs font-bold text-gray-200 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Remover 100g"
-                          >
-                            -100
-                          </button>
-                          <button 
-                            onClick={() => handleFilamentStockChange(f, 250)}
-                            className="px-2 h-7 rounded bg-orange-500/20 hover:bg-orange-500/30 text-xs font-bold text-orange-400 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Adicionar carretel 250g"
-                          >
-                            +250g
-                          </button>
+              {filamentos.length === 0 ? (
+                <div className="py-12 text-center text-xs text-gray-400 bg-[#111827] rounded-xl border border-gray-800">
+                  Nenhuma bobina de filamento cadastrada no estoque. Clique em "+ Nova Bobina" para cadastrar.
+                </div>
+              ) : (
+                filamentos.map(f => {
+                  const currentStock = f.stockGrams ?? 0;
+                  const minStock = f.minStockGrams ?? 300;
+                  const pct = Math.min(100, (currentStock / (minStock * 4 || 1200)) * 100);
+                  const low = currentStock < minStock;
+                  return (
+                    <div key={f.id || f.color} className="p-4 rounded-xl flex flex-col gap-2 shadow-lg bg-gray-800/80" style={{ border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold text-sm text-gray-100">
+                          {f.color} <span className="text-[11px] font-normal text-gray-400">({f.material})</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400">⚠ Estoque baixo</span>}
+                          <span className={`font-bold font-mono text-[14px] ${low ? 'text-red-400' : 'text-gray-100'}`}>{currentStock} g</span>
+                          
+                          <div className="flex items-center gap-1 ml-2">
+                            <button 
+                              onClick={() => handleFilamentStockChange(f, -100)}
+                              className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 text-xs font-bold text-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                              title="Remover 100g"
+                            >
+                              -100
+                            </button>
+                            <button 
+                              onClick={() => handleFilamentStockChange(f, 250)}
+                              className="px-2 h-7 rounded bg-orange-500/20 hover:bg-orange-500/30 text-xs font-bold text-orange-400 flex items-center justify-center transition-colors cursor-pointer"
+                              title="Adicionar carretel 250g"
+                            >
+                              +250g
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteFilament(f)}
+                              className="w-7 h-7 rounded bg-red-900/40 hover:bg-red-900/60 text-xs font-bold text-red-400 flex items-center justify-center transition-colors cursor-pointer ml-1"
+                              title="Deletar bobina"
+                            >
+                              🗑
+                            </button>
+                          </div>
                         </div>
                       </div>
+                      <div className="h-2.5 rounded-full bg-gray-900">
+                        <div className="h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
+                      </div>
+                      <div className="text-[11px] text-gray-400 flex items-center justify-between">
+                        <span>Mínimo recomendado: {minStock} g</span>
+                        <span className="text-[10px] font-mono">{pct.toFixed(0)}% da meta</span>
+                      </div>
                     </div>
-                    <div className="h-2.5 rounded-full bg-gray-900">
-                      <div className="h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
-                    </div>
-                    <div className="text-[11px] text-gray-400 flex items-center justify-between">
-                      <span>Mínimo recomendado: {minStock} g</span>
-                      <span className="text-[10px] font-mono">{pct.toFixed(0)}% da meta</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           )}
 
@@ -1043,14 +1206,20 @@ export default function Admin() {
               <div className="p-4 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-sm text-gray-100">💰 Tabela de Precificação Base</h3>
-                  <p className="text-xs text-gray-400">Altere o preço base de qualquer figure e clique em Salvar para atualizar imediatamente na vitrine.</p>
+                  <p className="text-xs text-gray-400">Altere o preço base de qualquer figure e clique em Salvar para atualizar imediatamente no banco.</p>
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
-                {catalog.map(p => (
-                  <PriceRow key={p.id} product={p} onSave={newPrice => handleSavePrice(p, newPrice)} />
-                ))}
+                {catalog.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-gray-400 bg-[#111827] rounded-xl border border-gray-800">
+                    Nenhuma figure cadastrada para ajuste de preço.
+                  </div>
+                ) : (
+                  catalog.map(p => (
+                    <PriceRow key={p.id} product={p} onSave={newPrice => handleSavePrice(p, newPrice)} />
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -1100,18 +1269,21 @@ export default function Admin() {
           }}
         />
       )}
+      {showApiModal && (
+        <ApiConfigModal onClose={() => setShowApiModal(false)} />
+      )}
     </div>
   );
 }
 
-// Linha de Preço com input e botão de salvar dedicado e seguro
+// Linha de Preço
 function PriceRow({ product, onSave }: { product: Product; onSave: (val: number) => void }) {
-  const [val, setVal] = useState((product.basePrice ?? 149).toString());
+  const [val, setVal] = useState((product.basePrice ?? 0).toString());
   const [isSaved, setIsSaved] = useState(false);
 
   function handleSave() {
     const num = parseFloat(val);
-    if (!isNaN(num) && num > 0) {
+    if (!isNaN(num) && num >= 0) {
       onSave(num);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);

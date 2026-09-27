@@ -10,7 +10,10 @@ interface Props {
 export function ProductCard({ product, onConfigure }: Props) {
   const [hovered, setHovered] = useState(false);
 
-  const lowestPrice = product.basePrice + Math.min(...product.finishOptions.map(f => f.extra));
+  const extraMin = product.finishOptions && product.finishOptions.length > 0
+    ? Math.min(...product.finishOptions.map(f => f.extra))
+    : 0;
+  const lowestPrice = (product.basePrice || 0) + (isFinite(extraMin) ? extraMin : 0);
 
   return (
     <article
@@ -30,7 +33,7 @@ export function ProductCard({ product, onConfigure }: Props) {
       {/* Image */}
       <div className="relative overflow-hidden aspect-[4/5]" style={{ background: '#111827' }}>
         <img
-          src={product.image}
+          src={product.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-500"
           style={{ transform: hovered ? 'scale(1.07)' : 'scale(1)' }}
@@ -40,13 +43,13 @@ export function ProductCard({ product, onConfigure }: Props) {
 
         {/* Tags top-left */}
         <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1">
-          {product.types.map(t => <TypeBadge key={t} type={t} />)}
+          {(product.types || []).map((t, idx) => <TypeBadge key={t + idx} type={t} />)}
         </div>
 
         {/* Material badges top-right */}
         <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end">
-          {product.materials.map(m => (
-            <span key={m} className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: 'rgba(17,24,39,0.85)', color: '#9CA3AF', border: '1px solid #374151' }}>
+          {(product.materials || ['PLA']).map((m, idx) => (
+            <span key={m + idx} className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: 'rgba(17,24,39,0.85)', color: '#9CA3AF', border: '1px solid #374151' }}>
               {m}
             </span>
           ))}
@@ -65,8 +68,8 @@ export function ProductCard({ product, onConfigure }: Props) {
         <h3 className="font-bold text-[15px] leading-tight" style={{ color: '#F9FAFB' }}>{product.name}</h3>
 
         <div className="flex flex-wrap gap-1 mt-0.5">
-          {product.scales.map(s => (
-            <span key={s} className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#111827', color: '#9CA3AF', border: '1px solid #374151' }}>
+          {(product.scales || ['1:10']).map((s, idx) => (
+            <span key={s + idx} className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#111827', color: '#9CA3AF', border: '1px solid #374151' }}>
               {s}
             </span>
           ))}
