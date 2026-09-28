@@ -76,7 +76,7 @@ export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Prop
 
           <Link
             to="/admin"
-            className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-sm transition-all"
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-sm transition-all"
             style={{ background: '#1F2937', border: '1px solid #374151', color: '#9CA3AF' }}
             title="Painel Admin"
             onMouseEnter={e => (e.currentTarget.style.color = '#F97316')}
