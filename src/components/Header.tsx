@@ -19,7 +19,7 @@ export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Prop
       <div className="max-w-[1440px] mx-auto px-4 md:px-8 h-16 flex items-center gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 shrink-0 mr-2">
-          <img src="/logo.png" alt="Forja do Chico Logo" className="w-9 h-9 rounded-lg object-cover" />
+          <img src="/logo.jpg" alt="Forja do Chico Logo" className="w-9 h-9 rounded-lg object-cover" />
           <span className="font-bold text-[15px] leading-tight hidden sm:block" style={{ color: '#F9FAFB' }}>
             Forja do Chico
           </span>
