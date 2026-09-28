@@ -55,7 +55,7 @@ export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Prop
             onMouseEnter={e => (e.currentTarget.style.borderColor = '#F97316')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#374151')}
           >
-            ðŸ“ OrÃ§amento STL
+            🛠️ Orçamento STL
           </button>
 
           <button
