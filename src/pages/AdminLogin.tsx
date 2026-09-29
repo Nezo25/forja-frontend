@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API = (import.meta as any).env?.VITE_API_URL ?? 'https://forja-backend.onrender.com';
+const API = (import.meta as any).env?.VITE_API_URL ?? 'https://forja-backend-1.onrender.com';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
