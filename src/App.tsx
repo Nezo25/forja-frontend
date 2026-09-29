@@ -1,7 +1,16 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Home from '@/pages/Home';
 import Admin from '@/pages/Admin';
+import AdminLogin from '@/pages/AdminLogin';
 import { ToastContainer } from '@/components/Toast';
+
+function ProtectedAdmin() {
+  const token = sessionStorage.getItem('__adm_token');
+  if (!token) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return <Admin />;
+}
 
 export default function App() {
   return (
@@ -9,7 +18,8 @@ export default function App() {
       <ToastContainer />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<ProtectedAdmin />} />
       </Routes>
     </BrowserRouter>
   );
