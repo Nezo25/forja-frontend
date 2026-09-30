@@ -1,9 +1,4 @@
 const getBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('forja_api_url');
-  }
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) return envUrl.replace(/\/+$/, '');
   return 'https://forja-backend-1.onrender.com/api/v1';
 };
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API = (import.meta as any).env?.VITE_API_URL ?? 'https://forja-backend-1.onrender.com';
+const API = 'https://forja-backend-1.onrender.com';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -50,7 +50,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-sm mx-4">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-3">
-          <img src="/logo.jpg" alt="Forja do Chico" className="w-14 h-14 rounded-xl object-cover" />
+          <img src="/logo.png" alt="Forja do Chico" className="w-14 h-14 rounded-xl object-cover" />
           <div className="text-center">
             <h1 className="text-xl font-extrabold" style={{ color: '#F9FAFB' }}>Forja do Chico</h1>
             <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Painel Administrativo</p>
