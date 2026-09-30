@@ -99,7 +99,7 @@ function sanitizeProduct(p: any): Product {
     id: p?.id ? p.id.toString() : 'prod_' + Math.random().toString(36).substring(2, 8),
     name: p?.name || 'Figure',
     category: p?.category || 'Figures Pokémon',
-    types: Array.isArray(p?.types) ? p.types : [p?.primaryType || 'Normal'].filter(Boolean),
+    types: Array.isArray(p?.types) && p.types.length > 0 ? p.types : [p?.primaryType || 'Normal', p?.secondaryType].filter(Boolean),
     scales: Array.isArray(p?.scales) && p.scales.length ? p.scales : [p?.scale || '1:10'],
     materials: Array.isArray(p?.materials) && p.materials.length ? p.materials : ['PLA'],
     basePrice: typeof p?.basePrice === 'number' ? p.basePrice : parsePrice(p?.basePrice) || 0,
@@ -181,7 +181,8 @@ export async function saveProduct(productData: Partial<Product>, initialId?: str
     scale: fullProduct.scales[0] || '1:10',
     basePrintTimeMinutes: (fullProduct.printTimeH || 0) * 60,
     defaultFilamentGrams: fullProduct.filamentG || 0,
-    imageUrl: fullProduct.image.startsWith('data:') ? 'https://placehold.co/600x700/1F2937/F97316?text=Figure' : fullProduct.image
+    imageUrl: fullProduct.image,
+    basePrice: fullProduct.basePrice
   };
 
   const method = isEditing && !id.startsWith('prod_') ? 'PUT' : 'POST';
