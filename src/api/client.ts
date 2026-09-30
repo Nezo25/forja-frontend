@@ -7,10 +7,12 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${baseUrl}${path}`;
 
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('__adm_token') : null;
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...options?.headers,
     },
   });
