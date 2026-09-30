@@ -8,15 +8,17 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { CheckoutModal } from '@/components/CheckoutModal';
 import { OrcamentoModal } from '@/components/OrcamentoModal';
 import { type CartItem, type Product } from '@/data/products';
-import { getStoredProducts } from '@/services/storage';
+import { getStoredProducts, fetchRemoteProducts } from '@/services/storage';
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>(getStoredProducts);
+  const [products, setProducts] = useState<Product[]>(getStoredProducts());
 
   useEffect(() => {
-    const handleUpdate = () => {
-      setProducts(getStoredProducts());
-    };
+    // Busca do banco quando a home carrega
+    fetchRemoteProducts().then(setProducts);
+
+    // Ouve atualizações em tempo real
+    const handleUpdate = () => setProducts(getStoredProducts());
     window.addEventListener('forja_products_updated', handleUpdate);
     return () => window.removeEventListener('forja_products_updated', handleUpdate);
   }, []);
