@@ -827,9 +827,7 @@ export default function Admin() {
           <button 
             onClick={() => setShowApiModal(true)} 
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-orange-400 hover:bg-gray-800/60 transition-all cursor-pointer"
-          >
-            ⚙️ Configurar API
-          </button>
+          >⚙️ Configurações da Loja</button>
           <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-orange-400 hover:bg-gray-800/60 transition-all">
             ← Ver Vitrine da Loja
           </Link>

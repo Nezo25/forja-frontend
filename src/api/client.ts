@@ -1,7 +1,6 @@
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
-    const custom = localStorage.getItem('forja_api_url');
-    if (custom) return custom.replace(/\/+$/, '');
+    localStorage.removeItem('forja_api_url');
   }
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) return envUrl.replace(/\/+$/, '');
