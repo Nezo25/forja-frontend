@@ -1,7 +1,14 @@
 {
-  "description": "Manage your expenses effortlessly with categorized tracking and spending alerts, helping users stay on budget and make informed financial decisions.",
+  "title": "Forja do Chico",
+  "description": "Sua figure dos sonhos saída da forja. Colecionáveis Pokémon, dioramas e itens sob encomenda. Alta qualidade em impressão 3D.",
+  "icons": {
+    "icon": "/logo.png"
+  },
+  "openGraph": {
+    "image": "/logo.png"
+  },
   "robots": {
-    "index": false
+    "index": true
   },
   "accessibility": {
     "addBypassLinks": false,
