@@ -3,7 +3,7 @@ export type PokemonType =
   | 'Lutador' | 'Veneno' | 'Terra' | 'Voador' | 'Psíquico' | 'Inseto'
   | 'Pedra' | 'Fantasma' | 'Dragão' | 'Escuridão' | 'Metálico' | 'Fada';
 
-export type Category = 'Figures Pokémon' | 'Dioramas' | 'Chibis' | 'Acessórios';
+export type Category = 'Figures Pokémon' | 'Dioramas' | 'Chibis' | 'Acessórios' | 'TCG';
 export type Scale = '1:10' | '1:1' | 'Chibi' | 'Diorama';
 export type Finish = 'Peça Crua' | 'Com Primer' | 'Pintado à Mão';
 export type Material = 'PLA' | 'Resina';
@@ -195,7 +195,7 @@ export const ALL_TYPES: PokemonType[] = [
 ];
 
 export const ALL_CATEGORIES: Category[] = [
-  'Figures Pokémon','Dioramas','Chibis','Acessórios'
+  'Figures Pokémon','Dioramas','Chibis','Acessórios', 'TCG'
 ];
 export const ALL_SCALES: Scale[] = ['1:10','1:1','Chibi','Diorama'];
 export const ALL_FINISHES: Finish[] = ['Peça Crua','Com Primer','Pintado à Mão'];
