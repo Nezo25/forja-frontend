@@ -795,7 +795,7 @@ export default function Admin() {
         style={{ width: 220, background: '#111827', borderRight: '1px solid #1F2937' }}
       >
         <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-800">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base shadow-lg shadow-orange-950/50" style={{ background: 'linear-gradient(135deg,#F97316,#EA580C)' }}>🔩</div>
+          <img src="/logo.png" alt="Forja Admin" className="w-10 h-10 rounded-lg object-cover bg-orange-500/20" />
           <div>
             <div className="font-extrabold text-[14px] text-gray-100">Forja Admin</div>
             <button 
