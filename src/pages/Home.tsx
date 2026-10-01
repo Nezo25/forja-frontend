@@ -12,10 +12,14 @@ import { getStoredProducts, fetchRemoteProducts } from '@/services/storage';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>(getStoredProducts());
+  const [isLoading, setIsLoading] = useState(getStoredProducts().length === 0);
 
   useEffect(() => {
     // Busca do banco quando a home carrega
-    fetchRemoteProducts().then(setProducts);
+    fetchRemoteProducts().then(res => {
+        setProducts(res);
+        setIsLoading(false);
+      });
 
     // Ouve atualizações em tempo real
     const handleUpdate = () => setProducts(getStoredProducts());
