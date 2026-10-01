@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { CartItem } from '@/data/products';
 
@@ -11,73 +11,68 @@ interface Props {
 }
 
 export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Props) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const total = cart.reduce((s, i) => s + i.qty, 0);
 
   return (
-    <header className="sticky top-0 z-50" style={{ background: 'rgba(11,15,25,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #1F2937' }}>
-      <div className="max-w-[1440px] mx-auto px-4 md:px-8 h-16 flex items-center gap-4">
+    <header className="sticky top-0 z-50 bg-[#0B0F19]/90 backdrop-blur-xl border-b border-gray-800">
+      <div className="max-w-[1440px] mx-auto px-3 md:px-8 h-16 flex items-center justify-between gap-3 md:gap-6">
+        
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 shrink-0 mr-2">
-          <img src="/logo.png?v=1790886146024" alt="Forja do Chico Logo" className="w-9 h-9 rounded-lg object-cover" />
-          <span className="font-bold text-[15px] leading-tight hidden sm:block" style={{ color: '#F9FAFB' }}>
+        <Link to="/" className={`flex items-center gap-2.5 shrink-0 ${searchFocused ? 'hidden md:flex' : 'flex'}`}>
+          <div className="w-9 h-9 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
+            {/* Tenta carregar a imagem, se falhar ou demorar tem um fallback SVG bonito de bigorna/fogo */}
+            <object data="/logo.png?v=1790886146024" type="image/png" className="w-full h-full object-cover">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2c-3.3 0-6 2.7-6 6 0 3 2 5.5 5 7.6.3.2.7.2 1 0 3-2.1 5-4.6 5-7.6 0-3.3-2.7-6-6-6z"/><path d="M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+            </object>
+          </div>
+          <span className="font-extrabold text-[15px] leading-tight text-white hidden sm:block">
             Forja do Chico
           </span>
         </Link>
 
         {/* Search */}
-        <div className="flex-1 max-w-xl relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <div className={`flex-1 flex justify-end md:justify-center transition-all ${searchFocused ? 'w-full' : 'max-w-xl'}`}>
+          <div className="relative w-full">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar figures..."
+              value={search}
+              onChange={e => onSearch(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              className="w-full h-10 pl-9 pr-4 text-sm rounded-lg outline-none transition-all bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+            />
           </div>
-          <input
-            type="text"
-            placeholder="Buscar figures, dioramas, tipos..."
-            value={search}
-            onChange={e => onSearch(e.target.value)}
-            className="w-full h-9 pl-9 pr-4 text-sm rounded-lg outline-none transition-all"
-            style={{
-              background: '#1F2937',
-              border: '1px solid #374151',
-              color: '#F9FAFB',
-            }}
-            onFocus={e => (e.target.style.borderColor = '#F97316')}
-            onBlur={e => (e.target.style.borderColor = '#374151')}
-          />
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 ml-auto shrink-0">
+        <div className={`flex items-center gap-2 shrink-0 ${searchFocused ? 'hidden md:flex' : 'flex'}`}>
           <button
             onClick={onOrcamento}
-            className="hidden md:flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-all"
-            style={{ background: '#1F2937', border: '1px solid #374151', color: '#F9FAFB' }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = '#F97316')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = '#374151')}
+            className="hidden md:flex items-center gap-2 h-10 px-4 rounded-lg text-sm font-semibold transition-all bg-gray-800 border border-gray-700 text-white hover:border-orange-500"
           >
-            🛠️ Orçamento STL
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <span className="hidden lg:inline">Orçamento STL</span>
           </button>
 
           <button
             onClick={onCartOpen}
-            className="relative flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-all"
-            style={{ background: '#F97316', color: '#fff' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#EA6A0A')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#F97316')}
+            className="relative flex items-center justify-center gap-2 h-10 w-10 md:w-auto md:px-4 rounded-lg text-sm font-bold transition-all bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/20"
           >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            <span className="hidden sm:inline">Carrinho</span>
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span className="hidden md:inline">Carrinho</span>
             {total > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center" style={{ background: '#0B0F19', color: '#F97316', border: '2px solid #F97316' }}>
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center bg-white text-orange-600 shadow-sm border-2 border-orange-500">
                 {total}
               </span>
             )}
           </button>
-
-          
         </div>
       </div>
     </header>
   );
 }
-

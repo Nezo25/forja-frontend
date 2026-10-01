@@ -202,9 +202,11 @@ export const ALL_FINISHES: Finish[] = ['Peça Crua','Com Primer','Pintado à Mã
 
 export interface CartItem {
   product: Product;
-  scale: Scale;
-  finish: Finish;
+  scale: Scale | string;
+  finish: Finish | string;
   material: Material;
   qty: number;
   unitPrice: number;
+  observations?: string;
+  customized?: boolean;
 }

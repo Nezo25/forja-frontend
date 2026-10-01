@@ -2,21 +2,21 @@ interface Props { onOrcamento: () => void; }
 
 export function Hero({ onOrcamento }: Props) {
   return (
-    <section className="relative overflow-hidden py-12 md:py-16 px-4 md:px-8">
+    <section className="relative overflow-hidden py-8 md:py-16 px-4 md:px-8">
       {/* Background glow */}
       <div className="pointer-events-none absolute inset-0" style={{
         background: 'radial-gradient(ellipse 60% 80% at 80% 50%, rgba(249,115,22,0.08) 0%, transparent 70%)',
       }} />
       <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-center gap-8">
         <div className="flex-1 min-w-0">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4" style={{ background: 'rgba(249,115,22,0.12)', color: '#F97316', border: '1px solid rgba(249,115,22,0.3)' }}>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold mb-3 md:mb-4" style={{ background: 'rgba(249,115,22,0.12)', color: '#F97316', border: '1px solid rgba(249,115,22,0.3)' }}>
             🔥 Impressão 3D Artesanal de Alta Precisão
           </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold leading-[1.15] mb-3" style={{ color: '#F9FAFB' }}>
+          <h1 className="text-2xl md:text-5xl font-extrabold leading-[1.15] mb-2 md:mb-3" style={{ color: '#F9FAFB' }}>
             Sua figure dos<br />
             <span style={{ color: '#F97316' }}>sonhos saída<br />da forja.</span>
           </h1>
-          <p className="text-[15px] mb-6" style={{ color: '#9CA3AF' }}>
+          <p className="text-sm md:text-[15px] mb-4 md:mb-6" style={{ color: '#9CA3AF' }}>
             Pokémon e colecionáveis em PLA e Resina, com pintura artesanal sob encomenda.
           </p>
           <div className="flex flex-wrap gap-2 mb-6">

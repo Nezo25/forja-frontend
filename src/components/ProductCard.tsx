@@ -5,9 +5,10 @@ import { TypeBadge } from './TypeBadge';
 interface Props {
   product: Product;
   onConfigure: (p: Product) => void;
+  onBuyNow: (p: Product) => void;
 }
 
-export function ProductCard({ product, onConfigure }: Props) {
+export function ProductCard({ product, onConfigure, onBuyNow }: Props) {
   const [hovered, setHovered] = useState(false);
 
   const extraMin = product.finishOptions && product.finishOptions.length > 0
@@ -75,22 +76,31 @@ export function ProductCard({ product, onConfigure }: Props) {
           ))}
         </div>
 
-        <div className="mt-auto pt-3 flex items-end justify-between">
-          <div>
-            <div className="text-[10px] uppercase tracking-wide font-medium" style={{ color: '#6B7280' }}>a partir de</div>
-            <div className="text-[20px] font-extrabold" style={{ color: '#F97316' }}>
-              R$ {lowestPrice.toFixed(2).replace('.', ',')}
+        <div className="mt-auto pt-3 flex flex-col gap-2">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-wide font-medium" style={{ color: '#6B7280' }}>a partir de</div>
+              <div className="text-[18px] font-extrabold" style={{ color: '#F97316' }}>
+                R$ {lowestPrice.toFixed(2).replace('.', ',')}
+              </div>
             </div>
           </div>
-          <button
-            className="h-9 px-4 rounded-lg text-sm font-bold transition-all"
-            style={{ background: '#F97316', color: '#fff' }}
-            onClick={e => { e.stopPropagation(); onConfigure(product); }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#EA6A0A')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#F97316')}
-          >
-            Configurar
-          </button>
+          
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            <button
+              className="h-8 rounded-lg text-[13px] font-bold transition-all border border-slate-700 hover:border-slate-600 hover:bg-slate-800"
+              style={{ color: '#F9FAFB' }}
+              onClick={e => { e.stopPropagation(); onConfigure(product); }}
+            >
+              Personalizar
+            </button>
+            <button
+              className="h-8 rounded-lg text-[13px] font-bold transition-all bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={e => { e.stopPropagation(); onBuyNow(product); }}
+            >
+              Comprar
+            </button>
+          </div>
         </div>
       </div>
     </article>
