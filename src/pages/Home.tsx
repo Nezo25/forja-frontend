@@ -94,13 +94,19 @@ export default function Home() {
           </div>
         </div>
 
-        {activeProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ color: '#6B7280' }}>
-            <div className="text-5xl">🔍</div>
-            <div className="text-base font-semibold">Nenhum produto encontrado</div>
-            <div className="text-sm">Tente ajustar os filtros ou a busca</div>
-          </div>
-        ) : (
+        {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4" style={{ color: '#6B7280' }}>
+              <div className="animate-spin text-4xl text-orange-500 border-4 border-t-orange-500 border-orange-500/20 rounded-full w-12 h-12"></div>
+              <div className="text-base font-semibold">Conectando ao banco de dados...</div>
+              <div className="text-xs max-w-sm text-center">O plano gratuito do Render pode levar até 50 segundos para acordar na primeira vez.</div>
+            </div>
+          ) : activeProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ color: '#6B7280' }}>
+              <div className="text-5xl">🔍</div>
+              <div className="text-base font-semibold">Nenhum produto encontrado</div>
+              <div className="text-sm">Tente ajustar os filtros ou a busca</div>
+            </div>
+          ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {activeProducts.map(p => (
               <ProductCard key={p.id} product={p} onConfigure={setConfigProduct} />
