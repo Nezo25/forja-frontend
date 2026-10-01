@@ -46,7 +46,7 @@ export default function Home() {
       if (filters.scales.length > 0 && !filters.scales.some(s => p.scales.includes(s))) return false;
       return true;
     });
-  }, [search, filters]);
+  }, [products, search, filters]);
 
   function addToCart(item: CartItem) {
     setCart(prev => {
