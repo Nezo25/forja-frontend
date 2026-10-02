@@ -32,6 +32,7 @@ export interface Filament {
   material: string;
   stockGrams: number;
   minStockGrams: number;
+  hexCode?: string;
 }
 
 const STORAGE_KEYS = {
@@ -308,7 +309,7 @@ export async function fetchRemoteFilaments(): Promise<Filament[]> {
   return getStoredFilaments();
 }
 
-export async function saveFilament(data: { color: string; material: string; stockGrams: number; minStockGrams: number }): Promise<Filament> {
+export async function saveFilament(data: { color: string; material: string; stockGrams: number; minStockGrams: number; hexCode?: string }): Promise<Filament> {
   const current = getStoredFilaments();
   const newFilament: Filament = {
     id: 'fil_' + Date.now(),
@@ -316,6 +317,7 @@ export async function saveFilament(data: { color: string; material: string; stoc
     material: data.material.trim(),
     stockGrams: data.stockGrams || 0,
     minStockGrams: data.minStockGrams || 300,
+    hexCode: data.hexCode,
   };
 
   const updated = [newFilament, ...current];

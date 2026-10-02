@@ -439,7 +439,16 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 
 // ------------------- MODAL: FILAMENTO -------------------
 function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: Filament) => void }) {
-  const [form, setForm] = useState({ color: '', material: 'PLA', stockG: '1000', minStockG: '300' });
+  const [form, setForm] = useState({ color: '', material: 'PLA', stockG: '1000', minStockG: '300', hexCode: '#f97316' });
+  const presetColors = [
+    { label: 'Azul Gyarados', hex: '#2563EB' },
+    { label: 'Vermelho Charizard', hex: '#DC2626' },
+    { label: 'Roxo Gengar', hex: '#7C3AED' },
+    { label: 'Amarelo Pikachu', hex: '#EAB308' },
+    { label: 'Verde Bulbasaur', hex: '#16A34A' },
+    { label: 'Preto Fosco', hex: '#1F2937' },
+    { label: 'Branco Seda', hex: '#F3F4F6' }
+  ];
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSave(e: React.FormEvent) {
@@ -454,7 +463,8 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
         color: form.color.trim(),
         material: form.material.trim(),
         stockGrams: parseFloat(form.stockG) || 0,
-        minStockGrams: parseFloat(form.minStockG) || 300
+        minStockGrams: parseFloat(form.minStockG) || 300,
+        hexCode: form.hexCode
       });
 
       toast.show({
@@ -487,6 +497,19 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
           </div>
           <div className="p-5 flex flex-col gap-4">
             <Field label="Cor *"><Input required placeholder="Ex: Vermelho Charizard" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} /></Field>
+            <Field label="Cor Visual (Hex)">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <input type="color" value={form.hexCode} onChange={e => setForm(f => ({ ...f, hexCode: e.target.value }))} className="w-12 h-10 rounded cursor-pointer bg-transparent border-0 p-0" />
+                  <Input placeholder="#f97316" value={form.hexCode} onChange={e => setForm(f => ({ ...f, hexCode: e.target.value }))} className="flex-1 font-mono uppercase" />
+                </div>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {presetColors.map(c => (
+                    <button key={c.hex} type="button" onClick={() => setForm(f => ({ ...f, hexCode: c.hex }))} className="w-6 h-6 rounded-full border border-gray-600 transition-transform hover:scale-110" style={{ backgroundColor: c.hex }} title={c.label} />
+                  ))}
+                </div>
+              </div>
+            </Field>
             <Field label="Material *">
               <select value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
                 {['PLA','Resina','PETG','ABS'].map(m => <option key={m}>{m}</option>)}
@@ -1174,8 +1197,8 @@ export default function Admin() {
                   return (
                     <div key={f.id || f.color} className="p-4 rounded-xl flex flex-col gap-2 shadow-lg bg-gray-800/80" style={{ border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
                       <div className="flex items-center justify-between">
-                        <div className="font-semibold text-sm text-gray-100">
-                          {f.color} <span className="text-[11px] font-normal text-gray-400">({f.material})</span>
+                        <div className="font-semibold text-sm text-gray-100 flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full border border-gray-600" style={{ backgroundColor: f.hexCode || '#f97316' }} /> {f.color} <span className="text-[11px] font-normal text-gray-400">({f.material})</span>
                         </div>
                         <div className="flex items-center gap-3">
                           {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400">⚠ Estoque baixo</span>}
@@ -1207,7 +1230,7 @@ export default function Admin() {
                         </div>
                       </div>
                       <div className="h-2.5 rounded-full bg-gray-900">
-                        <div className="h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: low ? '#EF4444' : '#F97316' }} />
+                        <div className="h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: low ? '#EF4444' : (f.hexCode || '#F97316') }} />
                       </div>
                       <div className="text-[11px] text-gray-400 flex items-center justify-between">
                         <span>Mínimo recomendado: {minStock} g</span>
