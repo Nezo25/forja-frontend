@@ -818,12 +818,8 @@ export default function Admin() {
         style={{ width: 220, background: '#111827', borderRight: '1px solid #1F2937' }}
       >
         <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-800">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a10 10 0 0 1 10 10H2A10 10 0 0 1 12 2z" />
-              <path d="M12 22a10 10 0 0 1-10-10h20a10 10 0 0 1-10 10z" />
-              <circle cx="12" cy="12" r="3" fill="#0B0F19" stroke="white" />
-            </svg>
+          <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+            <img src="/images/logo.png" alt="Forja Admin" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="font-extrabold text-[14px] text-gray-100">Forja Admin</div>
@@ -1207,21 +1203,21 @@ export default function Admin() {
                           <div className="flex items-center gap-1 ml-2">
                             <button 
                               onClick={() => handleFilamentStockChange(f, -100)}
-                              className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 text-xs font-bold text-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                              className="px-2 h-7 rounded bg-gray-700/50 hover:bg-gray-700/80 text-[11px] font-bold text-gray-300 flex items-center justify-center transition-colors cursor-pointer"
                               title="Remover 100g"
                             >
-                              -100
+                              - 100g
                             </button>
                             <button 
                               onClick={() => handleFilamentStockChange(f, 250)}
-                              className="px-2 h-7 rounded bg-orange-500/20 hover:bg-orange-500/30 text-xs font-bold text-orange-400 flex items-center justify-center transition-colors cursor-pointer"
+                              className="px-2 h-7 rounded bg-orange-500/20 hover:bg-orange-500/30 text-[11px] font-bold text-orange-400 flex items-center justify-center transition-colors cursor-pointer"
                               title="Adicionar carretel 250g"
                             >
                               +250g
                             </button>
                             <button 
                               onClick={() => handleDeleteFilament(f)}
-                              className="w-7 h-7 rounded bg-red-900/40 hover:bg-red-900/60 text-xs font-bold text-red-400 flex items-center justify-center transition-colors cursor-pointer ml-1"
+                              className="px-2 h-7 rounded bg-red-900/40 hover:bg-red-900/60 text-[11px] font-bold text-red-400 flex items-center justify-center transition-colors cursor-pointer ml-1"
                               title="Deletar bobina"
                             >
                               🗑
@@ -1273,34 +1269,26 @@ export default function Admin() {
       {showNewModal && (
         <ProductModal 
           onClose={() => setShowNewModal(false)} 
-          onSave={newP => {
-            setCatalog(prev => [newP, ...prev.filter(x => x.id !== newP.id)]);
-          }} 
+          onSave={() => {}} 
         />
       )}
       {editingProduct && (
         <ProductModal 
           initialData={editingProduct} 
           onClose={() => setEditingProduct(null)} 
-          onSave={updatedP => {
-            setCatalog(prev => prev.map(x => x.id === updatedP.id ? updatedP : x));
-          }} 
+          onSave={() => {}} 
         />
       )}
       {showNewOrderModal && (
         <OrderModal
           onClose={() => setShowNewOrderModal(false)}
-          onSave={newO => {
-            setOrders(prev => [newO, ...prev]);
-          }}
+          onSave={() => {}}
         />
       )}
       {showNewFilamentModal && (
         <FilamentModal 
           onClose={() => setShowNewFilamentModal(false)} 
-          onSave={newF => {
-            setFilamentos(prev => [newF, ...prev]);
-          }} 
+          onSave={() => {}} 
         />
       )}
       {answeringQuote && (

@@ -20,15 +20,8 @@ export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Prop
         
         {/* Logo */}
         <Link to="/" className={`flex items-center gap-2.5 shrink-0 ${searchFocused ? 'hidden md:flex' : 'flex'}`}>
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              {/* Pokeball top curve */}
-              <path d="M12 2a10 10 0 0 1 10 10H2A10 10 0 0 1 12 2z" />
-              {/* Pokeball bottom curve / anvil base */}
-              <path d="M12 22a10 10 0 0 1-10-10h20a10 10 0 0 1-10 10z" />
-              {/* Center button */}
-              <circle cx="12" cy="12" r="3" fill="#0B0F19" stroke="white" />
-            </svg>
+          <div className="w-9 h-9 shrink-0 flex items-center justify-center">
+            <img src="/images/logo.png" alt="Forja do Chico" className="w-full h-full object-contain" />
           </div>
           <span className="font-extrabold text-[15px] leading-tight text-white hidden sm:block">
             Forja do Chico

@@ -331,7 +331,8 @@ export async function saveFilament(data: { color: string; material: string; stoc
         material: data.material.trim(),
         stockGrams: data.stockGrams || 0,
         minStockGrams: data.minStockGrams || 300,
-      })
+          hexCode: data.hexCode
+        })
     });
     if (saved?.id) {
       newFilament.id = saved.id.toString();
