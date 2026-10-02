@@ -167,7 +167,7 @@ export const products: Product[] = [
   },
 ];
 
-export const TYPE_COLORS: Record<PokemonType, { text: string; bg: string }> = {
+export const TYPE_COLORS: Record<PokemonType, { text: string; bg: string; border?: string }> = {
   Normal:    { text: '#A8A29E', bg: 'rgba(168,162,158,0.15)' },
   Fogo:      { text: '#EF4444', bg: 'rgba(239,68,68,0.15)' },
   Água:      { text: '#3B82F6', bg: 'rgba(59,130,246,0.15)' },
@@ -183,7 +183,7 @@ export const TYPE_COLORS: Record<PokemonType, { text: string; bg: string }> = {
   Pedra:     { text: '#B45309', bg: 'rgba(180,83,9,0.15)' },
   Fantasma:  { text: '#6366F1', bg: 'rgba(99,102,241,0.15)' },
   Dragão:    { text: '#4F46E5', bg: 'rgba(79,70,229,0.15)' },
-  Escuridão: { text: '#374151', bg: 'rgba(55,65,81,0.2)' },
+  Escuridão: { text: '#C7D2FE', bg: '#312E81', border: '#4338CA' },
   Metálico:  { text: '#94A3B8', bg: 'rgba(148,163,184,0.15)' },
   Fada:      { text: '#F472B6', bg: 'rgba(244,114,182,0.15)' },
 };

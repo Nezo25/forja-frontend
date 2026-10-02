@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Product } from '@/data/products';
+import { TYPE_COLORS } from '@/data/products';
 import { TypeBadge } from './TypeBadge';
 
 interface Props {

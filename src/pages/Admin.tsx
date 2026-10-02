@@ -441,13 +441,29 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: Filament) => void }) {
   const [form, setForm] = useState({ color: '', material: 'PLA', stockG: '1000', minStockG: '300', hexCode: '#f97316' });
   const presetColors = [
-    { label: 'Azul Gyarados', hex: '#2563EB' },
+    // Básicos
+    { label: 'Preto Fosco', hex: '#18181B' },
+    { label: 'Branco Seda', hex: '#FAFAFA' },
+    { label: 'Cinza Prata', hex: '#94A3B8' },
+    { label: 'Grafite', hex: '#334155' },
+    // Fogo & Quentes
     { label: 'Vermelho Charizard', hex: '#DC2626' },
-    { label: 'Roxo Gengar', hex: '#7C3AED' },
-    { label: 'Amarelo Pikachu', hex: '#EAB308' },
+    { label: 'Laranja Charmander', hex: '#F97316' },
+    { label: 'Dourado/Amarelo', hex: '#EAB308' },
+    { label: 'Cobre Metálico', hex: '#B45309' },
+    // Água & Frio
+    { label: 'Azul Gyarados', hex: '#2563EB' },
+    { label: 'Ciano Ártico', hex: '#06B6D4' },
+    { label: 'Azul Marinho', hex: '#1E3A8A' },
+    // Natureza
     { label: 'Verde Bulbasaur', hex: '#16A34A' },
-    { label: 'Preto Fosco', hex: '#1F2937' },
-    { label: 'Branco Seda', hex: '#F3F4F6' }
+    { label: 'Verde Oliva', hex: '#4D7C0F' },
+    { label: 'Esmeralda', hex: '#059669' },
+    // Especiais / Místicos
+    { label: 'Roxo Gengar', hex: '#7C3AED' },
+    { label: 'Rosa Fada', hex: '#EC4899' },
+    { label: 'Bege/Nude Primer', hex: '#D4B996' },
+    { label: 'Marrom Madeira', hex: '#78350F' }
   ];
   const [isSaving, setIsSaving] = useState(false);
 
