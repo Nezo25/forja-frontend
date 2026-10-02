@@ -21,13 +21,28 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(getStoredProducts().length === 0);
 
   useEffect(() => {
-    fetchRemoteProducts().then(res => {
-        setProducts(res);
-        setIsLoading(false);
+    let mounted = true;
+    
+    fetchRemoteProducts()
+      .then(res => {
+        if (mounted) setProducts(res);
+      })
+      .catch(err => {
+        console.error('Falha ao carregar catálogo remoto', err);
+        if (mounted) setProducts(getStoredProducts());
+      })
+      .finally(() => {
+        if (mounted) setIsLoading(false);
       });
-    const handleUpdate = () => setProducts(getStoredProducts());
+
+    const handleUpdate = () => {
+      if (mounted) setProducts(getStoredProducts());
+    };
     window.addEventListener('forja_products_updated', handleUpdate);
-    return () => window.removeEventListener('forja_products_updated', handleUpdate);
+    return () => {
+      mounted = false;
+      window.removeEventListener('forja_products_updated', handleUpdate);
+    };
   }, []);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<Filters>({ categories: [], types: [], scales: [], finishes: [] });
@@ -101,14 +116,49 @@ export default function Home() {
       <Hero onOrcamento={() => setOrcamentoOpen(true)} />
 
       {/* Control Bar */}
-      <div className="sticky top-16 z-40 bg-[#0B0F19]/95 backdrop-blur-md border-b border-gray-800 py-3 px-4 md:px-8">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-          <div className="text-sm text-gray-400">
-            <span className="font-bold text-gray-200">{activeProducts.length}</span> produtos
+      <div className="sticky top-16 z-40 bg-[#0B0F19]/95 backdrop-blur-md border-b border-gray-800 py-3">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between gap-4">
+          
+          {/* Categorias - Quick Nav */}
+          <div className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1 -mb-1">
+            <button
+              onClick={() => {
+                setFilters(prev => ({ ...prev, categories: [] }));
+              }}
+              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-colors border ${
+                filters.categories.length === 0 
+                  ? 'bg-orange-500/20 border-orange-500 text-orange-500' 
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Todas
+            </button>
+            {['Figures Pokémon', 'Dioramas e Cenários', 'Chibis / Miniaturas', 'Acessórios & Colecionáveis'].map(cat => (
+              <button
+                key={cat}
+                onClick={() => {
+                  setFilters(prev => {
+                    let newTypes = prev.types;
+                    if (cat !== 'Figures Pokémon') {
+                      newTypes = [];
+                    }
+                    return { ...prev, categories: [cat], types: newTypes };
+                  });
+                }}
+                className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-colors border ${
+                  filters.categories.includes(cat)
+                    ? 'bg-orange-500/20 border-orange-500 text-orange-500' 
+                    : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
+
           <button 
             onClick={() => setFilterDrawerOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-sm font-semibold transition-colors border border-gray-700"
+            className="shrink-0 flex items-center gap-2 px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-full text-sm font-semibold transition-colors border border-gray-700"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Filtros {activeFiltersCount > 0 && <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-md">{activeFiltersCount}</span>}

@@ -20,11 +20,15 @@ export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Prop
         
         {/* Logo */}
         <Link to="/" className={`flex items-center gap-2.5 shrink-0 ${searchFocused ? 'hidden md:flex' : 'flex'}`}>
-          <div className="w-9 h-9 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
-            {/* Tenta carregar a imagem, se falhar ou demorar tem um fallback SVG bonito de bigorna/fogo */}
-            <object data="/logo.png?v=1790886146024" type="image/png" className="w-full h-full object-cover">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2c-3.3 0-6 2.7-6 6 0 3 2 5.5 5 7.6.3.2.7.2 1 0 3-2.1 5-4.6 5-7.6 0-3.3-2.7-6-6-6z"/><path d="M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
-            </object>
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {/* Pokeball top curve */}
+              <path d="M12 2a10 10 0 0 1 10 10H2A10 10 0 0 1 12 2z" />
+              {/* Pokeball bottom curve / anvil base */}
+              <path d="M12 22a10 10 0 0 1-10-10h20a10 10 0 0 1-10 10z" />
+              {/* Center button */}
+              <circle cx="12" cy="12" r="3" fill="#0B0F19" stroke="white" />
+            </svg>
           </div>
           <span className="font-extrabold text-[15px] leading-tight text-white hidden sm:block">
             Forja do Chico

@@ -32,7 +32,7 @@ export function ProductCard({ product, onConfigure, onBuyNow }: Props) {
       onClick={() => onConfigure(product)}
     >
       {/* Image */}
-      <div className="relative overflow-hidden aspect-[4/5]" style={{ background: '#111827' }}>
+      <div className="relative overflow-hidden aspect-square" style={{ background: '#111827' }}>
         <img
           src={product.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'}
           alt={product.name}
@@ -65,8 +65,8 @@ export function ProductCard({ product, onConfigure, onBuyNow }: Props) {
       </div>
 
       {/* Body */}
-      <div className="flex flex-col gap-2 p-4 flex-1">
-        <h3 className="font-bold text-[15px] leading-tight" style={{ color: '#F9FAFB' }}>{product.name}</h3>
+      <div className="flex flex-col gap-2 p-3 md:p-4 flex-1">
+        <h3 className="font-bold text-[14px] md:text-[15px] leading-tight line-clamp-2" style={{ color: '#F9FAFB' }}>{product.name}</h3>
 
         <div className="flex flex-wrap gap-1 mt-0.5">
           {(product.scales || ['1:10']).map((s, idx) => (
@@ -79,7 +79,7 @@ export function ProductCard({ product, onConfigure, onBuyNow }: Props) {
         <div className="mt-auto pt-3 flex flex-col gap-2">
           <div className="flex items-end justify-between">
             <div>
-              <div className="text-[10px] uppercase tracking-wide font-medium" style={{ color: '#6B7280' }}>a partir de</div>
+              <div className="text-[9px] md:text-[10px] uppercase tracking-wide font-medium" style={{ color: '#6B7280' }}>a partir de</div>
               <div className="text-[18px] font-extrabold" style={{ color: '#F97316' }}>
                 R$ {lowestPrice.toFixed(2).replace('.', ',')}
               </div>
@@ -88,14 +88,14 @@ export function ProductCard({ product, onConfigure, onBuyNow }: Props) {
           
           <div className="grid grid-cols-2 gap-2 mt-1">
             <button
-              className="h-8 rounded-lg text-[13px] font-bold transition-all border border-slate-700 hover:border-slate-600 hover:bg-slate-800"
+              className="h-9 rounded-lg text-xs md:text-sm font-bold transition-all border border-slate-700 hover:border-slate-600 hover:bg-slate-800"
               style={{ color: '#F9FAFB' }}
               onClick={e => { e.stopPropagation(); onConfigure(product); }}
             >
               Personalizar
             </button>
             <button
-              className="h-8 rounded-lg text-[13px] font-bold transition-all bg-orange-500 hover:bg-orange-600 text-white"
+              className="h-9 rounded-lg text-xs md:text-sm font-bold transition-all bg-orange-500 hover:bg-orange-600 text-white"
               onClick={e => { e.stopPropagation(); onBuyNow(product); }}
             >
               Comprar

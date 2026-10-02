@@ -8,32 +8,48 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   const url = `${baseUrl}${path}`;
 
   const token = typeof window !== 'undefined' ? sessionStorage.getItem('__adm_token') : null;
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...options?.headers,
-    },
-  });
+  
+  // AbortController para evitar requests infinitos no Safari
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos
 
-  if (!response.ok) {
-    let errorMsg = `Erro ${response.status}: ${response.statusText || 'Falha na requisição'}`;
-    try {
-      const text = await response.text();
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: options?.signal || controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...options?.headers,
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      let errorMsg = `Erro ${response.status}: ${response.statusText || 'Falha na requisição'}`;
       try {
-        const json = JSON.parse(text);
-        if (json.message) errorMsg = json.message;
-        else if (json.error) errorMsg = json.error;
+        const text = await response.text();
+        try {
+          const json = JSON.parse(text);
+          if (json.message) errorMsg = json.message;
+          else if (json.error) errorMsg = json.error;
+        } catch {
+          if (text && text.length < 200) errorMsg += ` - ${text}`;
+        }
       } catch {
-        if (text && text.length < 200) errorMsg += ` - ${text}`;
+        // ignore
       }
-    } catch {
-      // ignore
+      throw new Error(errorMsg);
     }
-    throw new Error(errorMsg);
-  }
 
-  const text = await response.text();
-  return text ? JSON.parse(text) : {} as T;
+    const text = await response.text();
+    return text ? JSON.parse(text) : {} as T;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('A requisição demorou muito e foi cancelada (Timeout de 8s).');
+    }
+    throw error;
+  }
 }

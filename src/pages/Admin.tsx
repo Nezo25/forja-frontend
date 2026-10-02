@@ -339,7 +339,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             <div className="grid grid-cols-2 gap-3">
               <Field label="Categoria">
                 <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as Category }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
-                  {['Figures Pokémon','Dioramas','Chibis','Acessórios'].map(c => <option key={c}>{c}</option>)}
+                  {ALL_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                 </select>
               </Field>
               <Field label="Tipos de Pokémon (Múltipla escolha)">
@@ -795,7 +795,13 @@ export default function Admin() {
         style={{ width: 220, background: '#111827', borderRight: '1px solid #1F2937' }}
       >
         <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-800">
-          <img src="/logo.png?v=1790886146023" alt="Forja Admin" className="w-10 h-10 rounded-lg object-cover bg-orange-500/20" />
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a10 10 0 0 1 10 10H2A10 10 0 0 1 12 2z" />
+              <path d="M12 22a10 10 0 0 1-10-10h20a10 10 0 0 1-10 10z" />
+              <circle cx="12" cy="12" r="3" fill="#0B0F19" stroke="white" />
+            </svg>
+          </div>
           <div>
             <div className="font-extrabold text-[14px] text-gray-100">Forja Admin</div>
             <button 
