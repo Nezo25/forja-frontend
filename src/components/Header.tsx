@@ -1,3 +1,4 @@
+import { LOGO_BASE64 } from '../logo-base64';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { CartItem } from '@/data/products';
@@ -21,7 +22,7 @@ export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Prop
         {/* Logo */}
         <Link to="/" className={`flex items-center gap-2.5 shrink-0 ${searchFocused ? 'hidden md:flex' : 'flex'}`}>
           <div className="w-9 h-9 shrink-0 flex items-center justify-center">
-            <img src="/images/logo.png" alt="Forja do Chico" className="w-full h-full object-contain" />
+            <img src={LOGO_BASE64} alt="Forja do Chico" className="w-full h-full object-contain" />
           </div>
           <span className="font-extrabold text-[15px] leading-tight text-white hidden sm:block">
             Forja do Chico

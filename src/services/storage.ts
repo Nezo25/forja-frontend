@@ -275,6 +275,7 @@ export function getStoredFilaments(): Filament[] {
           material: f.material || f.materialType || 'PLA',
           stockGrams: typeof f.stockGrams === 'number' ? f.stockGrams : (parseFloat(f.stockGrams) || 0),
           minStockGrams: typeof f.minStockGrams === 'number' ? f.minStockGrams : 300,
+          hexCode: f.hexCode,
         }));
       }
     }
@@ -299,7 +300,8 @@ export async function fetchRemoteFilaments(): Promise<Filament[]> {
         material: f.material || f.materialType || 'PLA',
         stockGrams: parseFloat(f.stockGrams) || 0,
         minStockGrams: parseFloat(f.minStockGrams) || 300,
-      }));
+          hexCode: f.hexCode,
+        }));
       saveFilamentsToStorage(mapped);
       return mapped;
     }

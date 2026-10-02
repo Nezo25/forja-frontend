@@ -1,3 +1,4 @@
+import { LOGO_BASE64 } from '../logo-base64';
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -819,7 +820,7 @@ export default function Admin() {
       >
         <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-800">
           <div className="w-10 h-10 shrink-0 flex items-center justify-center">
-            <img src="/images/logo.png" alt="Forja Admin" className="w-full h-full object-contain" />
+            <img src={LOGO_BASE64} alt="Forja Admin" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="font-extrabold text-[14px] text-gray-100">Forja Admin</div>
