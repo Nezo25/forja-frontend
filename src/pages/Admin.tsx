@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { Product, Category, PokemonType } from '@/data/products';
-import { ALL_TYPES } from '@/data/products';
+import { ALL_TYPES, ALL_CATEGORIES } from '@/data/products';
 import { TypeBadge } from '@/components/TypeBadge';
 import { toast } from '@/components/Toast';
 import { fetchApi } from '@/api/client';
