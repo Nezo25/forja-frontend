@@ -3,8 +3,10 @@ export type PokemonType =
   | 'Lutador' | 'Veneno' | 'Terra' | 'Voador' | 'Psíquico' | 'Inseto'
   | 'Pedra' | 'Fantasma' | 'Dragão' | 'Escuridão' | 'Metálico' | 'Fada';
 
-export type Category = 'Figures Pokémon' | 'Figures' | 'Dioramas e Cenários' | 'Chibis / Miniaturas' | 'Acessórios & Colecionáveis' | 'TCG';
-export type Scale = '1:10' | '1:1' | 'Chibi' | 'Diorama';
+export type PrintCategory = 'Figures Pokémon' | 'Dioramas e Cenários' | 'Chibis / Miniaturas' | 'Acessórios Geek 3D' | 'Acessórios TCG (3D)';
+export type TcgCategory = 'Booster Avulso' | 'Booster Box' | 'ETB' | 'Blister' | 'Deck' | 'Acessório Oficial';
+export type Category = PrintCategory | TcgCategory | 'Figures' | 'Acessórios & Colecionáveis' | 'TCG';
+export type Scale = 'Mini (5 cm)' | 'Padrão (10 cm)' | 'Grande (20 cm)' | 'Escala 1:10 (~15 cm)' | 'Escala 1:1 (Real)';
 export type Finish = 'Peça Crua' | 'Com Primer' | 'Pintado à Mão';
 export type Material = 'PLA' | 'Resina';
 
@@ -59,7 +61,7 @@ export const products: Product[] = [
     name: 'Gengar Sorridente',
     category: 'Figures Pokémon',
     types: ['Fantasma'],
-    scales: ['1:10', 'Chibi'],
+    scales: ['Escala 1:10 (~15 cm)', 'Grande (20 cm)'],
     materials: ['PLA', 'Resina'],
     basePrice: 89,
     finishOptions: FINISH_OPTIONS,
@@ -74,7 +76,7 @@ export const products: Product[] = [
     name: 'Gyarados Emergindo',
     category: 'Dioramas e Cenários',
     types: ['Água', 'Dragão'],
-    scales: ['Diorama'],
+    scales: ['Mini (5 cm)', 'Padrão (10 cm)'],
     materials: ['Resina'],
     basePrice: 349,
     finishOptions: FINISH_OPTIONS,
@@ -89,7 +91,7 @@ export const products: Product[] = [
     name: 'Pikachu Thunder',
     category: 'Figures Pokémon',
     types: ['Elétrico'],
-    scales: ['1:10', 'Chibi'],
+    scales: ['Escala 1:10 (~15 cm)', 'Grande (20 cm)'],
     materials: ['PLA'],
     basePrice: 79,
     finishOptions: FINISH_OPTIONS,
@@ -117,7 +119,7 @@ export const products: Product[] = [
     name: 'Bulbasaur Chibi',
     category: 'Chibis / Miniaturas',
     types: ['Planta'],
-    scales: ['Chibi'],
+    scales: ['Mini (5 cm)', 'Padrão (10 cm)'],
     materials: ['PLA'],
     basePrice: 55,
     finishOptions: FINISH_OPTIONS,
@@ -131,7 +133,7 @@ export const products: Product[] = [
     name: 'Garchomp Diorama',
     category: 'Dioramas e Cenários',
     types: ['Dragão'],
-    scales: ['Diorama'],
+    scales: ['Mini (5 cm)', 'Padrão (10 cm)'],
     materials: ['Resina'],
     basePrice: 419,
     finishOptions: FINISH_OPTIONS,
@@ -159,7 +161,7 @@ export const products: Product[] = [
     name: 'Dialga Lendário',
     category: 'Figures Pokémon',
     types: ['Metálico', 'Dragão'],
-    scales: ['1:10'],
+    scales: ['Escala 1:10 (~15 cm)', 'Grande (20 cm)'],
     materials: ['Resina'],
     basePrice: 289,
     finishOptions: FINISH_OPTIONS,
@@ -197,8 +199,8 @@ export const ALL_TYPES: PokemonType[] = [
   'Pedra', 'Fantasma', 'Dragão', 'Escuridão', 'Metálico', 'Fada'
 ];
 
-export const ALL_CATEGORIES: Category[] = ['Figures Pokémon', 'Figures', 'Dioramas e Cenários', 'Chibis / Miniaturas', 'Acessórios & Colecionáveis', 'TCG'];
-export const ALL_SCALES: Scale[] = ['1:10','1:1','Chibi','Diorama'];
+export const ALL_CATEGORIES: Category[] = ['Figures Pokémon', 'Dioramas e Cenários', 'Chibis / Miniaturas', 'Acessórios Geek 3D', 'Acessórios TCG (3D)'];
+export const ALL_SCALES: Scale[] = ['Mini (5 cm)', 'Padrão (10 cm)', 'Grande (20 cm)', 'Escala 1:10 (~15 cm)', 'Escala 1:1 (Real)'];
 export const ALL_FINISHES: Finish[] = ['Peça Crua','Com Primer','Pintado à Mão'];
 
 export interface CartItem {

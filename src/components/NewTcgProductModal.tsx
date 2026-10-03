@@ -86,15 +86,16 @@ export function NewTcgProductModal({ onClose, onSave, initialData }: NewTcgProdu
       });
 
       if (!res.ok) {
-        throw new Error('Falha ao salvar produto TCG');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || errData.message || 'Falha ao salvar produto TCG');
       }
 
       toast.show({ title: 'Sucesso!', message: 'Produto TCG cadastrado com sucesso!', type: 'success' });
       onSave(); // Trigger parent refresh
       onClose(); // Close modal
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.show({ title: 'Erro de Servidor', message: 'Houve um erro ao processar a requisição.', type: 'error' });
+      toast.show({ title: 'Erro de Servidor', message: err.message || 'Houve um erro ao processar a requisição.', type: 'error' });
     } finally {
       setLoading(false);
     }
