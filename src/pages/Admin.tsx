@@ -905,7 +905,7 @@ export default function Admin() {
           <div className="ml-auto flex items-center gap-3">
             {section === 'catalogo' && catalogTab === '3d' && (
               <button 
-                onClick={() => catalogTab === 'tcg' ? setIsTcgModalOpen(true) : setIs3DModalOpen(true)} 
+                onClick={() => setIs3DModalOpen(true)} 
                 className="h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:opacity-90 shadow-md shadow-orange-950/40 cursor-pointer" 
                 style={{ background: '#F97316', color: '#fff' }}
               >

@@ -44,6 +44,7 @@ export default function Home() {
       window.removeEventListener('forja_products_updated', handleUpdate);
     };
   }, []);
+  const [masterTab, setMasterTab] = useState<'ALL' | 'PRINT_3D' | 'TCG'>('ALL');
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<Filters>({ categories: [], types: [], scales: [], finishes: [] });
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -59,6 +60,8 @@ export default function Home() {
         const q = search.toLowerCase();
         if (!p.name.toLowerCase().includes(q) && !p.category.toLowerCase().includes(q) && !p.types.some(t => t.toLowerCase().includes(q))) return false;
       }
+      if (masterTab === 'PRINT_3D' && p.department === 'TCG') return false;
+      if (masterTab === 'TCG' && p.department !== 'TCG') return false;
       if (filters.categories.length > 0 && !filters.categories.includes(p.category)) return false;
       if (filters.types.length > 0 && !filters.types.some(t => p.types.includes(t as any))) return false;
       if (filters.scales.length > 0 && !filters.scales.some(s => p.scales.includes(s as any))) return false;
@@ -120,42 +123,55 @@ export default function Home() {
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between gap-4">
           
           {/* Categorias - Quick Nav */}
-          <div className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1 -mb-1">
-            <button
-              onClick={() => {
-                setFilters(prev => ({ ...prev, categories: [] }));
-              }}
-              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-colors border ${
-                filters.categories.length === 0 
-                  ? 'bg-orange-500/20 border-orange-500 text-orange-500' 
-                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              Todas
-            </button>
-            {['Figures Pokémon', 'Dioramas e Cenários', 'Chibis / Miniaturas', 'Acessórios & Colecionáveis'].map(cat => (
+          <div className="flex-1 flex flex-col gap-3 overflow-x-auto no-scrollbar">
+            <div className="flex bg-gray-800/50 p-1 rounded-xl w-fit border border-gray-700/50">
+              {[
+                { id: 'ALL', label: '🔥 Todas as Criações' },
+                { id: 'PRINT_3D', label: '🖨️ Oficina 3D' },
+                { id: 'TCG', label: '🃏 TCG & Selados' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setMasterTab(tab.id as any);
+                    setFilters(prev => ({ ...prev, categories: [], types: [] }));
+                  }}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${masterTab === tab.id ? 'bg-gray-700 text-white shadow-md' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            
+            <div className="flex items-center gap-2 pb-1 -mb-1 w-max">
               <button
-                key={cat}
-                onClick={() => {
-                  setFilters(prev => {
-                    let newTypes = prev.types;
-                    if (cat !== 'Figures Pokémon') {
-                      newTypes = [];
-                    }
-                    return { ...prev, categories: [cat], types: newTypes };
-                  });
-                }}
-                className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-colors border ${
-                  filters.categories.includes(cat)
-                    ? 'bg-orange-500/20 border-orange-500 text-orange-500' 
-                    : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
-                }`}
+                onClick={() => setFilters(prev => ({ ...prev, categories: [] }))}
+                className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-colors border ${filters.categories.length === 0 ? 'bg-orange-500/20 border-orange-500 text-orange-500' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'}`}
               >
-                {cat}
+                Todas
               </button>
-            ))}
+              {(masterTab === 'TCG' ? [
+                'Booster Avulso', 'Booster Box', 'ETB', 'Blister', 'Deck', 'Acessório Oficial'
+              ] : [
+                'Figures Pokémon', 'Dioramas e Cenários', 'Chibis / Miniaturas', 'Acessórios Geek 3D', 'Acessórios TCG (3D)'
+              ]).map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setFilters(prev => {
+                      let newTypes = prev.types;
+                      if (cat !== 'Figures Pokémon' && cat !== 'Chibis / Miniaturas') newTypes = [];
+                      return { ...prev, categories: [cat], types: newTypes };
+                    });
+                  }}
+                  className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-colors border ${filters.categories.includes(cat as any) ? 'bg-orange-500/20 border-orange-500 text-orange-500' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'}`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
-
+          
           <button 
             onClick={() => setFilterDrawerOpen(true)}
             className="shrink-0 flex items-center gap-2 px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-full text-sm font-semibold transition-colors border border-gray-700"
@@ -167,6 +183,7 @@ export default function Home() {
       </div>
 
       <FilterDrawer 
+        masterTab={masterTab}
         open={filterDrawerOpen} 
         onClose={() => setFilterDrawerOpen(false)} 
         filters={filters as any} 

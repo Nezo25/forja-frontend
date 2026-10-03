@@ -7,9 +7,10 @@ interface Props {
   onChange: (f: Filters) => void;
   onClose: () => void;
   open: boolean;
+  masterTab?: 'ALL' | 'PRINT_3D' | 'TCG';
 }
 
-export function FilterDrawer({ filters, onChange, onClose, open }: Props) {
+export function FilterDrawer({ filters, onChange, onClose, open, masterTab = 'ALL' }: Props) {
   const { translateType } = useLanguagePreference();
 
   const toggleIn = (arr: string[], val: string) =>

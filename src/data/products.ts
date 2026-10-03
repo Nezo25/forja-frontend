@@ -16,6 +16,7 @@ export interface FinishOption {
 export interface Product {
   id: string;
   name: string;
+  department?: 'PRINT_3D' | 'TCG';
   category: Category;
   types: PokemonType[];
   scales: Scale[];
@@ -27,6 +28,8 @@ export interface Product {
   filamentG: number;
   active: boolean;
   featured?: boolean;
+  expansionName?: string;
+  stock?: number;
 }
 
 export const FINISH_OPTIONS: FinishOption[] = [

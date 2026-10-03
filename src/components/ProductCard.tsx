@@ -45,17 +45,32 @@ export function ProductCard({ product, onConfigure, onBuyNow }: Props) {
 
         {/* Tags top-left */}
         <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1">
-          {(product.types || []).map((t, idx) => <TypeBadge key={t + idx} type={t} />)}
+          {product.department === 'TCG' ? (
+            <>
+              {product.expansionName && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-900/80 text-purple-200 border border-purple-700/50 backdrop-blur-sm shadow-sm">
+                  {product.expansionName}
+                </span>
+              )}
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-900/80 text-green-400 border border-green-700/50 backdrop-blur-sm shadow-sm">
+                Pronta Entrega
+              </span>
+            </>
+          ) : (
+            (product.types || []).map((t, idx) => <TypeBadge key={t + idx} type={t} />)
+          )}
         </div>
 
         {/* Material badges top-right */}
-        <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end">
-          {(product.materials || ['PLA']).map((m, idx) => (
-            <span key={m + idx} className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: 'rgba(17,24,39,0.85)', color: '#9CA3AF', border: '1px solid #374151' }}>
-              {m}
-            </span>
-          ))}
-        </div>
+        {product.department !== 'TCG' && (
+          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end">
+            {(product.materials || ['PLA']).map((m, idx) => (
+              <span key={m + idx} className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: 'rgba(17,24,39,0.85)', color: '#9CA3AF', border: '1px solid #374151' }}>
+                {m}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Category bottom */}
         <div className="absolute bottom-2.5 left-2.5">
@@ -87,14 +102,16 @@ export function ProductCard({ product, onConfigure, onBuyNow }: Props) {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-2 mt-1">
-            <button
-              className="h-9 rounded-lg text-xs md:text-sm font-bold transition-all border border-slate-700 hover:border-slate-600 hover:bg-slate-800"
-              style={{ color: '#F9FAFB' }}
-              onClick={e => { e.stopPropagation(); onConfigure(product); }}
-            >
-              Personalizar
-            </button>
+          <div className={product.department === 'TCG' ? "grid grid-cols-1 gap-2 mt-1" : "grid grid-cols-2 gap-2 mt-1"}>
+            {product.department !== 'TCG' && (
+              <button
+                className="h-9 rounded-lg text-xs md:text-sm font-bold transition-all border border-slate-700 hover:border-slate-600 hover:bg-slate-800"
+                style={{ color: '#F9FAFB' }}
+                onClick={e => { e.stopPropagation(); onConfigure(product); }}
+              >
+                Personalizar
+              </button>
+            )}
             <button
               className="h-9 rounded-lg text-xs md:text-sm font-bold transition-all bg-orange-500 hover:bg-orange-600 text-white"
               onClick={e => { e.stopPropagation(); onBuyNow(product); }}
