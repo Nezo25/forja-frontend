@@ -680,22 +680,7 @@ export default function Admin() {
 
   // Carrega diretamente da API em produção
   
-  async function handleSaveTcg(p) {
-    // using fetchApi or similar if needed. Actually let's just do:
-    // Actually wait, how do they save products?
-    // Let's look at getStoredProducts
-    const current = JSON.parse(localStorage.getItem('forja_products') || '[]');
-    const isEdit = current.find(x => x.id === p.id);
-    if(isEdit) {
-       localStorage.setItem('forja_products', JSON.stringify(current.map(x => x.id === p.id ? p : x)));
-    } else {
-       localStorage.setItem('forja_products', JSON.stringify([p, ...current]));
-    }
-    // refresh the state
-    setCatalog(JSON.parse(localStorage.getItem('forja_products')));
-    setShowNewTcgModal(false);
-    setEditingProduct(null);
-  }
+  
 
   useEffect(() => {
     setIsLoading(true);
