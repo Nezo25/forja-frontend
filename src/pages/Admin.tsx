@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { Product, Category, PokemonType } from '@/data/products';
 import { ALL_TYPES, ALL_CATEGORIES } from '@/data/products';
+import { NewTcgProductModal } from '../components/NewTcgProductModal';
 import { TypeBadge } from '@/components/TypeBadge';
 import { toast } from '@/components/Toast';
 import { fetchApi } from '@/api/client';
@@ -660,6 +661,8 @@ export default function Admin() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showNewTcgModal, setShowNewTcgModal] = useState(false);
+  const [catalogTab, setCatalogTab] = useState<'3d' | 'tcg'>('3d');
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [showNewFilamentModal, setShowNewFilamentModal] = useState(false);
   const [showApiModal, setShowApiModal] = useState(false);
@@ -667,7 +670,33 @@ export default function Admin() {
   const [answeringQuote, setAnsweringQuote] = useState<Quote | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  async function handleSaveTcg() {
+    const updated = await fetchRemoteProducts();
+    setCatalog(updated);
+    setShowNewTcgModal(false);
+    setEditingProduct(null);
+  }
+
+
   // Carrega diretamente da API em produção
+  
+  async function handleSaveTcg(p) {
+    // using fetchApi or similar if needed. Actually let's just do:
+    // Actually wait, how do they save products?
+    // Let's look at getStoredProducts
+    const current = JSON.parse(localStorage.getItem('forja_products') || '[]');
+    const isEdit = current.find(x => x.id === p.id);
+    if(isEdit) {
+       localStorage.setItem('forja_products', JSON.stringify(current.map(x => x.id === p.id ? p : x)));
+    } else {
+       localStorage.setItem('forja_products', JSON.stringify([p, ...current]));
+    }
+    // refresh the state
+    setCatalog(JSON.parse(localStorage.getItem('forja_products')));
+    setShowNewTcgModal(false);
+    setEditingProduct(null);
+  }
+
   useEffect(() => {
     setIsLoading(true);
     Promise.all([
@@ -889,13 +918,22 @@ export default function Admin() {
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            {section === 'catalogo' && (
+            {section === 'catalogo' && catalogTab === '3d' && (
               <button 
                 onClick={() => setShowNewModal(true)} 
                 className="h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:opacity-90 shadow-md shadow-orange-950/40 cursor-pointer" 
                 style={{ background: '#F97316', color: '#fff' }}
               >
                 + Nova Figure
+              </button>
+            )}
+            {section === 'catalogo' && catalogTab === 'tcg' && (
+              <button 
+                onClick={() => setShowNewTcgModal(true)} 
+                className="h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:opacity-90 shadow-md shadow-orange-950/40 cursor-pointer" 
+                style={{ background: '#F97316', color: '#fff' }}
+              >
+                + Novo Produto TCG
               </button>
             )}
             {section === 'pedidos' && (
@@ -937,12 +975,29 @@ export default function Admin() {
                     <div className="text-2xl font-extrabold text-gray-100">{k.value}</div>
                     <div className="text-[11px] text-gray-400">{k.label}</div>
                   </div>
+
+    
                 ))}
+              </div>
+              {/* TABS */}
+              <div className="flex gap-4 border-b border-gray-700 mb-4">
+                <button 
+                  onClick={() => setCatalogTab('3d')}
+                  className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors ${catalogTab === '3d' ? 'border-orange-500 text-orange-500' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+                >
+                  Impressões 3D
+                </button>
+                <button 
+                  onClick={() => setCatalogTab('tcg')}
+                  className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors ${catalogTab === 'tcg' ? 'border-orange-500 text-orange-500' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+                >
+                  TCG & Selados
+                </button>
               </div>
 
               {/* Table */}
               <div className="rounded-xl overflow-hidden shadow-xl border border-gray-700/80">
-                {catalog.length === 0 ? (
+                {catalog.filter(p => catalogTab === 'tcg' ? p.category === 'TCG' : p.category !== 'TCG').length === 0 ? (
                   <div className="py-16 px-4 text-center flex flex-col items-center justify-center gap-3 bg-[#111827]">
                     <div className="text-4xl">📦</div>
                     <h3 className="font-extrabold text-base text-gray-200">Nenhum produto cadastrado no banco</h3>
@@ -960,13 +1015,13 @@ export default function Admin() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-gray-800 border-b border-gray-700">
-                          {['Produto','Categoria','Tipos','Escalas','Tempo','Filamento','Preço','Status','Ações'].map(h => (
+                          {(catalogTab === '3d' ? ['Produto','Categoria','Tipos','Escalas','Tempo','Filamento','Preço','Status','Ações'] : ['Produto','Coleção','Idioma','Estoque','Preço','Status','Ações']).map(h => (
                             <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {catalog.map((p, i) => (
+                        {catalog.filter(p => catalogTab === 'tcg' ? p.category === 'TCG' : p.category !== 'TCG').map((p, i) => (
                           <tr key={p.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-3">
@@ -1267,7 +1322,7 @@ export default function Admin() {
               </div>
 
               <div className="flex flex-col gap-2">
-                {catalog.length === 0 ? (
+                {catalog.filter(p => catalogTab === 'tcg' ? p.category === 'TCG' : p.category !== 'TCG').length === 0 ? (
                   <div className="py-12 text-center text-xs text-gray-400 bg-[#111827] rounded-xl border border-gray-800">
                     Nenhuma figure cadastrada para ajuste de preço.
                   </div>
@@ -1283,6 +1338,13 @@ export default function Admin() {
       </main>
 
       {/* Modais */}
+      {showNewTcgModal && (
+        <NewTcgProductModal 
+          onClose={() => setShowNewTcgModal(false)} 
+          onSave={handleSaveTcg} 
+          initialData={editingProduct || undefined}
+        />
+      )}
       {showNewModal && (
         <ProductModal 
           onClose={() => setShowNewModal(false)} 

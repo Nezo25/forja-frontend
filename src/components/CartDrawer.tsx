@@ -20,7 +20,7 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
       return;
     }
 
-    const wppNumber = '5511999999999'; // TO-DO: Colocar o número real da Forja do Chico
+    const wppNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511982563005';
 
     let text = `🔥 *Novo Pedido - Forja do Chico* 🔥\n\n`;
     text += `👤 *Cliente:* ${name}\n`;
