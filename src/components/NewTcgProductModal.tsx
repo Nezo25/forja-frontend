@@ -151,11 +151,11 @@ export function NewTcgProductModal({ onClose, onSave, initialData }: NewTcgProdu
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Preço Unitário de Venda (R$) *</label>
-                <input required type="number" step="0.01" min="0" value={form.price || ''} onChange={e => setForm(f => ({...f, price: parseFloat(e.target.value)}))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-800 border border-gray-700 text-gray-100 focus:border-orange-500" />
+                <input required type="number" step="0.01" min="0" value={form.price === 0 ? '' : form.price} onChange={e => setForm(f => ({...f, price: parseFloat(e.target.value)}))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-800 border border-gray-700 text-gray-100 focus:border-orange-500" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Quantidade em Estoque (Unidades) *</label>
-                <input required type="number" min="0" step="1" value={form.stockQuantity ?? 0} onChange={e => setForm(f => ({...f, stockQuantity: parseInt(e.target.value, 10)}))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-800 border border-gray-700 text-gray-100 focus:border-orange-500" />
+                <input required type="number" min="0" step="1" value={form.stockQuantity === 0 ? '' : form.stockQuantity} onChange={e => setForm(f => ({...f, stockQuantity: parseInt(e.target.value, 10)}))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-800 border border-gray-700 text-gray-100 focus:border-orange-500" />
               </div>
             </div>
 
