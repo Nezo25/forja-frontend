@@ -50,7 +50,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-sm mx-4">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-3">
-          <img src="/logo.png" alt="Forja do Chico" className="w-14 h-14 rounded-xl object-cover" />
+          <img src="/images/logo.png" alt="Forja do Chico" className="w-14 h-14 rounded-xl object-cover" />
           <div className="text-center">
             <h1 className="text-xl font-extrabold" style={{ color: '#F9FAFB' }}>Forja do Chico</h1>
             <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Painel Administrativo</p>

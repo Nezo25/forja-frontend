@@ -660,8 +660,8 @@ export default function Admin() {
   const [filamentos, setFilamentos] = useState<Filament[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [showNewModal, setShowNewModal] = useState(false);
-  const [showNewTcgModal, setShowNewTcgModal] = useState(false);
+  const [is3DModalOpen, setIs3DModalOpen] = useState(false);
+  const [isTcgModalOpen, setIsTcgModalOpen] = useState(false);
   const [catalogTab, setCatalogTab] = useState<'3d' | 'tcg'>('3d');
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [showNewFilamentModal, setShowNewFilamentModal] = useState(false);
@@ -673,7 +673,7 @@ export default function Admin() {
   async function handleSaveTcg() {
     const updated = await fetchRemoteProducts();
     setCatalog(updated);
-    setShowNewTcgModal(false);
+    setIsTcgModalOpen(false);
     setEditingProduct(null);
   }
 
@@ -905,7 +905,7 @@ export default function Admin() {
           <div className="ml-auto flex items-center gap-3">
             {section === 'catalogo' && catalogTab === '3d' && (
               <button 
-                onClick={() => setShowNewModal(true)} 
+                onClick={() => setIs3DModalOpen(true)} 
                 className="h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:opacity-90 shadow-md shadow-orange-950/40 cursor-pointer" 
                 style={{ background: '#F97316', color: '#fff' }}
               >
@@ -914,7 +914,7 @@ export default function Admin() {
             )}
             {section === 'catalogo' && catalogTab === 'tcg' && (
               <button 
-                onClick={() => setShowNewTcgModal(true)} 
+                onClick={() => setIsTcgModalOpen(true)} 
                 className="h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:opacity-90 shadow-md shadow-orange-950/40 cursor-pointer" 
                 style={{ background: '#F97316', color: '#fff' }}
               >
@@ -988,7 +988,7 @@ export default function Admin() {
                     <h3 className="font-extrabold text-base text-gray-200">Nenhum produto cadastrado no banco</h3>
                     <p className="text-xs text-gray-400 max-w-md">Todos os dados mockados foram limpos. Seu banco está vazio e pronto para receber dados reais de produção.</p>
                     <button
-                      onClick={() => setShowNewModal(true)}
+                      onClick={() => setIs3DModalOpen(true)}
                       className="mt-2 h-9 px-4 rounded-lg text-xs font-bold text-white cursor-pointer"
                       style={{ background: '#F97316' }}
                     >
@@ -1323,16 +1323,16 @@ export default function Admin() {
       </main>
 
       {/* Modais */}
-      {showNewTcgModal && (
+      {isTcgModalOpen && (
         <NewTcgProductModal 
-          onClose={() => setShowNewTcgModal(false)} 
+          onClose={() => setIsTcgModalOpen(false)} 
           onSave={handleSaveTcg} 
           initialData={editingProduct || undefined}
         />
       )}
-      {showNewModal && (
+      {is3DModalOpen && (
         <ProductModal 
-          onClose={() => setShowNewModal(false)} 
+          onClose={() => setIs3DModalOpen(false)} 
           onSave={() => {}} 
         />
       )}

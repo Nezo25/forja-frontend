@@ -3,6 +3,7 @@ import Home from '@/pages/Home';
 import Admin from '@/pages/Admin';
 import AdminLogin from '@/pages/AdminLogin';
 import { ToastContainer } from '@/components/Toast';
+import { LanguageProvider } from '@/components/LanguageContext';
 
 function ProtectedAdmin() {
   const token = sessionStorage.getItem('__adm_token');
@@ -14,6 +15,7 @@ function ProtectedAdmin() {
 
 export default function App() {
   return (
+    <LanguageProvider>
     <BrowserRouter>
       <ToastContainer />
       <Routes>
@@ -22,5 +24,6 @@ export default function App() {
         <Route path="/admin" element={<ProtectedAdmin />} />
       </Routes>
     </BrowserRouter>
+    </LanguageProvider>
   );
 }
