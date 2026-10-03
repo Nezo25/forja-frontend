@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { Product, Category, PokemonType } from '@/data/products';
-import { ALL_TYPES, ALL_CATEGORIES } from '@/data/products';
+import { ALL_TYPES, ALL_CATEGORIES, ALL_SCALES } from '@/data/products';
 import { NewTcgProductModal } from '../components/NewTcgProductModal';
 import { TypeBadge } from '@/components/TypeBadge';
 import { toast } from '@/components/Toast';
@@ -367,7 +367,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             <div className="grid grid-cols-2 gap-3">
               <Field label="Escala">
                 <select value={form.scale} onChange={e => setForm(f => ({ ...f, scale: e.target.value as any }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
-                  {['1:10','1:1','Chibi','Diorama'].map(s => <option key={s}>{s}</option>)}
+                  {ALL_SCALES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </Field>
               <Field label="Material">
