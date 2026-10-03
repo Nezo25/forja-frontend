@@ -12,7 +12,7 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   useEffect(() => {
     const originalFetch = window.fetch;
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com';
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com';
 
     window.fetch = async (...args) => {
       try {
@@ -64,7 +64,7 @@ function MaintenanceOverlay() {
   const checkStatus = async () => {
     setChecking(true);
     try {
-      const url = `${import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com'}/api/v1/health/ping`;
+      const url = `${import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com'}/api/v1/health/ping`;
       // Use standard fetch here to avoid the interceptor loop, actually originalFetch isn't accessible here.
       // The interceptor will handle it! If it returns 200 OK, the interceptor sets isMaintenance = false.
       await fetch(url);

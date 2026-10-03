@@ -86,7 +86,7 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
 
 // ------------------- MODAL: CONFIGURAÇÃO DE CONEXÃO COM O BANCO -------------------
 function ApiConfigModal({ onClose }: { onClose: () => void }) {
-  const currentUrl = localStorage.getItem('forja_api_url') || import.meta.env.VITE_API_URL || 'https://forja-api.onrender.com/api/v1';
+  const currentUrl = localStorage.getItem('forja_api_url') || import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com/api/v1';
   const [url, setUrl] = useState(currentUrl);
   const [testing, setTesting] = useState(false);
   const [statusResult, setStatusResult] = useState<string | null>(null);
@@ -139,7 +139,7 @@ function ApiConfigModal({ onClose }: { onClose: () => void }) {
 
         <div className="py-4 flex flex-col gap-4">
           <Field label="URL do Backend / API">
-            <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://forja-api.onrender.com/api/v1" />
+            <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://forja-backend-1.onrender.com/api/v1" />
           </Field>
 
           {statusResult && (

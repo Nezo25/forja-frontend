@@ -34,7 +34,7 @@ export function StoreSettings() {
   const testConnection = async () => {
     setPingData({ status: 'loading', latency: pingData.latency });
     try {
-      const url = `${import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com'}/api/v1/health/ping`;
+      const url = `${import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com'}/api/v1/health/ping`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Bad status');
       const data = await res.json();

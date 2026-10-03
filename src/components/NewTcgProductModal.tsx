@@ -71,8 +71,8 @@ export function NewTcgProductModal({ onClose, onSave, initialData }: NewTcgProdu
       const token = localStorage.getItem('forja_token');
       // For creation, we POST. For edit, we would PUT/PATCH, but for now assuming POST for simplicity or modify if it's an edit
       const url = initialData?.id 
-          ? `${import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com'}/api/v1/admin/tcg-products/${initialData.id}`
-          : `${import.meta.env.VITE_API_URL || 'https://forja-backend.onrender.com'}/api/v1/admin/tcg-products`;
+          ? `${import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com'}/api/v1/admin/tcg-products/${initialData.id}`
+          : `${import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com'}/api/v1/admin/tcg-products`;
           
       const method = initialData?.id ? 'PUT' : 'POST';
 
