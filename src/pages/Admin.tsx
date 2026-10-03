@@ -342,7 +342,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
                   {ALL_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                 </select>
               </Field>
-              <Field label="Tipos de Pokémon (Múltipla escolha)">
+              {form.category === 'Figures Pokémon' && (<Field label="Tipos de Pokémon (Múltipla escolha)">
   <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto p-2 border border-gray-700 rounded-lg bg-gray-900">
     {ALL_TYPES.map(t => (
       <label key={t} className="flex items-center gap-1.5 cursor-pointer hover:bg-gray-800 p-1 rounded transition-colors">
@@ -359,7 +359,8 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
       </label>
     ))}
   </div>
-</Field>
+</Field>)}
+
             </div>
 
             <div className="grid grid-cols-2 gap-3">
