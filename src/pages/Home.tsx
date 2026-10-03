@@ -60,8 +60,8 @@ export default function Home() {
         if (!p.name.toLowerCase().includes(q) && !p.category.toLowerCase().includes(q) && !p.types.some(t => t.toLowerCase().includes(q))) return false;
       }
       if (filters.categories.length > 0 && !filters.categories.includes(p.category)) return false;
-      if (filters.types.length > 0 && !filters.types.some(t => p.types.includes(t))) return false;
-      if (filters.scales.length > 0 && !filters.scales.some(s => p.scales.includes(s))) return false;
+      if (filters.types.length > 0 && !filters.types.some(t => p.types.includes(t as any))) return false;
+      if (filters.scales.length > 0 && !filters.scales.some(s => p.scales.includes(s as any))) return false;
       if (filters.finishes.length > 0) return false; // Basic matching for finishes if needed, though products don't strictly have a root finish array
       return true;
     });

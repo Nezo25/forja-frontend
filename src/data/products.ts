@@ -69,7 +69,7 @@ export const products: Product[] = [
   {
     id: 'p3',
     name: 'Gyarados Emergindo',
-    category: 'Dioramas',
+    category: 'Dioramas e Cenários',
     types: ['Água', 'Dragão'],
     scales: ['Diorama'],
     materials: ['Resina'],
@@ -112,7 +112,7 @@ export const products: Product[] = [
   {
     id: 'p6',
     name: 'Bulbasaur Chibi',
-    category: 'Chibis',
+    category: 'Chibis / Miniaturas',
     types: ['Planta'],
     scales: ['Chibi'],
     materials: ['PLA'],
@@ -126,7 +126,7 @@ export const products: Product[] = [
   {
     id: 'p7',
     name: 'Garchomp Diorama',
-    category: 'Dioramas',
+    category: 'Dioramas e Cenários',
     types: ['Dragão'],
     scales: ['Diorama'],
     materials: ['Resina'],
@@ -140,7 +140,7 @@ export const products: Product[] = [
   {
     id: 'p8',
     name: 'Suporte Pokébola',
-    category: 'Acessórios',
+    category: 'Acessórios & Colecionáveis',
     types: [],
     scales: ['1:1'],
     materials: ['PLA'],
