@@ -905,7 +905,7 @@ export default function Admin() {
           <div className="ml-auto flex items-center gap-3">
             {section === 'catalogo' && catalogTab === '3d' && (
               <button 
-                onClick={() => setIs3DModalOpen(true)} 
+                onClick={() => catalogTab === 'tcg' ? setIsTcgModalOpen(true) : setIs3DModalOpen(true)} 
                 className="h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:opacity-90 shadow-md shadow-orange-950/40 cursor-pointer" 
                 style={{ background: '#F97316', color: '#fff' }}
               >
@@ -988,8 +988,8 @@ export default function Admin() {
                     <h3 className="font-extrabold text-base text-gray-200">Nenhum produto cadastrado no banco</h3>
                     <p className="text-xs text-gray-400 max-w-md">Todos os dados mockados foram limpos. Seu banco está vazio e pronto para receber dados reais de produção.</p>
                     <button
-                      onClick={() => setIs3DModalOpen(true)}
-                      className="mt-2 h-9 px-4 rounded-lg text-xs font-bold text-white cursor-pointer"
+                      onClick={() => catalogTab === 'tcg' ? setIsTcgModalOpen(true) : setIs3DModalOpen(true)}
+                        className="mt-2 h-9 px-4 rounded-lg text-xs font-bold text-white cursor-pointer"
                       style={{ background: '#F97316' }}
                     >
                       + Cadastrar Primeira Figure
@@ -1336,13 +1336,19 @@ export default function Admin() {
           onSave={() => {}} 
         />
       )}
-      {editingProduct && (
+      {editingProduct && catalogTab === 'tcg' ? (
+        <NewTcgProductModal 
+          initialData={editingProduct as any} 
+          onClose={() => setEditingProduct(null)} 
+          onSave={handleSaveTcg} 
+        />
+      ) : editingProduct ? (
         <ProductModal 
           initialData={editingProduct} 
           onClose={() => setEditingProduct(null)} 
           onSave={() => {}} 
         />
-      )}
+      ) : null}
       {showNewOrderModal && (
         <OrderModal
           onClose={() => setShowNewOrderModal(false)}
