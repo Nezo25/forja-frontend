@@ -140,15 +140,56 @@ export function saveProductsToStorage(products: Product[]): void {
 
 export async function fetchRemoteProducts(): Promise<Product[]> {
   try {
-    const data: any = await fetchApi('/models');
-    const items = data?.content || (Array.isArray(data) ? data : []);
-    if (Array.isArray(items)) {
-      const mapped = items.map(sanitizeProduct);
-      saveProductsToStorage(mapped);
-      return mapped;
+    let allProducts: Product[] = [];
+
+    // Fetch 3D Models
+    try {
+      const data3d: any = await fetchApi('/models');
+      const items3d = data3d?.content || (Array.isArray(data3d) ? data3d : []);
+      if (Array.isArray(items3d)) {
+        allProducts = [...items3d.map(sanitizeProduct)];
+      }
+    } catch (err) {
+      console.warn('API /models não respondeu ou retornou erro:', err);
+    }
+
+    // Fetch TCG Products
+    try {
+      const isAdmin = Boolean(typeof window !== 'undefined' && sessionStorage.getItem('__adm_token'));
+      const tcgEndpoint = isAdmin ? '/admin/tcg-products?size=100' : '/tcg-products?size=100';
+      const dataTcg: any = await fetchApi(tcgEndpoint);
+      const itemsTcg = dataTcg?.content || (Array.isArray(dataTcg) ? dataTcg : []);
+      if (Array.isArray(itemsTcg)) {
+        const mappedTcg = itemsTcg.map(tcg => ({
+          id: tcg.id.toString(),
+          name: tcg.name,
+          category: 'TCG',
+          types: [],
+          scales: [tcg.itemType],
+          materials: [tcg.language],
+          basePrice: tcg.price,
+          finishOptions: [],
+          image: tcg.imageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=TCG',
+          printTimeH: 0,
+          filamentG: 0,
+          active: tcg.isActive,
+          featured: false,
+          expansionName: tcg.expansionName,
+          stockQuantity: tcg.stockQuantity,
+          department: 'TCG'
+        } as any));
+        allProducts = [...allProducts, ...mappedTcg];
+      }
+    } catch (err) {
+      console.warn('API de TCG não respondeu ou retornou erro:', err);
+    }
+
+    if (allProducts.length > 0) {
+      saveProductsToStorage(allProducts);
+      return allProducts;
     }
   } catch (err) {
-    console.warn('API /models não respondeu ou retornou erro:', err);
+    console.warn('Erro geral em fetchRemoteProducts:', err);
   }
   return getStoredProducts();
 }
