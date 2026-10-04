@@ -1,3 +1,4 @@
+import { fetchApi } from '@/api/client';
 import React, { useState, useEffect } from 'react';
 import { toast } from './Toast';
 

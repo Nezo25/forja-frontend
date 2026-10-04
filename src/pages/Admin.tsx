@@ -992,7 +992,7 @@ export default function Admin() {
                         className="mt-2 h-9 px-4 rounded-lg text-xs font-bold text-white cursor-pointer"
                       style={{ background: '#F97316' }}
                     >
-                      + Cadastrar Primeira Figure
+                      + Cadastrar Primeiro Produto
                     </button>
                   </div>
                 ) : (

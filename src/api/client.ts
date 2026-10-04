@@ -32,7 +32,8 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
         const text = await response.text();
         try {
           const json = JSON.parse(text);
-          if (json.message) errorMsg = json.message;
+          if (json.detail) errorMsg = json.detail;
+          else if (json.message) errorMsg = json.message;
           else if (json.error) errorMsg = json.error;
         } catch {
           if (text && text.length < 200) errorMsg += ` - ${text}`;
