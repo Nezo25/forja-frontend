@@ -18,6 +18,8 @@ export interface OrderKanbanDTO {
   id: number;
   shortCode: string;
   customerName: string;
+  customerPhone: string;
+  customerEmail: string;
   totalAmount: number;
   kanbanColumn: KanbanColumn;
   tags: string[];
@@ -117,8 +119,21 @@ export function KanbanBoard() {
                               <span className="text-orange-400 font-extrabold text-sm font-mono">{card.shortCode}</span>
                             </div>
                             
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-0.5">
                               <span className="text-gray-300 text-sm font-medium">{card.customerName}</span>
+                              {card.customerPhone && (
+                                <a 
+                                  href={`https://wa.me/${card.customerPhone.replace(/\D/g, '')}`} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="text-xs text-green-400 hover:underline flex items-center gap-1"
+                                >
+                                  📱 {card.customerPhone}
+                                </a>
+                              )}
+                              {card.customerEmail && (
+                                <span className="text-xs text-gray-500">📧 {card.customerEmail}</span>
+                              )}
                             </div>
                             
                             <div className="flex flex-wrap gap-1 mt-1">

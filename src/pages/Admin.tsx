@@ -38,7 +38,7 @@ import {
   type Filament
 } from '@/services/storage';
 
-type Section = 'catalogo' | 'kanban' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos';
+type Section = 'catalogo' | 'kanban' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos' | 'cupons';
 
 const NAV: { id: Section; icon: string; label: string }[] = [
   { id: 'catalogo', icon: '📦', label: 'Catálogo' },
@@ -1153,6 +1153,19 @@ export default function Admin() {
               <KanbanBoard />
             </div>
           )}
+          {/* 🎟️🎟️ CUPONS DE DESCONTO 🎟️🎟️ */}
+          {section === 'cupons' && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl mb-2">
+                <span className="font-bold text-sm text-gray-200">Gerenciamento de Cupons</span>
+                <button className="text-xs text-orange-400 hover:underline font-bold cursor-pointer">+ Novo Cupom</button>
+              </div>
+              <div className="p-12 text-center text-xs text-gray-400 bg-[#111827] rounded-xl border border-gray-700 shadow-xl">
+                O módulo de cupons está em construção, mas a API de cupons já está online e funcional no checkout!
+              </div>
+            </div>
+          )}
+
 
 
           {/* ── ORÇAMENTOS STL ── */}
