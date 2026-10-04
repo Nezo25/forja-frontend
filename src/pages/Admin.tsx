@@ -1017,7 +1017,9 @@ export default function Admin() {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-[12px] text-gray-300">{p.category}</td>
+                            {catalogTab === '3d' ? (
+                                <>
+                                  <td className="px-4 py-3 text-[12px] text-gray-300">{p.category}</td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-1">
                                 {(p.types || []).map((t, idx) => <TypeBadge key={t + idx} type={t} />)}
@@ -1033,6 +1035,22 @@ export default function Admin() {
                             </td>
                             <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.printTimeH ?? 0}h</td>
                             <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.filamentG ?? 0}g</td>
+                                </>
+                              ) : (
+                                <>
+                                  <td className="px-4 py-3 text-[12px] text-gray-300">{p.expansionName || '—'}</td>
+                                  <td className="px-4 py-3">
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                                      {p.materials && p.materials[0] ? p.materials[0] : '—'}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <span className="px-2 py-1 rounded text-[11px] font-bold bg-gray-800 text-gray-300 border border-gray-700">
+                                      {(p as any).stockQuantity ?? 0} un
+                                    </span>
+                                  </td>
+                                </>
+                              )}
                             <td className="px-4 py-3 font-bold text-sm text-orange-400">R$ {formatPrice(p.basePrice ?? 0)}</td>
                             <td className="px-4 py-3">
                               <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={p.active ? { background: 'rgba(34,197,94,0.15)', color: '#22C55E' } : { background: '#1F2937', color: '#6B7280' }}>
