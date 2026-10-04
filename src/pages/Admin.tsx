@@ -1144,6 +1144,16 @@ export default function Admin() {
               {/* Tabela de Pedidos Antiga (Oculta ou mantida aqui caso queira) */}
             </div>
           )}
+          {section === 'kanban' && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl mb-2">
+                <span className="font-bold text-sm text-gray-200">Quadro Kanban de Produção</span>
+                <button onClick={() => setShowNewOrderModal(true)} className="text-xs text-orange-400 hover:underline font-bold cursor-pointer">+ Novo Pedido</button>
+              </div>
+              <KanbanBoard />
+            </div>
+          )}
+
 
           {/* ── ORÇAMENTOS STL ── */}
           {section === 'orcamentos' && (
