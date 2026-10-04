@@ -247,11 +247,19 @@ export async function saveProduct(productData: Partial<Product>, initialId?: str
 
 export async function deleteProduct(id: string): Promise<void> {
   const current = getStoredProducts();
+  const product = current.find(p => p.id === id);
+  if (!product) return;
+  const isTcg = product.category === 'TCG';
+
   const updated = current.filter(p => p.id !== id);
   saveProductsToStorage(updated);
 
   try {
-    await fetchApi(`/models/${id}`, { method: 'DELETE' });
+    if (isTcg) {
+      await fetchApi(`/admin/tcg-products/${id}`, { method: 'DELETE' });
+    } else {
+      await fetchApi(`/models/${id}`, { method: 'DELETE' });
+    }
   } catch (err) {
     console.warn('Erro ao deletar na API:', err);
   }
@@ -260,9 +268,12 @@ export async function deleteProduct(id: string): Promise<void> {
 export async function toggleProductActive(id: string): Promise<boolean> {
   const current = getStoredProducts();
   let newStatus = true;
+  let isTcg = false;
+  
   const updated = current.map(p => {
     if (p.id === id) {
       newStatus = !p.active;
+      if (p.category === 'TCG') isTcg = true;
       return { ...p, active: newStatus };
     }
     return p;
@@ -270,20 +281,24 @@ export async function toggleProductActive(id: string): Promise<boolean> {
   saveProductsToStorage(updated);
 
   try {
-    const p = updated.find(x => x.id === id);
-    if (p) {
-      await fetchApi(`/models/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          name: p.name,
-          generation: 1,
-          primaryType: p.types[0] || 'Normal',
-          scale: p.scales[0] || '1:10',
-          basePrintTimeMinutes: (p.printTimeH || 0) * 60,
-          defaultFilamentGrams: p.filamentG || 0,
-          isActive: newStatus
-        })
-      });
+    if (isTcg) {
+      await fetchApi(`/admin/tcg-products/${id}/toggle-active`, { method: 'PATCH' });
+    } else {
+      const p = updated.find(x => x.id === id);
+      if (p) {
+        await fetchApi(`/models/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: p.name,
+            generation: 1,
+            primaryType: p.types[0] || 'Normal',
+            scale: p.scales[0] || '1:10',
+            basePrintTimeMinutes: (p.printTimeH || 0) * 60,
+            defaultFilamentGrams: p.filamentG || 0,
+            isActive: newStatus
+          })
+        });
+      }
     }
   } catch (err) {}
   return newStatus;
@@ -291,14 +306,38 @@ export async function toggleProductActive(id: string): Promise<boolean> {
 
 export async function updateProductPrice(id: string, newPrice: number): Promise<void> {
   const current = getStoredProducts();
+  const product = current.find(p => p.id === id);
+  if (!product) return;
+  const isTcg = product.category === 'TCG';
+
   const updated = current.map(p => p.id === id ? { ...p, basePrice: newPrice } : p);
   saveProductsToStorage(updated);
 
   try {
-    await fetchApi(`/models/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ basePrice: newPrice })
-    });
+    if (isTcg) {
+      // For TCG, we need to send the whole object since we added PUT /admin/tcg-products/{id}
+      // But it's easier to just fetch it and update, or we can leave it since TCG has its own modal for editing
+      // Actually, Admin.tsx calls handleSavePrice for both. We should support it!
+      const tcgPayload = {
+        name: product.name,
+        itemType: product.scales[0], // it's stored in scales
+        expansionName: product.expansionName,
+        language: product.materials[0], // it's stored in materials
+        price: newPrice,
+        stockQuantity: product.stockQuantity || 0,
+        imageUrl: product.image,
+        isActive: product.active
+      };
+      await fetchApi(`/admin/tcg-products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(tcgPayload)
+      });
+    } else {
+      await fetchApi(`/models/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ basePrice: newPrice })
+      });
+    }
   } catch (err) {}
 }
 
