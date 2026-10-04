@@ -227,7 +227,7 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
             )}
             <div className="flex items-center justify-between mb-2">
               <span className="font-bold text-gray-200">Total Estimado</span>
-              <span className="text-xl font-extrabold text-white">R$ {subtotal.toFixed(2).replace('.', ',')}</span>
+              <span className="text-xl font-extrabold text-white">R$ {total.toFixed(2).replace('.', ',')}</span>
             </div>
             <button
               onClick={handleCheckout}
