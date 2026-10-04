@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { CartItem } from '../App';
+import type { CartItem } from '../data/products';
 import { fetchApi } from '../api/client';
 import { toast } from './Toast';
 

@@ -30,10 +30,10 @@ export function KanbanBoard() {
     try {
       setLoading(true);
       const data = await fetchApi('/admin/orders/kanban');
-      setBoard(data);
+      setBoard(data as any);
     } catch (e) {
       console.error(e);
-      toast.error('Erro ao carregar kanban');
+      toast.info('Erro ao carregar kanban');
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export function KanbanBoard() {
       });
       loadBoard();
     } catch (e) {
-      toast.error('Erro ao mover card');
+      toast.info('Erro ao mover card');
     }
   }
 
