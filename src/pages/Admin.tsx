@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import type { Product, Category, PokemonType } from '@/data/products';
 import { ALL_TYPES, ALL_CATEGORIES, ALL_SCALES } from '@/data/products';
 import { NewTcgProductModal } from '../components/NewTcgProductModal';
+import { KanbanBoard } from '../components/KanbanBoard';
 import { TypeBadge } from '@/components/TypeBadge';
 import { toast } from '@/components/Toast';
 import { fetchApi } from '@/api/client';
@@ -1140,59 +1141,12 @@ export default function Admin() {
               </div>
 
               {/* Tabela de Pedidos */}
-              <div className="rounded-xl overflow-hidden shadow-xl border border-gray-700">
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
-                  <span className="font-bold text-sm text-gray-200">Lista Real de Pedidos</span>
-                  <button onClick={() => setShowNewOrderModal(true)} className="text-xs text-orange-400 hover:underline font-bold cursor-pointer">+ Novo Pedido</button>
-                </div>
-                {orders.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-gray-400 bg-[#111827]">
-                    Nenhum pedido registrado no banco de dados. Cadastre um novo pedido acima para testar o gráfico.
-                  </div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-800/60 border-b border-gray-700">
-                        {['Pedido','Cliente','Produto','Data','Valor','Status','Ações'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {orders.map((o, i) => (
-                        <tr key={o.id} style={{ background: i % 2 === 0 ? '#111827' : '#161B24', borderBottom: '1px solid #1F2937' }}>
-                          <td className="px-4 py-3 font-mono text-[12px] font-bold text-orange-400">{o.id}</td>
-                          <td className="px-4 py-3 font-medium text-gray-100">{o.cliente}</td>
-                          <td className="px-4 py-3 text-sm text-gray-300">{o.produto}</td>
-                          <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{o.data}</td>
-                          <td className="px-4 py-3 font-bold text-gray-100">R$ {o.valor}</td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={o.status}
-                              onChange={e => handleOrderStatusChange(o, e.target.value)}
-                              className="text-xs px-2.5 py-1 rounded-lg font-semibold outline-none cursor-pointer border bg-gray-800 border-gray-700"
-                              style={{ color: STATUS_COLORS[o.status]?.text || '#F9FAFB' }}
-                            >
-                              {['Aguardando pgto','Em impressão','Enviado','Entregue'].map(st => (
-                                <option key={st} value={st}>{st}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => handleDeleteOrder(o)}
-                              className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-red-900/50 cursor-pointer"
-                              style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#EF4444' }}
-                            >
-                              🗑 Deletar
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl mb-4">
+                <span className="font-bold text-sm text-gray-200">Kanban de Produção</span>
+                <button onClick={() => setShowNewOrderModal(true)} className="text-xs text-orange-400 hover:underline font-bold cursor-pointer">+ Novo Pedido</button>
               </div>
+              
+              <KanbanBoard />
             </div>
           )}
 
