@@ -38,10 +38,11 @@ import {
   type Filament
 } from '@/services/storage';
 
-type Section = 'catalogo' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos';
+type Section = 'catalogo' | 'kanban' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos';
 
 const NAV: { id: Section; icon: string; label: string }[] = [
   { id: 'catalogo', icon: '📦', label: 'Catálogo' },
+  { id: 'kanban', icon: '📋', label: 'Kanban de Produção' },
   { id: 'pedidos', icon: '🛒', label: 'Pedidos e Finanças' },
   { id: 'orcamentos', icon: '📐', label: 'Orçamentos STL' },
   { id: 'estoque', icon: '🧵', label: 'Estoque Filamento' },
