@@ -1,4 +1,6 @@
 import { OrderKanbanDTO } from './KanbanBoard';
+import { toast } from '@/components/Toast';
+import { fetchApi } from '@/api/client';
 
 interface OrderDetailModalProps {
   order: OrderKanbanDTO;
@@ -6,6 +8,45 @@ interface OrderDetailModalProps {
 }
 
 export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
+  async function handleDelete() {
+    if (!confirm('Deseja excluir esta OS?')) return;
+    try {
+      await fetchApi(`/admin/orders/${order.id}`, { method: 'DELETE' });
+      toast.show({ title: 'Sucesso', message: 'OS Excluída.', type: 'success' });
+      window.dispatchEvent(new Event('forja_orders_updated'));
+      onClose();
+    } catch (e) {
+      toast.show({ title: 'Erro', message: 'Falha ao excluir.', type: 'error' });
+    }
+  }
+
+  async function handleReject() {
+    const reason = window.prompt("Motivo da rejeição:");
+    if (!reason) return;
+    try {
+      await fetchApi(`/admin/orders/${order.id}/reject`, {
+        method: 'PATCH',
+        body: JSON.stringify({ rejectionReason: reason })
+      });
+      toast.show({ title: 'Sucesso', message: 'Pedido rejeitado/cancelado.', type: 'success' });
+      window.dispatchEvent(new Event('forja_orders_updated'));
+      onClose();
+    } catch (e) {
+      toast.show({ title: 'Erro', message: 'Falha ao rejeitar.', type: 'error' });
+    }
+  }
+
+  async function handleApprove() {
+    try {
+      await fetchApi(`/admin/orders/${order.id}/approve`, { method: 'PATCH' });
+      toast.show({ title: 'Sucesso', message: 'Pedido aprovado!', type: 'success' });
+      window.dispatchEvent(new Event('forja_orders_updated'));
+      onClose();
+    } catch (e) {
+      toast.show({ title: 'Erro', message: 'Falha ao aprovar.', type: 'error' });
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
@@ -57,13 +98,27 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
             </div>
           </div>
           
-          <div className="flex justify-end gap-3 mt-2">
+          <div className="flex justify-between mt-2 pt-4 border-t border-gray-700/50">
             <button 
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-bold bg-gray-700 text-white hover:bg-gray-600 transition-colors"
+              onClick={handleDelete}
+              className="px-4 py-2 rounded-lg text-sm font-bold bg-red-900/50 text-red-400 hover:bg-red-900 transition-colors"
             >
-              Fechar
+              Excluir OS
             </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={handleReject}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-orange-900/50 text-orange-400 hover:bg-orange-900 transition-colors"
+              >
+                Rejeitar / Cancelar
+              </button>
+              <button 
+                onClick={handleApprove}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-green-700 text-white hover:bg-green-600 transition-colors"
+              >
+                Aprovar Pedido
+              </button>
+            </div>
           </div>
 
         </div>

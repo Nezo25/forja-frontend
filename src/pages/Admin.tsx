@@ -561,93 +561,77 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
 
 // ------------------- MODAL: RESPONDER ORÇAMENTO -------------------
 function QuoteModal({ quote, onClose, onSave }: { quote: Quote; onClose: () => void; onSave: (updated: Quote) => void }) {
-  const [status, setStatus] = useState(quote.status || 'Orçamento enviado');
-  const [price, setPrice] = useState((quote.precoEstimado ?? 180).toString());
-  const [notes, setNotes] = useState(quote.detalhes || '');
-  const [isSaving, setIsSaving] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    setIsSaving(true);
-    await new Promise(r => setTimeout(r, 400));
+  async function handleReject() {
+    setIsProcessing(true);
+    try {
+      await fetchApi(`/admin/quotes/${quote.id}/reject`, { method: 'PATCH' });
+      toast.show({ title: 'Rejeitado', message: 'Orçamento rejeitado.', type: 'success' });
+      onSave({ ...quote, status: 'Recusado' });
+      onClose();
+    } catch(e) {
+      toast.show({ title: 'Erro', message: 'Falha ao rejeitar.', type: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
+  }
 
-    const updated: Quote = {
-      ...quote,
-      status,
-      precoEstimado: parseFloat(price) || undefined,
-      detalhes: notes,
-    };
+  async function handleApproveAndZap() {
+    setIsProcessing(true);
+    try {
+      const zapLink = `https://wa.me/${quote.contato?.replace(/\D/g, '')}?text=Olá! Seu orçamento foi aprovado.`;
+      window.open(zapLink, '_blank');
+      toast.show({ title: 'Sucesso', message: 'Orçamento aprovado e WhatsApp aberto.', type: 'success' });
+      onSave({ ...quote, status: 'Aprovado' });
+      onClose();
+    } catch(e) {
+      toast.show({ title: 'Erro', message: 'Falha ao aprovar.', type: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
+  }
 
-    await updateQuote(quote.id, updated);
-
-    toast.show({
-      title: 'Orçamento respondido com sucesso!',
-      message: `Status de "${quote.cliente}" atualizado para "${status}".`,
-      type: 'success',
-      icon: '📐',
-    });
-
-    onSave(updated);
-    onClose();
-    setIsSaving(false);
+  async function handleConvertToOS() {
+    setIsProcessing(true);
+    try {
+      await fetchApi(`/admin/quotes/${quote.id}/convert-to-kanban`, { method: 'POST' });
+      toast.show({ title: 'Convertido!', message: 'OS criada no Kanban.', type: 'success' });
+      onSave({ ...quote, status: 'Convertido' });
+      onClose();
+    } catch(e) {
+      toast.show({ title: 'Erro', message: 'Falha ao converter.', type: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
   }
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-      <div className="relative w-full max-w-md overflow-y-auto rounded-2xl shadow-2xl" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
-        <form onSubmit={handleSave}>
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-            <div>
-              <h2 className="font-extrabold text-lg text-gray-100">Responder Orçamento {quote.id}</h2>
-              <p className="text-xs text-gray-400">Cliente: {quote.cliente}</p>
-            </div>
-            <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg text-gray-400 hover:text-white" style={{ background: '#1F2937' }}>✕</button>
-          </div>
-          <div className="p-5 flex flex-col gap-4">
-            <div className="p-3 rounded-lg bg-gray-900 border border-gray-800 text-xs flex flex-col gap-1">
-              <div><strong className="text-gray-300">Arquivo:</strong> <span className="font-mono text-orange-400">{quote.arquivo}</span></div>
-              {quote.contato && <div><strong className="text-gray-300">Contato:</strong> {quote.contato}</div>}
-              {quote.escala && <div><strong className="text-gray-300">Escala:</strong> {quote.escala}</div>}
-              {quote.acabamento && <div><strong className="text-gray-300">Acabamento:</strong> {quote.acabamento}</div>}
-            </div>
+      <div className="relative w-full max-w-md overflow-y-auto rounded-2xl shadow-2xl p-5 flex flex-col gap-4" style={{ background: '#111827', border: '1px solid #374151' }} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+          <h2 className="font-extrabold text-lg text-gray-100">Analisar Orçamento STL</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+        </div>
+        
+        <div className="p-3 rounded-lg bg-gray-900 border border-gray-800 text-sm flex flex-col gap-2">
+          <div><strong className="text-gray-300">ID:</strong> {quote.id}</div>
+          <div><strong className="text-gray-300">Cliente:</strong> {quote.cliente}</div>
+          <div><strong className="text-gray-300">Arquivo:</strong> {quote.arquivo}</div>
+        </div>
 
-            <Field label="Status do Orçamento">
-              <select value={status} onChange={e => setStatus(e.target.value)} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
-                {['Aguardando análise','Orçamento enviado','Aprovado','Recusado'].map(s => <option key={s}>{s}</option>)}
-              </select>
-            </Field>
-
-            <Field label="Valor Estimado da Impressão (R$)">
-              <Input type="number" placeholder="180" value={price} onChange={e => setPrice(e.target.value)} />
-            </Field>
-
-            <Field label="Observações técnicas ou para o cliente">
-              <textarea
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                rows={3}
-                placeholder="Ex: Tempo estimado 14h, filamento cinza primer incluído..."
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none bg-gray-900 border border-gray-700 text-gray-100"
-              />
-            </Field>
-
-            <button 
-              disabled={isSaving} 
-              type="submit" 
-              className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 transition-all flex items-center justify-center gap-2 cursor-pointer" 
-              style={{ background: '#F97316', color: '#fff' }}
-            >
-              {isSaving ? (
-                <>
-                  <span className="animate-spin text-sm">⏳</span> Salvando Resposta...
-                </>
-              ) : (
-                <>Salvar Resposta do Orçamento 💾</>
-              )}
-            </button>
-          </div>
-        </form>
+        <div className="flex flex-col gap-3 mt-2">
+          <button disabled={isProcessing} onClick={handleReject} className="w-full h-10 rounded-xl bg-red-900/50 text-red-400 font-bold hover:bg-red-900 border border-red-500/30 transition-colors cursor-pointer">
+            Rejeitar STL ❌
+          </button>
+          <button disabled={isProcessing} onClick={handleApproveAndZap} className="w-full h-10 rounded-xl bg-green-700 text-white font-bold hover:bg-green-600 transition-colors cursor-pointer">
+            Aprovar & WhatsApp 💬
+          </button>
+          <button disabled={isProcessing} onClick={handleConvertToOS} className="w-full h-10 rounded-xl bg-orange-600 text-white font-bold hover:bg-orange-500 transition-colors cursor-pointer">
+            Converter em OS no Kanban 📥
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1204,7 +1188,7 @@ export default function Admin() {
                                 onClick={() => setAnsweringQuote(s)}
                                 className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-orange-500/20 cursor-pointer bg-gray-800 border border-orange-500/30 text-orange-400" 
                               >
-                                💬 Responder
+                                💬 Analisar
                               </button>
                               <button
                                 onClick={() => handleDeleteQuote(s)}

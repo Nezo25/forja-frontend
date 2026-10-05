@@ -58,9 +58,9 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative h-40 shrink-0 overflow-hidden rounded-t-2xl bg-[#0B0F19]">
-          <img src={product.image} alt={product.name} className="w-full h-full object-cover opacity-50" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111827] to-transparent" />
+        <div className="relative h-[50vh] min-h-[300px] shrink-0 overflow-hidden rounded-t-2xl bg-[#0B0F19]">
+          <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#111827] to-transparent pointer-events-none" />
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-gray-400 hover:text-white transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
           </button>
