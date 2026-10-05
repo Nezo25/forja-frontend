@@ -10,43 +10,11 @@ const MaintenanceContext = createContext<MaintenanceContextProps | undefined>(un
 export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMaintenance, setMaintenance] = useState(false);
 
-  useEffect(() => {
-    const originalFetch = window.fetch;
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com';
-
-    window.fetch = async (...args) => {
-      try {
-        const response = await originalFetch(...args);
-        
-        // Se a requisição for para a nossa API e retornar 502, 503 ou 504, ativamos o modo manutenção
-        if (typeof args[0] === 'string' && args[0].startsWith(apiUrl)) {
-          if ([502, 503, 504].includes(response.status)) {
-            setMaintenance(true);
-          } else if (response.ok && isMaintenance) {
-            // Se voltou a responder OK, tira do modo manutenção
-            setMaintenance(false);
-          }
-        }
-        
-        return response;
-      } catch (error) {
-        // Se a requisição for para a API e falhar por rede (Failed to fetch)
-        if (typeof args[0] === 'string' && args[0].startsWith(apiUrl)) {
-          setMaintenance(true);
-        }
-        throw error;
-      }
-    };
-
-    return () => {
-      window.fetch = originalFetch;
-    };
-  }, [isMaintenance]);
-
+  // Manutenção desabilitada pois no plano gratuito do Render o spin up demora
+  // e bloqueava a loja indevidamente.
   return (
     <MaintenanceContext.Provider value={{ isMaintenance, setMaintenance }}>
       {children}
-      {isMaintenance && <MaintenanceOverlay />}
     </MaintenanceContext.Provider>
   );
 };
