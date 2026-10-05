@@ -15,8 +15,8 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
       toast.show({ title: 'Sucesso', message: 'OS Excluída.', type: 'success' });
       window.dispatchEvent(new Event('forja_orders_updated'));
       onClose();
-    } catch (e) {
-      toast.show({ title: 'Erro', message: 'Falha ao excluir.', type: 'error' });
+    } catch (e: any) {
+      toast.show({ title: 'Erro', message: e.message || 'Falha ao excluir.', type: 'error' });
     }
   }
 
@@ -93,8 +93,21 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
               <span className="font-semibold text-gray-200">Etapa Atual:</span> {order.kanbanColumn}
             </div>
             
-            <div className="mt-4 p-4 border border-dashed border-gray-600 rounded-lg text-center text-sm text-gray-500">
-              [Lista de peças fatiadas e filamentos alocados aparecerão aqui]
+                        <div className="mt-4 flex flex-col gap-2">
+              {order.items && order.items.map((item: any, idx: number) => (
+                <div key={idx} className="p-3 bg-gray-900 border border-gray-700 rounded-lg flex flex-col gap-1 text-sm">
+                  <div className="font-bold text-gray-200">{item.quantity}x {item.itemName}</div>
+                  <div className="text-xs text-gray-400 flex gap-4">
+                    <span>Acabamento: <span className="text-gray-300">{item.finishType}</span></span>
+                    <span>Filamento: <span className="text-gray-300">{item.filamentColor}</span></span>
+                  </div>
+                </div>
+              ))}
+              {(!order.items || order.items.length === 0) && (
+                <div className="p-4 border border-dashed border-gray-600 rounded-lg text-center text-sm text-gray-500">
+                  Nenhum item alocado
+                </div>
+              )}
             </div>
           </div>
           

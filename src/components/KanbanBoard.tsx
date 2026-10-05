@@ -25,6 +25,7 @@ export interface OrderKanbanDTO {
   totalAmount: number;
   kanbanColumn: KanbanColumn;
   tags: string[];
+  items?: any[];
 }
 
 export function KanbanBoard() {
@@ -35,10 +36,10 @@ export function KanbanBoard() {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('email') || searchParams.get('os') || searchParams.get('phone') || '');
   const [selectedOrder, setSelectedOrder] = useState<OrderKanbanDTO | null>(null);
 
-  const fetchKanban = async () => {
+    const fetchKanban = async () => {
     try {
       setLoading(true);
-      const res: any = await fetchApi('/admin/orders/kanban');
+      const res: any = await fetchApi(`/admin/orders/kanban?t=${Date.now()}`);
       setBoard(res);
     } catch (err) {
       toast.error('Erro ao carregar Kanban');
@@ -49,6 +50,11 @@ export function KanbanBoard() {
 
   useEffect(() => {
     fetchKanban();
+    const handleUpdate = () => {
+      fetchKanban();
+    };
+    window.addEventListener('forja_orders_updated', handleUpdate);
+    return () => window.removeEventListener('forja_orders_updated', handleUpdate);
   }, []);
 
   const filteredBoard = useMemo(() => {
