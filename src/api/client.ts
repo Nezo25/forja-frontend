@@ -1,5 +1,6 @@
 const getBaseUrl = () => {
-  return 'https://forja-backend-1.onrender.com/api/v1';
+  const root = import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com';
+  return `${root}/api/v1`;
 };
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -9,9 +10,9 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
 
   const token = typeof window !== 'undefined' ? sessionStorage.getItem('__adm_token') : null;
   
-  // AbortController para evitar requests infinitos no Safari
+  // AbortController para evitar requests infinitos no Safari, aumentado para 60s devido ao cold start do Render
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos
 
   try {
     const response = await fetch(url, {
