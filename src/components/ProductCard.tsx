@@ -1,131 +1,79 @@
 import { useState } from 'react';
-import type { Product, PokemonType, ProductCategory } from '@/data/products';
-import { TYPE_COLORS, CATEGORY_LABELS } from '@/data/products';
-import { TypeBadge } from './TypeBadge';
+import type { Product, PokemonType } from '@/data/products';
+import { CATEGORY_LABELS } from '@/data/products';
 
 interface Props {
   product: Product;
+  index?: number;
   onConfigure: (p: Product) => void;
   onBuyNow: (p: Product) => void;
 }
 
-export function ProductCard({ product, onConfigure, onBuyNow }: Props) {
+export function ProductCard({ product, index = 1, onConfigure, onBuyNow }: Props) {
   const [hovered, setHovered] = useState(false);
 
   const extraMin = product.finishOptions && product.finishOptions.length > 0
     ? Math.min(...product.finishOptions.map(f => f.extra))
     : 0;
   const lowestPrice = (product.basePrice || 0) + (isFinite(extraMin) ? extraMin : 0);
-
-  const primaryType = (product.types && product.types.length > 0) ? (product.types[0] as PokemonType) : undefined;
-  const elementalColor = primaryType && TYPE_COLORS[primaryType] ? TYPE_COLORS[primaryType].text : '#F97316';
   const categoryLabel = (CATEGORY_LABELS as Record<string, string>)[product.category] || product.category;
+  const itemNumber = (index).toString().padStart(2, '0');
+
+  // Badge label (finish or scale or type)
+  const badgeText = product.department === 'TCG' 
+    ? (product.expansionName || 'PRONTA ENTREGA') 
+    : (product.scales?.[0] || 'ESCALA 1:10');
 
   return (
     <article
-      className="flex flex-col rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 bg-[#0F172A] border border-slate-800/80 shadow-xl shadow-black/40 hover:-translate-y-1"
-      style={{
-        boxShadow: hovered 
-          ? `0 12px 30px -4px rgba(0,0,0,0.6), 0 0 20px -3px ${elementalColor}25`
-          : '0 10px 25px -5px rgba(0,0,0,0.4)',
-        borderColor: hovered ? `${elementalColor}50` : 'rgba(30, 41, 59, 0.8)',
-      }}
+      className="flex flex-col cursor-pointer group select-none"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => onConfigure(product)}
     >
-      {/* Image Container */}
-      <div className="relative overflow-hidden aspect-square rounded-t-xl bg-[#0B0F19]">
+      {/* Dark Image Container */}
+      <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-[#1E1E1E] border border-black/10 shadow-sm">
         <img
           src={product.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'}
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 ease-out"
-          style={{ transform: hovered ? 'scale(1.06)' : 'scale(1)' }}
+          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
           loading="lazy"
         />
-        {/* Subtle dark gradient overlay */}
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#0F172A] via-transparent to-black/20" />
 
-        {/* Top-left Badges (Types or TCG) */}
-        <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10">
-          {product.department === 'TCG' ? (
-            <>
-              {product.expansionName && (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-900/90 text-purple-200 border border-purple-700/60 backdrop-blur-sm shadow-sm">
-                  {product.expansionName}
-                </span>
-              )}
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/90 text-emerald-400 border border-emerald-700/60 backdrop-blur-sm shadow-sm">
-                Pronta Entrega
-              </span>
-            </>
-          ) : (
-            (product.types || []).map((t, idx) => <TypeBadge key={t + idx} type={t} />)
-          )}
-        </div>
-
-        {/* Top-right Material Badges */}
-        {product.department !== 'TCG' && (
-          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end z-10">
-            {(product.materials || ['PLA']).map((m, idx) => (
-              <span key={m + idx} className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900/90 text-slate-300 border border-slate-700/70 backdrop-blur-sm">
-                {m}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Bottom Category Tag */}
-        <div className="absolute bottom-2.5 left-2.5 z-10">
-          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-orange-500/15 text-[#F97316] border border-orange-500/30 backdrop-blur-md">
-            {categoryLabel}
+        {/* Top Badges */}
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between text-[10px] font-bold tracking-widest text-[#A3A3A3] uppercase pointer-events-none z-10">
+          <span className="opacity-70 font-mono">{itemNumber}</span>
+          <span className="px-2 py-0.5 rounded bg-black/60 backdrop-blur-md text-[#E5E5E5] border border-white/10">
+            {badgeText}
           </span>
         </div>
+
+        {/* Floating Round Cart/Buy Button (bottom right) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onBuyNow(product);
+          }}
+          className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-white text-black hover:bg-[#EA580C] hover:text-white flex items-center justify-center shadow-lg transition-transform active:scale-90 z-20"
+          title="Adicionar ao carrinho"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </button>
       </div>
 
-      {/* Card Content Body */}
-      <div className="flex flex-col gap-2 p-3.5 md:p-4 flex-1">
-        <h3 className="font-bold text-sm md:text-[15px] text-slate-100 leading-snug line-clamp-2 group-hover:text-orange-400 transition-colors">
-          {product.name}
-        </h3>
-
-        <div className="flex flex-wrap gap-1 mt-0.5">
-          {(product.scales || ['1:10']).map((s, idx) => (
-            <span key={s + idx} className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-900/80 text-slate-400 border border-slate-800">
-              {s}
-            </span>
-          ))}
-        </div>
-
-        <div className="mt-auto pt-3 flex flex-col gap-2.5">
-          <div className="flex items-baseline justify-between">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
-              A partir de
-            </span>
-            <div className="text-[17px] md:text-lg font-black text-[#F97316]">
-              R$ {lowestPrice.toFixed(2).replace('.', ',')}
-            </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className={product.department === 'TCG' ? "grid grid-cols-1 gap-2 mt-1" : "grid grid-cols-2 gap-2 mt-1"}>
-            {product.department !== 'TCG' && (
-              <button
-                type="button"
-                className="h-9 px-3 rounded-lg text-xs md:text-sm font-bold transition-all bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700/80 active:scale-[0.98] flex items-center justify-center"
-                onClick={e => { e.stopPropagation(); onConfigure(product); }}
-              >
-                Personalizar
-              </button>
-            )}
-            <button
-              type="button"
-              className="h-9 px-3 rounded-lg text-xs md:text-sm font-extrabold transition-all bg-[#F97316] hover:bg-[#EA580C] text-white shadow-md shadow-orange-500/20 active:scale-[0.98] flex items-center justify-center gap-1.5"
-              onClick={e => { e.stopPropagation(); onBuyNow(product); }}
-            >
-              Comprar
-            </button>
-          </div>
+      {/* Info Below Image */}
+      <div className="pt-3 pb-1 flex flex-col gap-0.5">
+        <span className="text-[10px] font-bold tracking-[0.15em] text-[#737373] uppercase">
+          {categoryLabel}
+        </span>
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-display text-2xl md:text-3xl font-black text-[#171717] uppercase tracking-wide group-hover:text-[#EA580C] transition-colors line-clamp-1">
+            {product.name}
+          </h3>
+          <span className="font-display text-lg md:text-xl font-bold text-[#171717] shrink-0">
+            R$ {lowestPrice.toFixed(0)}
+          </span>
         </div>
       </div>
     </article>

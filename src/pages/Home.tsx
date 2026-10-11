@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
-import { FilterDrawer } from '@/components/FilterDrawer';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCustomizeModal } from '@/components/ProductCustomizeModal';
 import { CartDrawer } from '@/components/CartDrawer';
@@ -9,19 +8,12 @@ import { OrcamentoModal } from '@/components/OrcamentoModal';
 import { type CartItem, type Product, CATEGORY_LABELS, type ProductCategory, toProductCategory } from '@/data/products';
 import { getStoredProducts, fetchRemoteProducts } from '@/services/storage';
 
-export interface Filters {
-  categories: string[];
-  types: string[];
-  scales: string[];
-  finishes: string[];
-}
-
 export default function Home() {
   const [products, setProducts] = useState<Product[]>(getStoredProducts());
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Blindagem Safari / iOS: Busca assíncrona com tratamento de erro e timeout controlado
+  // Blindagem Safari / iOS: Busca assíncrona com timeout estrito e fallback
   const loadCatalog = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
@@ -30,31 +22,23 @@ export default function Home() {
       if (res && res.length > 0) {
         setProducts(res);
       } else {
-        const cached = getStoredProducts();
-        setProducts(cached);
+        setProducts(getStoredProducts());
       }
     } catch (err: any) {
-      console.warn('Falha na busca remota do catálogo, ativando fallback em cache:', err);
-      const cached = getStoredProducts();
-      setProducts(cached);
+      console.warn('Falha na busca remota do catálogo, ativando fallback:', err);
+      setProducts(getStoredProducts());
       setLoadError('A conexão com o servidor demorou ou falhou. Exibindo catálogo em cache.');
     } finally {
-      // Incondicionalmente encerra o estado de carregamento
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     let mounted = true;
-
     loadCatalog();
-
     const handleUpdate = () => {
-      if (mounted) {
-        setProducts(getStoredProducts());
-      }
+      if (mounted) setProducts(getStoredProducts());
     };
-
     window.addEventListener('forja_products_updated', handleUpdate);
     return () => {
       mounted = false;
@@ -62,45 +46,35 @@ export default function Home() {
     };
   }, [loadCatalog]);
 
-  const [masterTab, setMasterTab] = useState<'ALL' | 'PRINT_3D' | 'TCG'>('ALL');
+  const [activeCategory, setActiveCategory] = useState<string>('ALL');
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<Filters>({ categories: [], types: [], scales: [], finishes: [] });
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [configProduct, setConfigProduct] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [orcamentoOpen, setOrcamentoOpen] = useState(false);
 
-  const activeProducts = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     return products.filter(p => {
       if (!p.active) return false;
       if (search) {
         const q = search.toLowerCase();
         const pCatLabel = (CATEGORY_LABELS as Record<string, string>)[p.category] || p.category;
-        const matchesSearch = 
+        const matches = 
           p.name.toLowerCase().includes(q) || 
           p.category.toLowerCase().includes(q) || 
           pCatLabel.toLowerCase().includes(q) ||
           p.types.some(t => t.toLowerCase().includes(q));
-        if (!matchesSearch) return false;
-      }
-      if (masterTab === 'PRINT_3D' && p.department === 'TCG') return false;
-      if (masterTab === 'TCG' && p.department !== 'TCG') return false;
-      
-      if (filters.categories.length > 0) {
-        const matchesCategory = filters.categories.some(cat => {
-          const catEnum = toProductCategory(cat);
-          const pEnum = toProductCategory(p.category);
-          return p.category === cat || pEnum === cat || pEnum === catEnum;
-        });
-        if (!matchesCategory) return false;
+        if (!matches) return false;
       }
 
-      if (filters.types.length > 0 && !filters.types.some(t => p.types.includes(t as any))) return false;
-      if (filters.scales.length > 0 && !filters.scales.some(s => p.scales.includes(s as any))) return false;
-      return true;
+      if (activeCategory === 'ALL') return true;
+      if (activeCategory === 'TCG') return p.department === 'TCG' || p.category === 'TCG';
+
+      const pEnum = toProductCategory(p.category);
+      const catEnum = toProductCategory(activeCategory);
+      return p.category === activeCategory || pEnum === activeCategory || pEnum === catEnum;
     });
-  }, [products, search, masterTab, filters]);
+  }, [products, search, activeCategory]);
 
   function addToCart(item: CartItem) {
     setCart(prev => {
@@ -137,10 +111,9 @@ export default function Home() {
     setCart(prev => prev.filter((_, i) => i !== idx));
   }
 
-  const activeFiltersCount = filters.categories.length + filters.types.length + filters.scales.length + filters.finishes.length;
-
   return (
-    <div className="min-h-screen bg-[#090D16] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#141414] text-white flex flex-col font-sans selection:bg-[#EA580C] selection:text-white">
+      {/* Header com Logo original */}
       <Header
         cart={cart}
         onCartOpen={() => setCartOpen(true)}
@@ -148,182 +121,249 @@ export default function Home() {
         search={search}
         onSearch={setSearch}
       />
-      
+
+      {/* Hero Editorial (Figma Make) */}
       <Hero onOrcamento={() => setOrcamentoOpen(true)} />
 
-      {/* Control Bar */}
-      <div className="sticky top-16 z-40 bg-[#090D16]/95 backdrop-blur-md border-b border-slate-800/80 py-3">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between gap-4">
+      {/* SECTION 01 — Orange Transition Banner (Figma Make) */}
+      <section className="bg-[#EA580C] text-white py-12 md:py-20 px-4 md:px-8 overflow-hidden">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          <div className="md:col-span-3 text-[11px] font-bold tracking-[0.25em] uppercase text-orange-200/80 pt-2">
+            Não sai de uma prateleira.
+          </div>
+          <div className="md:col-span-9 flex flex-col">
+            <span className="text-[11px] font-bold tracking-[0.25em] uppercase text-orange-200/80 mb-3">
+              01 — O nosso jeito
+            </span>
+            <h2 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.95] text-white uppercase tracking-tight">
+              Cada peça carrega pequenas marcas do processo. É isso que faz dela <span className="underline decoration-white/40 underline-offset-4">só sua.</span>
+            </h2>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 02 — Catálogo de Produtos (Warm Bone/Cream Figma Make) */}
+      <section id="catalogo" className="bg-[#ECE8DE] text-[#171717] py-14 md:py-24 px-4 md:px-8">
+        <div className="max-w-[1440px] mx-auto">
           
-          {/* Categorias - Quick Nav */}
-          <div className="flex-1 flex flex-col gap-2.5 overflow-x-auto no-scrollbar">
-            <div className="flex bg-[#0F172A] p-1 rounded-xl w-fit border border-slate-800 shadow-sm">
-              {[
-                { id: 'ALL', label: '🔥 Todas as Criações' },
-                { id: 'PRINT_3D', label: '🖨️ Oficina 3D' },
-                { id: 'TCG', label: '🃏 TCG & Selados' }
-              ].map(tab => (
+          {/* Section Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-6 border-b border-[#D6D0C2]">
+            <div>
+              <span className="text-[11px] font-bold tracking-[0.25em] uppercase text-[#737373] block mb-2">
+                02 — Últimas da forja
+              </span>
+              <h2 className="font-display text-4xl sm:text-5xl md:text-6xl text-[#171717] uppercase tracking-wide leading-none">
+                Escolha a sua próxima história.
+              </h2>
+            </div>
+            <button
+              onClick={() => setActiveCategory('ALL')}
+              className="text-xs font-bold tracking-wider uppercase text-[#171717] hover:text-[#EA580C] transition-colors flex items-center gap-1.5 self-start md:self-end"
+            >
+              <span>Ver catálogo completo</span>
+              <span>→</span>
+            </button>
+          </div>
+
+          {/* Category Filter Pills (Figma Make Style) */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-6 mb-4">
+            {[
+              { id: 'ALL', label: 'Todos' },
+              { id: 'FIGURE_POKEMON', label: 'Figures Pokémon' },
+              { id: 'DIORAMA', label: 'Dioramas' },
+              { id: 'CHIBI', label: 'Colecionáveis' },
+              { id: 'ACCESSORY_3D', label: 'Geek 3D' },
+              { id: 'TCG', label: 'TCG & Selados' },
+            ].map(tab => {
+              const active = activeCategory === tab.id;
+              return (
                 <button
                   key={tab.id}
-                  onClick={() => {
-                    setMasterTab(tab.id as any);
-                    setFilters(prev => ({ ...prev, categories: [], types: [] }));
-                  }}
-                  className={`px-4 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all ${
-                    masterTab === tab.id 
-                      ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20' 
-                      : 'text-slate-400 hover:text-slate-200'
+                  onClick={() => setActiveCategory(tab.id)}
+                  className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
+                    active 
+                      ? 'bg-[#171717] text-white shadow-md' 
+                      : 'bg-[#DCD6C8] text-[#525252] hover:bg-[#D0C9B8] hover:text-[#171717]'
                   }`}
                 >
                   {tab.label}
                 </button>
+              );
+            })}
+          </div>
+
+          {/* Product Grid */}
+          {isLoading ? (
+            <div className="py-24 flex flex-col items-center justify-center text-center gap-4">
+              <div className="w-10 h-10 border-4 border-[#171717] border-t-transparent rounded-full animate-spin" />
+              <span className="font-display text-xl text-[#171717] uppercase tracking-wider">
+                Carregando criações da Forja...
+              </span>
+            </div>
+          ) : loadError && filteredProducts.length === 0 ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center max-w-md mx-auto gap-4">
+              <div className="text-3xl">⚠️</div>
+              <h3 className="font-display text-2xl uppercase">Falha na conexão com o servidor</h3>
+              <p className="text-xs text-[#737373]">
+                O backend pode estar iniciando no Render. Clique abaixo para tentar novamente.
+              </p>
+              <button
+                onClick={() => loadCatalog()}
+                className="px-6 py-2.5 rounded-full bg-[#171717] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#EA580C] transition-colors"
+              >
+                Tentar Novamente
+              </button>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center gap-2">
+              <span className="text-3xl opacity-40">🔍</span>
+              <h3 className="font-display text-2xl uppercase text-[#171717]">Nenhum item nesta categoria</h3>
+              <button
+                onClick={() => setActiveCategory('ALL')}
+                className="text-xs font-bold text-[#EA580C] uppercase tracking-wider mt-2 hover:underline"
+              >
+                Voltar a todos os produtos
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 md:gap-8">
+              {filteredProducts.map((p, idx) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  index={idx + 1}
+                  onConfigure={setConfigProduct}
+                  onBuyNow={handleBuyNow}
+                />
               ))}
             </div>
-            
-            <div className="flex items-center gap-2 pb-1 -mb-1 w-max">
-              <button
-                onClick={() => setFilters(prev => ({ ...prev, categories: [] }))}
-                className={`whitespace-nowrap px-3.5 py-1 rounded-full text-xs font-bold transition-all border ${
-                  filters.categories.length === 0 
-                    ? 'bg-[#F97316]/20 border-[#F97316] text-[#F97316] shadow-sm' 
-                    : 'bg-[#0F172A] border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                }`}
-              >
-                Todas
-              </button>
-              {(masterTab === 'TCG' ? [
-                { key: 'Booster Avulso', label: 'Booster Avulso' },
-                { key: 'Booster Box', label: 'Booster Box' },
-                { key: 'ETB', label: 'ETB' },
-                { key: 'Blister', label: 'Blister' },
-                { key: 'Deck', label: 'Deck' },
-                { key: 'Acessório Oficial', label: 'Acessório Oficial' }
-              ] : [
-                { key: 'FIGURE_POKEMON', label: CATEGORY_LABELS.FIGURE_POKEMON },
-                { key: 'DIORAMA', label: CATEGORY_LABELS.DIORAMA },
-                { key: 'CHIBI', label: CATEGORY_LABELS.CHIBI },
-                { key: 'ACCESSORY_3D', label: CATEGORY_LABELS.ACCESSORY_3D },
-              ]).map(catItem => {
-                const isSelected = filters.categories.includes(catItem.key) || filters.categories.includes(catItem.label);
-                return (
-                  <button
-                    key={catItem.key}
-                    onClick={() => {
-                      setFilters(prev => {
-                        let newTypes = prev.types;
-                        if (catItem.key !== 'FIGURE_POKEMON' && catItem.key !== 'CHIBI') newTypes = [];
-                        return { ...prev, categories: [catItem.key], types: newTypes };
-                      });
-                    }}
-                    className={`whitespace-nowrap px-3.5 py-1 rounded-full text-xs font-semibold transition-all border ${
-                      isSelected 
-                        ? 'bg-[#F97316]/20 border-[#F97316] text-[#F97316] shadow-sm' 
-                        : 'bg-[#0F172A] border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                    }`}
-                  >
-                    {catItem.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          )}
+
+        </div>
+      </section>
+
+      {/* SECTION 03 — A Oficina: Feito Sem Pressa (Figma Make) */}
+      <section id="oficina" className="bg-[#141414] text-white py-16 md:py-24 px-4 md:px-8 border-t border-[#262626]">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
-          <button 
-            onClick={() => setFilterDrawerOpen(true)}
-            className="shrink-0 flex items-center gap-2 px-4 py-2 bg-[#0F172A] hover:bg-slate-800 text-slate-200 rounded-xl text-xs md:text-sm font-bold transition-all border border-slate-800 shadow-sm"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            <span>Filtros</span>
-            {activeFiltersCount > 0 && (
-              <span className="bg-[#F97316] text-white text-[11px] px-1.5 py-0.5 rounded-full font-bold">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      <FilterDrawer 
-        masterTab={masterTab}
-        open={filterDrawerOpen} 
-        onClose={() => setFilterDrawerOpen(false)} 
-        filters={filters as any} 
-        onChange={setFilters as any} 
-      />
-
-      {/* Catalog Main */}
-      <main id="catalogo" className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 flex-1 w-full">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-400">
-            <div className="animate-spin text-4xl text-[#F97316] border-4 border-t-[#F97316] border-orange-500/20 rounded-full w-12 h-12" />
-            <div className="text-base font-bold text-slate-200">Carregando catálogo da Forja...</div>
-            <div className="text-xs max-w-sm text-center text-slate-400">
-              Sincronizando modelos 3D e estoque TCG.
+          {/* Left Workshop Atmosphere Image */}
+          <div className="lg:col-span-6 relative aspect-square md:aspect-[4/3] rounded-2xl overflow-hidden bg-[#1E1E1E] border border-[#2E2E2E] shadow-2xl">
+            <img
+              src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=1000&auto=format&fit=crop"
+              alt="Bancada da Forja do Chico"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+            <div className="absolute bottom-4 left-4 bg-white/90 text-black px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest">
+              Na bancada, agora
             </div>
           </div>
-        ) : loadError && activeProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 gap-4 text-center max-w-md mx-auto bg-[#0F172A] border border-slate-800 rounded-2xl shadow-xl">
-            <div className="text-4xl">⚠️</div>
-            <h3 className="text-lg font-bold text-slate-100">Não foi possível carregar o catálogo</h3>
-            <p className="text-xs text-slate-400">
-              O servidor demorou para responder ou está inicializando.
-            </p>
-            <button
-              onClick={() => loadCatalog()}
-              className="mt-2 px-5 py-2.5 rounded-xl font-extrabold text-xs uppercase tracking-wider bg-[#F97316] hover:bg-[#EA580C] text-white shadow-lg shadow-orange-500/20 active:scale-95 transition-all flex items-center gap-2"
-            >
-              <span>🔄</span> Tentar Novamente
-            </button>
-          </div>
-        ) : activeProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-            <div className="text-5xl opacity-40">🔍</div>
-            <div className="text-base font-bold text-slate-200">Nenhum produto encontrado</div>
-            <div className="text-sm text-slate-400">Tente ajustar os filtros ou os termos de busca</div>
-            <button
-              onClick={() => loadCatalog()}
-              className="mt-3 px-4 py-2 rounded-xl text-xs font-semibold bg-[#0F172A] hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
-            >
-              🔄 Recarregar Catálogo
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 md:gap-5">
-            {activeProducts.map(p => (
-              <ProductCard key={p.id} product={p} onConfigure={setConfigProduct} onBuyNow={handleBuyNow} />
-            ))}
-          </div>
-        )}
 
-        {/* STL CTA */}
-        <div
-          className="mt-14 p-6 md:p-8 rounded-2xl flex flex-col md:flex-row items-center gap-6 cursor-pointer group bg-[#0F172A] border border-orange-500/30 shadow-xl shadow-black/40 hover:border-orange-500/60 transition-all"
-          onClick={() => setOrcamentoOpen(true)}
-        >
-          <div className="flex-1 min-w-0 text-center md:text-left">
-            <div className="text-3xl mb-2">📦</div>
-            <h3 className="text-xl md:text-2xl font-black mb-1.5 text-slate-100">
-              Tem um arquivo STL próprio?
-            </h3>
-            <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
-              Envie seu modelo 3D para um orçamento sob medida em tempo real. Imprimimos qualquer projeto — da Pokédex customizada a miniaturas exclusivas de RPG.
+          {/* Right Process Explanation */}
+          <div className="lg:col-span-6 flex flex-col justify-center">
+            <span className="text-[11px] font-bold tracking-[0.25em] uppercase text-[#737373] mb-3">
+              03 — Feito sem pressa
+            </span>
+            <h2 className="font-display text-4xl sm:text-5xl md:text-6xl text-white uppercase tracking-tight leading-[0.95] mb-6">
+              Da camada bruta ao último traço do pincel.
+            </h2>
+            <p className="text-sm md:text-base text-[#A3A3A3] mb-8 leading-relaxed max-w-xl">
+              A impressão é só o começo. Depois dela vêm a cura, a preparação, a pintura e uma inspeção cuidadosa — tudo dentro da nossa oficina.
             </p>
+
+            <div className="flex flex-col border-t border-[#262626]">
+              <div className="py-4 border-b border-[#262626] flex items-start gap-4">
+                <span className="font-mono text-xs text-[#EA580C] font-bold pt-0.5">01</span>
+                <div>
+                  <h4 className="font-display text-xl text-white uppercase tracking-wide">Impressão Precisa</h4>
+                  <p className="text-xs text-[#737373] mt-0.5">Resina ou PLA, escolhidos para cada projeto.</p>
+                </div>
+              </div>
+
+              <div className="py-4 border-b border-[#262626] flex items-start gap-4">
+                <span className="font-mono text-xs text-[#EA580C] font-bold pt-0.5">02</span>
+                <div>
+                  <h4 className="font-display text-xl text-white uppercase tracking-wide">Acabamento Manual</h4>
+                  <p className="text-xs text-[#737373] mt-0.5">Lixamento, preparação e pintura por camadas.</p>
+                </div>
+              </div>
+
+              <div className="py-4 border-b border-[#262626] flex items-start gap-4">
+                <span className="font-mono text-xs text-[#EA580C] font-bold pt-0.5">03</span>
+                <div>
+                  <h4 className="font-display text-xl text-white uppercase tracking-wide">Envio Protegido</h4>
+                  <p className="text-xs text-[#737373] mt-0.5">Embalagem pensada para a peça chegar inteira.</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <button
-            type="button"
-            className="w-full md:w-auto shrink-0 h-11 px-7 rounded-xl font-extrabold text-sm transition-all bg-[#F97316] hover:bg-[#EA580C] text-white shadow-lg shadow-orange-500/25 active:scale-95"
-          >
-            Enviar meu STL 🚀
-          </button>
+
         </div>
-      </main>
+      </section>
 
-      <footer className="text-center py-8 text-xs text-slate-500 border-t border-slate-800/80 mt-auto bg-[#070A10]">
-        © 2026 Forja do Chico • Impressão 3D Artesanal & Geek Shop • Todos os direitos reservados
+      {/* SECTION 04 — Sob Medida: STL Call-to-Action (Figma Make Cream Banner) */}
+      <section className="bg-[#ECE8DE] text-[#171717] py-16 md:py-24 px-4 md:px-8 border-t border-[#D6D0C2]">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <div className="md:col-span-7 flex flex-col">
+            <span className="text-[11px] font-bold tracking-[0.25em] uppercase text-[#EA580C] mb-2">
+              Tem uma ideia fora do catálogo?
+            </span>
+            <h2 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-[#171717] uppercase tracking-tight leading-[0.92]">
+              Você imagina. <br />
+              A gente forja.
+            </h2>
+          </div>
+
+          <div className="md:col-span-5 flex flex-col items-start md:items-end gap-5">
+            <p className="text-sm md:text-base text-[#525252] leading-relaxed max-w-sm md:text-right">
+              Envie seu arquivo STL ou conte a sua ideia. Avaliamos material, escala e acabamento antes de começar.
+            </p>
+            <button
+              onClick={() => setOrcamentoOpen(true)}
+              className="h-12 px-7 rounded-lg text-sm font-bold flex items-center gap-2 transition-all bg-[#171717] hover:bg-[#EA580C] text-white shadow-xl cursor-pointer"
+            >
+              <span>Pedir orçamento</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer Minimalista (Figma Make) */}
+      <footer className="bg-[#141414] text-white py-12 px-4 md:px-8 border-t border-[#262626]">
+        <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8 pb-8 border-b border-[#262626]">
+          {/* Logo original */}
+          <div className="flex items-center gap-3">
+            <img src="/images/logo.png" alt="Forja do Chico" className="w-9 h-9 object-contain" />
+            <span className="font-display text-2xl tracking-wide uppercase text-white">
+              Forja do Chico
+            </span>
+          </div>
+
+          {/* Slogan */}
+          <div className="font-display text-2xl md:text-3xl uppercase tracking-wider text-[#EA580C]">
+            Peças que merecem ficar.
+          </div>
+        </div>
+
+        <div className="max-w-[1440px] mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#737373]">
+          <div className="flex items-center gap-6">
+            <a href="#catalogo" className="hover:text-white transition-colors">Catálogo</a>
+            <a href="#oficina" className="hover:text-white transition-colors">Processo</a>
+            <button onClick={() => setOrcamentoOpen(true)} className="hover:text-white transition-colors">Orçamentos</button>
+          </div>
+          <div>
+            © 2026 FORJA DO CHICO • FEITO COM CUIDADO
+          </div>
+        </div>
       </footer>
 
-      {/* Modals */}
-      <ProductCustomizeModal product={configProduct} onClose={() => setConfigProduct(null)} onAdd={addToCart} />
+      {/* Modais de Interação */}
+      <ProductCustomizeModal
+        product={configProduct}
+        onClose={() => setConfigProduct(null)}
+        onAdd={addToCart}
+      />
       <CartDrawer
         open={cartOpen}
         cart={cart}
@@ -331,7 +371,10 @@ export default function Home() {
         onRemove={removeFromCart}
         onClear={() => setCart([])}
       />
-      <OrcamentoModal open={orcamentoOpen} onClose={() => setOrcamentoOpen(false)} />
+      <OrcamentoModal
+        open={orcamentoOpen}
+        onClose={() => setOrcamentoOpen(false)}
+      />
     </div>
   );
 }
