@@ -63,17 +63,40 @@ export function ProductCard({ product, index = 1, onConfigure, onBuyNow }: Props
       </div>
 
       {/* Info Below Image */}
-      <div className="pt-3 pb-1 flex flex-col gap-0.5">
-        <span className="text-[10px] font-bold tracking-[0.15em] text-[#737373] uppercase">
-          {categoryLabel}
-        </span>
-        <div className="flex items-baseline justify-between gap-2">
-          <h3 className="font-display text-2xl md:text-3xl font-black text-[#171717] uppercase tracking-wide group-hover:text-[#EA580C] transition-colors line-clamp-1">
-            {product.name}
-          </h3>
-          <span className="font-display text-lg md:text-xl font-bold text-[#171717] shrink-0">
-            R$ {lowestPrice.toFixed(0)}
+      <div className="pt-3 pb-1 flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-bold tracking-[0.16em] text-[#737373] uppercase">
+            {categoryLabel}
           </span>
+          {product.types && product.types.length > 0 && (
+            <span className="text-[10px] font-semibold text-[#8C8C8C] uppercase tracking-wider">
+              {product.types.slice(0, 2).join(' • ')}
+            </span>
+          )}
+        </div>
+
+        <h3 className="font-display text-2xl md:text-3xl font-black text-[#171717] uppercase tracking-wide group-hover:text-[#EA580C] transition-colors line-clamp-1">
+          {product.name}
+        </h3>
+
+        {/* Grounded & Prominent Price Container */}
+        <div className="mt-1 pt-2 border-t border-black/10 flex items-end justify-between">
+          <div className="flex flex-col">
+            <span className="text-[9px] font-bold tracking-[0.18em] text-[#8C8C8C] uppercase">
+              A partir de
+            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-xs font-black text-[#EA580C]">R$</span>
+              <span className="font-display text-2xl md:text-3xl font-black text-[#171717] tracking-tight leading-none">
+                {lowestPrice.toLocaleString('pt-BR', { minimumFractionDigits: lowestPrice % 1 === 0 ? 0 : 2 })}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-[11px] font-bold tracking-wider uppercase text-[#EA580C] group-hover:translate-x-1 transition-transform">
+            <span>Personalizar</span>
+            <span className="text-sm">→</span>
+          </div>
         </div>
       </div>
     </article>

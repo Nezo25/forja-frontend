@@ -1,6 +1,12 @@
-interface Props { onOrcamento: () => void; }
+import type { Product } from '@/data/products';
 
-export function Hero({ onOrcamento }: Props) {
+interface Props {
+  onOrcamento: () => void;
+  featuredProduct?: Product | null;
+  onConfigure?: (p: Product) => void;
+}
+
+export function Hero({ onOrcamento, featuredProduct, onConfigure }: Props) {
   return (
     <section className="relative overflow-hidden bg-[#161616] text-white pt-10 pb-16 md:py-20 px-4 md:px-8 border-b border-[#262626]">
       <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -15,10 +21,10 @@ export function Hero({ onOrcamento }: Props) {
             </span>
           </div>
 
-          {/* Main Huge Condensed Headline */}
-          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.92] tracking-wide text-white uppercase mb-6">
-            Da imaginação <br />
-            <span className="text-[#EA580C]">para a matéria.</span>
+          {/* Main Huge Condensed Headline - Spacing fixed to prevent accent overlap */}
+          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-wide text-white uppercase mb-6 flex flex-col gap-2 md:gap-3 leading-none">
+            <span className="block">Da imaginação</span>
+            <span className="block text-[#EA580C]">para a matéria.</span>
           </h1>
 
           {/* Paragraph */}
@@ -63,32 +69,42 @@ export function Hero({ onOrcamento }: Props) {
           </div>
         </div>
 
-        {/* Right Studio Showcase Card */}
+        {/* Right Studio Showcase Card (Dinâmico com Peça em Destaque) */}
         <div className="lg:col-span-5 relative flex justify-center">
-          <div className="relative w-full max-w-md aspect-[4/5] rounded-2xl overflow-hidden bg-[#1E1E1E] border border-[#2E2E2E] shadow-2xl group">
+          <div 
+            onClick={() => {
+              if (featuredProduct && onConfigure) onConfigure(featuredProduct);
+            }}
+            className={`relative w-full max-w-md aspect-[4/5] rounded-2xl overflow-hidden bg-[#1E1E1E] border border-[#2E2E2E] shadow-2xl group transition-all ${featuredProduct && onConfigure ? 'cursor-pointer hover:border-[#EA580C]/60 hover:shadow-orange-950/20' : ''}`}
+          >
             <img
-              src="https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=1000&auto=format&fit=crop"
-              alt="Peça em destaque na Forja"
+              src={featuredProduct?.image || "https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=1000&auto=format&fit=crop"}
+              alt={featuredProduct?.name || "Peça em destaque na Forja"}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             {/* Dark gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/30 pointer-events-none" />
 
             {/* Bottom Tag */}
-            <div className="absolute bottom-5 left-5 z-10">
-              <span className="text-[10px] font-bold tracking-[0.2em] text-[#A3A3A3] uppercase block mb-1">
-                Peça em Destaque
+            <div className="absolute bottom-5 left-5 right-24 z-10">
+              <span className="text-[10px] font-bold tracking-[0.2em] text-[#EA580C] uppercase block mb-1">
+                ⭐ Peça em Destaque {featuredProduct ? `• R$ ${featuredProduct.basePrice}` : ''}
               </span>
-              <span className="font-display text-2xl md:text-3xl text-white uppercase tracking-wide">
-                Gengar Sorridente Sombrio
+              <span className="font-display text-2xl md:text-3xl text-white uppercase tracking-wide block line-clamp-2">
+                {featuredProduct?.name || "Gengar Sorridente Sombrio"}
               </span>
+              {featuredProduct && (
+                <span className="text-[11px] font-semibold text-[#A3A3A3] mt-1 flex items-center gap-1 group-hover:text-white transition-colors">
+                  Toque para personalizar <span className="text-[#EA580C]">→</span>
+                </span>
+              )}
             </div>
 
-            {/* Round Seal: Forjado desde 2021 */}
+            {/* Round Seal: Forjando desde 2022 */}
             <div className="absolute -bottom-3 -right-3 md:bottom-6 md:-right-6 z-20 w-24 h-24 rounded-full bg-[#EAE5D9] text-[#161616] p-2 flex flex-col items-center justify-center text-center shadow-2xl border-4 border-[#161616] transform rotate-12 group-hover:rotate-0 transition-transform">
               <span className="text-base leading-none mb-0.5">✦</span>
-              <span className="font-display text-xs font-bold leading-tight uppercase">FORJADO</span>
-              <span className="text-[9px] font-bold text-[#555] leading-none">DESDE 2021</span>
+              <span className="font-display text-xs font-bold leading-tight uppercase">FORJANDO</span>
+              <span className="text-[9px] font-bold text-[#555] leading-none">DESDE 2022</span>
             </div>
           </div>
 

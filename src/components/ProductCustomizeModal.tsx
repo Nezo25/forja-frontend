@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { CartItem, Finish, Material, Product, Scale } from '@/data/products';
+import { CATEGORY_LABELS } from '@/data/products';
 import { TypeBadge } from './TypeBadge';
 
 interface Props {
@@ -18,9 +19,9 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
 
   useEffect(() => {
     if (product != null) {
-      setScale(product.scales[0]);
+      setScale(product.scales && product.scales.length > 0 ? product.scales[0] : ('Padrão' as any));
       setFinish('Peça Crua');
-      setMaterial(product.materials[0]);
+      setMaterial(product.materials && product.materials.length > 0 ? product.materials[0] : 'PLA');
       setQty(1);
       setObservations('');
       setAdded(false);
@@ -29,123 +30,244 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
 
   if (!product) return null;
 
-  const finishExtra = product.finishOptions.find(f => f.label === finish)?.extra ?? 0;
-  const unitPrice = product.basePrice + finishExtra;
+  const isTcg = product.department === 'TCG' || product.category === 'TCG';
+  const finishOptions = product.finishOptions && product.finishOptions.length > 0
+    ? product.finishOptions
+    : [{ label: 'Peça Crua' as Finish, extra: 0 }];
+
+  const finishExtra = finishOptions.find(f => f.label === finish)?.extra ?? 0;
+  const unitPrice = (product.basePrice || 0) + finishExtra;
   const total = unitPrice * qty;
+  const categoryLabel = (CATEGORY_LABELS as Record<string, string>)[product.category] || product.category;
 
   function handleAdd() {
-    if (!scale) return;
+    if (!scale && !isTcg) return;
     onAdd({ 
       product: product!, 
-      scale, 
+      scale: scale || 'Padrão', 
       finish, 
       material, 
       qty, 
       unitPrice,
       observations: observations.trim() || undefined,
-      customized: true
+      customized: !isTcg
     });
     setAdded(true);
-    setTimeout(onClose, 800);
+    setTimeout(onClose, 750);
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+      {/* Dark overlay backdrop */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" />
 
+      {/* Main Modal Dialog */}
       <div
-        className="relative w-full md:max-w-xl max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-2xl flex flex-col bg-[#111827] border border-gray-700 shadow-2xl animate-in slide-in-from-bottom-4 md:slide-in-from-bottom-0"
+        className="relative w-full sm:max-w-xl max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl flex flex-col bg-[#161616] border border-[#2E2E2E] shadow-2xl shadow-black/80 text-white animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="relative h-[50vh] min-h-[300px] shrink-0 overflow-hidden rounded-t-2xl bg-[#0B0F19]">
-          <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#111827] to-transparent pointer-events-none" />
-          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-gray-400 hover:text-white transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        {/* Top Image Showcase Banner */}
+        <div className="relative h-64 sm:h-72 shrink-0 overflow-hidden bg-[#1E1E1E] border-b border-[#262626]">
+          <img 
+            src={product.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'} 
+            alt={product.name} 
+            className="w-full h-full object-contain p-4" 
+          />
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#161616] via-transparent to-black/40 pointer-events-none" />
+
+          {/* Close button */}
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center bg-black/60 hover:bg-[#EA580C] text-[#A3A3A3] hover:text-white transition-all border border-white/10 z-20 cursor-pointer"
+            aria-label="Fechar"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
           </button>
-          <div className="absolute bottom-3 left-4">
-            <div className="flex gap-1 mb-1">{product.types.map(t => <TypeBadge key={t} type={t} />)}</div>
-            <h2 className="text-xl font-extrabold text-white">{product.name}</h2>
+
+          {/* Product Header Information inside Banner */}
+          <div className="absolute bottom-4 left-5 right-5 z-10">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className="text-[10px] font-bold tracking-[0.2em] text-[#EA580C] uppercase">
+                {categoryLabel}
+              </span>
+              {product.types && product.types.length > 0 && (
+                <div className="flex gap-1">
+                  {product.types.map(t => <TypeBadge key={t} type={t} />)}
+                </div>
+              )}
+            </div>
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-white uppercase tracking-wide leading-none">
+              {product.name}
+            </h2>
           </div>
         </div>
 
-        <div className="p-5 flex flex-col gap-5">
-          {/* Alerta */}
-          <div className="flex gap-3 bg-blue-900/20 border border-blue-800 rounded-lg p-3">
-            <svg className="shrink-0 text-blue-400 mt-0.5" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-            <p className="text-xs text-blue-200 leading-relaxed">
-              <strong>Atenção:</strong> Os valores exibidos são estimativas base. O valor final e prazo exato podem variar conforme ajustes de escala, nível de detalhamento e acabamento acordados durante o atendimento via WhatsApp.
-            </p>
-          </div>
-
-          {/* Scale */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-gray-400">Escala / Tamanho</label>
-            <div className="flex flex-wrap gap-2">
-              {product.scales.map(s => (
-                <button
-                  key={s}
-                  onClick={() => setScale(s)}
-                  className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all border ${scale === s ? 'bg-orange-500/20 text-orange-500 border-orange-500' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'}`}
-                >
-                  {s}
-                </button>
-              ))}
-              <button
-                onClick={() => setScale('Personalizada')}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all border ${scale === 'Personalizada' ? 'bg-orange-500/20 text-orange-500 border-orange-500' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'}`}
-              >
-                Medida Personalizada
-              </button>
+        {/* Modal Configuration Body */}
+        <div className="p-5 sm:p-6 flex flex-col gap-6">
+          
+          {/* Forge Notice Banner */}
+          <div className="flex gap-3 bg-[#1C1613] border border-[#EA580C]/25 rounded-xl p-3.5 text-xs text-[#D4D4D4] leading-relaxed">
+            <span className="text-base leading-none text-[#EA580C] shrink-0 mt-0.5">🔥</span>
+            <div>
+              <span className="font-bold text-white block mb-0.5">Produção sob encomenda e acabamento manual</span>
+              Os valores são estimativas base. O valor final e prazo exato podem ser refinados no WhatsApp de acordo com suas preferências.
             </div>
           </div>
 
-          {/* Finish */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-gray-400">Tipo de Acabamento</label>
-            <div className="flex flex-col gap-2">
-              {product.finishOptions.map(f => (
+          {/* Scales Selector (only if not strictly TCG) */}
+          {!isTcg && product.scales && product.scales.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <label className="text-[11px] font-bold tracking-[0.18em] text-[#A3A3A3] uppercase">
+                  Escala & Dimensões
+                </label>
+                <span className="text-[11px] text-[#737373]">Selecione o tamanho</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {product.scales.map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setScale(s)}
+                    className={`px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                      scale === s 
+                        ? 'bg-[#EA580C] text-white border-[#EA580C] shadow-md shadow-orange-950/40' 
+                        : 'bg-[#1E1E1E] text-[#D4D4D4] border-[#2E2E2E] hover:border-[#404040] hover:text-white'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
                 <button
-                  key={f.label}
-                  onClick={() => setFinish(f.label)}
-                  className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm font-semibold transition-all border text-left ${finish === f.label ? 'bg-orange-500/10 text-orange-500 border-orange-500' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'}`}
+                  type="button"
+                  onClick={() => setScale('Personalizada')}
+                  className={`px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                    scale === 'Personalizada' 
+                      ? 'bg-[#EA580C] text-white border-[#EA580C] shadow-md shadow-orange-950/40' 
+                      : 'bg-[#1E1E1E] text-[#D4D4D4] border-[#2E2E2E] hover:border-[#404040] hover:text-white'
+                  }`}
                 >
-                  <span>{f.label}</span>
-                  <span className="font-bold">{f.extra === 0 ? 'Incluído' : `+ R$ ${f.extra.toFixed(2).replace('.', ',')}`}</span>
+                  📐 Medida Personalizada
                 </button>
-              ))}
+              </div>
+            </div>
+          )}
+
+          {/* Finish Options (only if not TCG) */}
+          {!isTcg && product.finishOptions && product.finishOptions.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <label className="text-[11px] font-bold tracking-[0.18em] text-[#A3A3A3] uppercase">
+                  Grau de Acabamento
+                </label>
+                <span className="text-[11px] text-[#737373]">Oficina Forja do Chico</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {finishOptions.map(f => {
+                  const isSelected = finish === f.label;
+                  return (
+                    <button
+                      key={f.label}
+                      type="button"
+                      onClick={() => setFinish(f.label)}
+                      className={`flex flex-col justify-between p-3.5 rounded-xl text-left transition-all border cursor-pointer ${
+                        isSelected 
+                          ? 'bg-[#EA580C]/15 border-[#EA580C] shadow-md shadow-orange-950/30 ring-1 ring-[#EA580C]' 
+                          : 'bg-[#1E1E1E] border-[#2A2A2A] hover:border-[#383838]'
+                      }`}
+                    >
+                      <span className={`text-xs font-bold block mb-1 ${isSelected ? 'text-white' : 'text-[#D4D4D4]'}`}>
+                        {f.label}
+                      </span>
+                      <span className="text-xs font-mono font-semibold text-[#EA580C]">
+                        {f.extra === 0 ? 'Sem custo extra' : `+ R$ ${f.extra.toFixed(2).replace('.', ',')}`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Quantity Selector */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-[#1E1E1E] border border-[#2A2A2A]">
+            <span className="text-xs font-bold text-[#D4D4D4] uppercase tracking-wider">
+              Quantidade de Peças
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setQty(q => Math.max(1, q - 1))}
+                className="w-8 h-8 rounded-lg bg-[#262626] hover:bg-[#333333] text-white flex items-center justify-center font-bold text-sm border border-[#3A3A3A] transition-colors cursor-pointer"
+              >
+                −
+              </button>
+              <span className="font-display text-xl text-white min-w-[24px] text-center">
+                {qty}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQty(q => q + 1)}
+                className="w-8 h-8 rounded-lg bg-[#262626] hover:bg-[#333333] text-white flex items-center justify-center font-bold text-sm border border-[#3A3A3A] transition-colors cursor-pointer"
+              >
+                +
+              </button>
             </div>
           </div>
 
           {/* Observations */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-gray-400">Observações especiais</label>
+            <label className="block text-[11px] font-bold tracking-[0.18em] text-[#A3A3A3] uppercase mb-2">
+              Observações ou Detalhes Especiais (Opcional)
+            </label>
             <textarea 
               value={observations}
               onChange={e => setObservations(e.target.value)}
-              placeholder="Ex: base translúcida, efeito de ataque, suporte específico..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-orange-500"
-              rows={3}
+              placeholder="Ex: pose específica, efeito brilhante/shiny, adaptação para LED..."
+              className="w-full bg-[#1E1E1E] border border-[#2E2E2E] focus:border-[#EA580C] rounded-xl p-3 text-xs text-white placeholder-[#666] outline-none transition-colors"
+              rows={2}
             />
           </div>
 
-          {/* Price + CTA */}
-          <div className="flex items-center justify-between pt-4 mt-2 border-t border-gray-800">
+          {/* Bottom Bar: Total & High-Impact CTA */}
+          <div className="pt-4 border-t border-[#262626] flex items-center justify-between gap-4">
             <div>
-              <div className="text-xs uppercase tracking-wide text-gray-400 font-medium">Estimativa</div>
-              <div className="text-2xl font-extrabold text-orange-500">
-                R$ {total.toFixed(2).replace('.', ',')}*
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[#A3A3A3] font-bold block mb-0.5">
+                Estimativa Total
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs font-black text-[#EA580C]">R$</span>
+                <span className="font-display text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
+                  {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
             </div>
+
             <button
+              type="button"
               onClick={handleAdd}
-              disabled={!scale || added}
-              className={`h-11 px-6 rounded-xl font-bold text-sm transition-all text-white flex items-center gap-2 ${added ? 'bg-green-500 hover:bg-green-600' : 'bg-orange-500 hover:bg-orange-600 disabled:opacity-50'}`}
+              disabled={(!scale && !isTcg) || added}
+              className={`h-12 px-6 sm:px-8 rounded-lg font-bold text-xs sm:text-sm tracking-wider uppercase transition-all flex items-center gap-2 cursor-pointer shadow-lg active:scale-95 ${
+                added 
+                  ? 'bg-emerald-600 text-white shadow-emerald-950/40' 
+                  : 'bg-[#EA580C] hover:bg-[#C2410C] text-white shadow-orange-950/50 disabled:opacity-50 disabled:cursor-not-allowed'
+              }`}
             >
-              {added ? 'Adicionado!' : 'Adicionar Personalizado'}
+              {added ? (
+                <>
+                  <span>✓</span> Adicionado ao Carrinho!
+                </>
+              ) : (
+                <>
+                  <span>Adicionar ao Carrinho</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </>
+              )}
             </button>
           </div>
+
         </div>
       </div>
     </div>

@@ -14,6 +14,8 @@ import {
   saveProduct,
   deleteProduct,
   toggleProductActive,
+  toggleProductFeatured,
+  setFeaturedProduct,
   updateProductPrice,
   getStoredFilaments,
   fetchRemoteFilaments,
@@ -260,6 +262,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     basePrice: (initialData?.basePrice ?? 149).toString(), 
     image: initialData?.image || '', 
     active: initialData ? initialData.active : true,
+    featured: initialData ? Boolean(initialData.featured) : false,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -303,6 +306,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
         filamentG: parseInt(form.filamentG, 10) || 0,
         image: form.image.trim() || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
         active: form.active,
+        featured: form.featured,
       }, initialData?.id);
 
       toast.show({
@@ -424,6 +428,13 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
             )}
 
             <label className="flex items-center gap-2 cursor-pointer pt-1">
+              <input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} className="w-4 h-4 rounded accent-orange-500 cursor-pointer" />
+              <span className="text-sm font-semibold text-amber-400 flex items-center gap-1.5">
+                ⭐ Peça em Destaque na Vitrine Principal (Hero)
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded accent-orange-500 cursor-pointer" />
               <span className="text-sm font-semibold text-gray-300">Produto ativo na vitrine da loja</span>
             </label>
@@ -725,6 +736,18 @@ export default function Admin() {
     return totalFaturamento / orders.length;
   }, [orders, totalFaturamento]);
 
+  // Catálogo: Toggle Destaque no Hero
+  function handleToggleFeatured(p: Product) {
+    const isNowFeatured = toggleProductFeatured(p.id);
+    setCatalog(getStoredProducts());
+    toast.show({
+      title: isNowFeatured ? 'Peça em Destaque!' : 'Destaque removido',
+      message: isNowFeatured ? `"${p.name}" agora é a peça exibida no Hero da vitrine.` : `"${p.name}" não é mais o destaque do Hero.`,
+      type: 'success',
+      icon: '⭐'
+    });
+  }
+
   // Catálogo: Toggle Ativo / Pausado
   async function handleToggleActive(p: Product) {
     const isNowActive = await toggleProductActive(p.id);
@@ -1004,7 +1027,14 @@ export default function Admin() {
                               <div className="flex items-center gap-3">
                                 <img src={p.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'} alt={p.name} className="w-10 h-12 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
                                 <div>
-                                  <div className="font-semibold text-sm text-gray-100">{p.name}</div>
+                                  <div className="font-semibold text-sm text-gray-100 flex items-center gap-1.5">
+                                    <span>{p.name}</span>
+                                    {p.featured && (
+                                      <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                        ⭐ Destaque Hero
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="text-[10px] font-mono text-gray-500">{p.id}</div>
                                 </div>
                               </div>
@@ -1051,6 +1081,18 @@ export default function Admin() {
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleFeatured(p)}
+                                  title={p.featured ? "Remover do destaque do Hero" : "Definir como peça em destaque no Hero"}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer ${
+                                    p.featured 
+                                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30' 
+                                      : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-amber-400 hover:bg-gray-700'
+                                  }`}
+                                >
+                                  {p.featured ? '⭐ Destaque' : '☆ Destacar'}
+                                </button>
                                 <button
                                   onClick={() => setEditingProduct(p)}
                                   className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:bg-gray-700 bg-gray-800 border border-gray-700 text-blue-400 cursor-pointer"

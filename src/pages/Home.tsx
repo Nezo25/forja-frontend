@@ -76,6 +76,10 @@ export default function Home() {
     });
   }, [products, search, activeCategory]);
 
+  const featuredProduct = useMemo(() => {
+    return products.find(p => p.featured && p.active) || products.find(p => p.featured) || products[0] || null;
+  }, [products]);
+
   function addToCart(item: CartItem) {
     setCart(prev => {
       const idx = prev.findIndex(i => 
@@ -122,8 +126,12 @@ export default function Home() {
         onSearch={setSearch}
       />
 
-      {/* Hero Editorial (Figma Make) */}
-      <Hero onOrcamento={() => setOrcamentoOpen(true)} />
+      {/* Hero Editorial (Figma Make) com Peça em Destaque Dinâmica */}
+      <Hero 
+        onOrcamento={() => setOrcamentoOpen(true)} 
+        featuredProduct={featuredProduct}
+        onConfigure={setConfigProduct}
+      />
 
       {/* SECTION 01 — Orange Transition Banner (Figma Make) */}
       <section className="bg-[#EA580C] text-white py-12 md:py-20 px-4 md:px-8 overflow-hidden">

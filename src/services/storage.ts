@@ -217,10 +217,38 @@ export async function fetchRemoteProducts(): Promise<Product[]> {
   return getStoredProducts();
 }
 
+export function toggleProductFeatured(id: string): boolean {
+  const current = getStoredProducts();
+  const target = current.find(p => p.id === id);
+  const willBeFeatured = !target?.featured;
+  const updated = current.map(p => ({
+    ...p,
+    featured: p.id === id ? willBeFeatured : false
+  }));
+  saveProductsToStorage(updated);
+  return willBeFeatured;
+}
+
+export function setFeaturedProduct(id: string): void {
+  const current = getStoredProducts();
+  const updated = current.map(p => ({
+    ...p,
+    featured: p.id === id
+  }));
+  saveProductsToStorage(updated);
+}
+
 export async function saveProduct(productData: Partial<Product>, initialId?: string): Promise<Product> {
   const current = getStoredProducts();
   const isEditing = Boolean(initialId);
   const id = initialId || (productData.id ? productData.id : 'prod_' + Date.now());
+
+  // Se este produto foi marcado como destaque, desmarca os outros para manter o destaque principal único
+  if (productData.featured) {
+    current.forEach(p => {
+      if (p.id !== id) p.featured = false;
+    });
+  }
 
   const fullProduct: Product = sanitizeProduct({
     ...productData,
