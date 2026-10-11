@@ -45,7 +45,7 @@ const NAV: { id: Section; icon: string; label: string }[] = [
   { id: 'kanban', icon: '📋', label: 'Kanban de Produção' },
   { id: 'pedidos', icon: '🛒', label: 'Pedidos e Finanças' },
   { id: 'orcamentos', icon: '📐', label: 'Orçamentos STL' },
-  { id: 'estoque', icon: '🧵', label: 'Estoque Filamento' },
+  { id: 'estoque', icon: '🎨', label: 'Cores Disponíveis' },
   { id: 'precos', icon: '💰', label: 'Ajuste de Preços' },
 ];
 
@@ -482,16 +482,16 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
       const saved = await saveFilament({
         color: form.color.trim(),
         material: form.material.trim(),
-        stockGrams: parseFloat(form.stockG) || 0,
-        minStockGrams: parseFloat(form.minStockG) || 300,
+        stockGrams: 1000,
+        minStockGrams: 0,
         hexCode: form.hexCode
       });
 
       toast.show({
-        title: 'Filamento salvo no Banco de Dados!',
-        message: `Bobina "${saved.color} (${saved.material})" foi adicionada ao estoque.`,
+        title: 'Cor adicionada com sucesso!',
+        message: `A cor "${saved.color} (${saved.material})" foi disponibilizada na vitrine da loja.`,
         type: 'success',
-        icon: '🧵',
+        icon: '🎨',
       });
 
       onSave(saved);
@@ -510,13 +510,13 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
         <form onSubmit={handleSave}>
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
             <div>
-              <h2 className="font-extrabold text-lg text-gray-100">Nova Bobina de Filamento</h2>
-              <p className="text-xs text-gray-400">Cadastrar no estoque</p>
+              <h2 className="font-extrabold text-lg text-gray-100">Nova Cor de Filamento</h2>
+              <p className="text-xs text-gray-400">Cadastrar cor visível na loja</p>
             </div>
             <button type="button" onClick={onClose} className="text-sm px-3 py-1 rounded-lg text-gray-400 hover:text-white" style={{ background: '#1F2937' }}>✕</button>
           </div>
           <div className="p-5 flex flex-col gap-4">
-            <Field label="Cor *"><Input required placeholder="Ex: Vermelho Charizard" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} /></Field>
+            <Field label="Nome da Cor *"><Input required placeholder="Ex: Vermelho Charizard" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} /></Field>
             <Field label="Cor Visual (Hex)">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
@@ -535,21 +535,19 @@ function FilamentModal({ onClose, onSave }: { onClose: () => void; onSave: (f: F
                 {['PLA','Resina','PETG','ABS'].map(m => <option key={m}>{m}</option>)}
               </select>
             </Field>
-            <Field label="Estoque Atual (g) *"><Input required type="number" placeholder="1000" value={form.stockG} onChange={e => setForm(f => ({ ...f, stockG: e.target.value }))} /></Field>
-            <Field label="Mínimo Recomendado (g) *"><Input required type="number" placeholder="300" value={form.minStockG} onChange={e => setForm(f => ({ ...f, minStockG: e.target.value }))} /></Field>
             
             <button 
               disabled={isSaving} 
               type="submit" 
-              className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 transition-all flex items-center justify-center gap-2 cursor-pointer" 
+              className="w-full h-11 rounded-xl font-extrabold text-sm mt-1 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-orange-950/40" 
               style={{ background: '#F97316', color: '#fff' }}
             >
               {isSaving ? (
                 <>
-                  <span className="animate-spin text-sm">⏳</span> Salvando no Banco de Dados...
+                  <span className="animate-spin text-sm">⏳</span> Salvando no Catálogo...
                 </>
               ) : (
-                <>Salvar Filamento 💾</>
+                <>Salvar Cor 🎨</>
               )}
             </button>
           </div>
@@ -922,7 +920,7 @@ export default function Admin() {
                 className="h-9 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:opacity-90 shadow-md shadow-orange-950/40 cursor-pointer" 
                 style={{ background: '#F97316', color: '#fff' }}
               >
-                + Nova Bobina
+                + Nova Cor
               </button>
             )}
           </div>
@@ -1208,64 +1206,54 @@ export default function Admin() {
             </div>
           )}
 
-          {/* ── ESTOQUE ── */}
+          {/* ── CORES DISPONÍVEIS ── */}
           {section === 'estoque' && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
+              <div className="p-4 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm text-gray-100 flex items-center gap-2">
+                    🎨 Cores de Filamento Disponíveis na Loja
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Defina quais cores de filamento aparecem como opções selecionáveis para os clientes na vitrine e encomendas 3D.
+                  </p>
+                </div>
+              </div>
+
               {filamentos.length === 0 ? (
                 <div className="py-12 text-center text-xs text-gray-400 bg-[#111827] rounded-xl border border-gray-800">
-                  Nenhuma bobina de filamento cadastrada no estoque. Clique em "+ Nova Bobina" para cadastrar.
+                  Nenhuma cor cadastrada. Clique em "+ Nova Cor" no topo para adicionar.
                 </div>
               ) : (
-                filamentos.map(f => {
-                  const currentStock = f.stockGrams ?? 0;
-                  const minStock = f.minStockGrams ?? 300;
-                  const pct = Math.min(100, (currentStock / (minStock * 4 || 1200)) * 100);
-                  const low = currentStock < minStock;
-                  return (
-                    <div key={f.id || f.color} className="p-4 rounded-xl flex flex-col gap-2 shadow-lg bg-gray-800/80" style={{ border: `1px solid ${low ? 'rgba(239,68,68,0.4)' : '#374151'}` }}>
-                      <div className="flex items-center justify-between">
-                        <div className="font-semibold text-sm text-gray-100 flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full border border-gray-600" style={{ backgroundColor: f.hexCode || '#f97316' }} /> {f.color} <span className="text-[11px] font-normal text-gray-400">({f.material})</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {low && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400">⚠ Estoque baixo</span>}
-                          <span className={`font-bold font-mono text-[14px] ${low ? 'text-red-400' : 'text-gray-100'}`}>{currentStock} g</span>
-                          
-                          <div className="flex items-center gap-1 ml-2">
-                            <button 
-                              onClick={() => handleFilamentStockChange(f, -100)}
-                              className="px-2 h-7 rounded bg-gray-700/50 hover:bg-gray-700/80 text-[11px] font-bold text-gray-300 flex items-center justify-center transition-colors cursor-pointer"
-                              title="Remover 100g"
-                            >
-                              - 100g
-                            </button>
-                            <button 
-                              onClick={() => handleFilamentStockChange(f, 250)}
-                              className="px-2 h-7 rounded bg-orange-500/20 hover:bg-orange-500/30 text-[11px] font-bold text-orange-400 flex items-center justify-center transition-colors cursor-pointer"
-                              title="Adicionar carretel 250g"
-                            >
-                              +250g
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteFilament(f)}
-                              className="px-2 h-7 rounded bg-red-900/40 hover:bg-red-900/60 text-[11px] font-bold text-red-400 flex items-center justify-center transition-colors cursor-pointer ml-1"
-                              title="Deletar bobina"
-                            >
-                              🗑
-                            </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {filamentos.map(f => (
+                    <div 
+                      key={f.id || f.color} 
+                      className="p-4 rounded-xl flex items-center justify-between shadow-lg bg-gray-800/80 border border-gray-700/80 hover:border-gray-600 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span 
+                          className="w-6 h-6 rounded-full border border-gray-600 shadow-md shrink-0" 
+                          style={{ backgroundColor: f.hexCode || '#f97316' }} 
+                        />
+                        <div>
+                          <div className="font-bold text-sm text-gray-100">{f.color}</div>
+                          <div className="text-[11px] text-gray-400 font-medium">
+                            {f.material || 'PLA'} • <span className="text-green-400 font-semibold">Ativo na vitrine</span>
                           </div>
                         </div>
                       </div>
-                      <div className="h-2.5 rounded-full bg-gray-900">
-                        <div className="h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: low ? '#EF4444' : (f.hexCode || '#F97316') }} />
-                      </div>
-                      <div className="text-[11px] text-gray-400 flex items-center justify-between">
-                        <span>Mínimo recomendado: {minStock} g</span>
-                        <span className="text-[10px] font-mono">{pct.toFixed(0)}% da meta</span>
-                      </div>
+                      
+                      <button 
+                        onClick={() => handleDeleteFilament(f)}
+                        className="px-2.5 py-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/60 text-xs font-semibold text-red-400 border border-red-800/40 transition-colors cursor-pointer"
+                        title="Remover cor da loja"
+                      >
+                        🗑 Excluir
+                      </button>
                     </div>
-                  );
-                })
+                  ))}
+                </div>
               )}
             </div>
           )}

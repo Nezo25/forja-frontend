@@ -61,12 +61,14 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
         customScale: item.scale
       }));
 
+      const observations = cart.map(i => i.observations ? `${i.product.name}: ${i.observations}` : null).filter(Boolean).join(' | ');
+
       const payload = {
         customerName: name,
         customerPhone: phone,
         customerEmail: email,
         couponCode: appliedCoupon || null,
-        observations: '',
+        observations: observations || '',
         shippingAddressLine: 'A combinar',
         shippingCity: 'A combinar',
         shippingState: 'A combinar',

@@ -16,6 +16,15 @@ const COLUMNS: { id: KanbanColumn, label: string, icon: string }[] = [
   { id: 'READY_SHIPPED', label: 'Enviados', icon: '🚀' },
 ];
 
+export interface OrderKanbanItemDTO {
+  itemName: string;
+  quantity: number;
+  finishType: string;
+  filamentColor?: string;
+  scale?: string;
+  printTimeMinutes?: number;
+}
+
 export interface OrderKanbanDTO {
   id: number;
   shortCode: string;
@@ -25,7 +34,9 @@ export interface OrderKanbanDTO {
   totalAmount: number;
   kanbanColumn: KanbanColumn;
   tags: string[];
-  items?: any[];
+  items?: OrderKanbanItemDTO[];
+  customerNotes?: string;
+  internalNotes?: string;
 }
 
 export function KanbanBoard() {
