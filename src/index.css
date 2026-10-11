@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --color-forge-bg:       #0B0F19;
+  --color-forge-surface:  #111827;
+  --color-forge-card:     #1F2937;
+  --color-forge-border:   #374151;
+  --color-forge-muted:    #6B7280;
+  --color-forge-text:     #F9FAFB;
+  --color-forge-subtext:  #9CA3AF;
+
+  --color-forge-orange:   #F97316;
+  --color-forge-orange-hover: #EA6A0A;
+  --color-forge-orange-dim:   rgba(249,115,22,0.15);
+
+  --color-type-fire:      #EF4444;
+  --color-type-fire-bg:   rgba(239,68,68,0.15);
+  --color-type-ghost:     #8B5CF6;
+  --color-type-ghost-bg:  rgba(139,92,246,0.15);
+  --color-type-water:     #3B82F6;
+  --color-type-water-bg:  rgba(59,130,246,0.15);
+  --color-type-electric:  #EAB308;
+  --color-type-electric-bg: rgba(234,179,8,0.15);
+  --color-type-grass:     #22C55E;
+  --color-type-grass-bg:  rgba(34,197,94,0.15);
+  --color-type-psychic:   #EC4899;
+  --color-type-psychic-bg: rgba(236,72,153,0.15);
+  --color-type-dragon:    #6366F1;
+  --color-type-dragon-bg: rgba(99,102,241,0.15);
+  --color-type-steel:     #94A3B8;
+  --color-type-steel-bg:  rgba(148,163,184,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--color-forge-bg);
+  color: var(--color-forge-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-forge-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-forge-muted); }
+
+::selection { background: var(--color-forge-orange-dim); color: var(--color-forge-orange); }

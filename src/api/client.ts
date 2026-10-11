@@ -1,0 +1,57 @@
+const getBaseUrl = () => {
+  const root = import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com';
+  return `${root}/api/v1`;
+};
+
+export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const baseUrl = getBaseUrl();
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${baseUrl}${path}`;
+
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('__adm_token') : null;
+  
+  // AbortController para evitar requests infinitos no Safari, aumentado para 60s devido ao cold start do Render
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: options?.signal || controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...options?.headers,
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      let errorMsg = `Erro ${response.status}: ${response.statusText || 'Falha na requisição'}`;
+      try {
+        const text = await response.text();
+        try {
+          const json = JSON.parse(text);
+          if (json.detail) errorMsg = json.detail;
+          else if (json.message) errorMsg = json.message;
+          else if (json.error) errorMsg = json.error;
+        } catch {
+          if (text && text.length < 200) errorMsg += ` - ${text}`;
+        }
+      } catch {
+        // ignore
+      }
+      throw new Error(errorMsg);
+    }
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : {} as T;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('A requisição demorou muito e foi cancelada (Timeout de 8s).');
+    }
+    throw error;
+  }
+}
