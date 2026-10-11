@@ -1,5 +1,19 @@
-import { type Product, type PokemonType } from '@/data/products';
+import { type Product, type PokemonType, type Category, products } from '@/data/products';
+import { toProductCategory, type ProductCategory } from '@/types/catalog';
 import { fetchApi } from '@/api/client';
+
+export function safeFormatDate(dateStr?: string | null): string {
+  if (!dateStr) return new Date().toLocaleDateString('pt-BR');
+  try {
+    const normalized = typeof dateStr === 'string' && dateStr.includes(' ') && !dateStr.includes('T')
+      ? dateStr.replace(' ', 'T')
+      : dateStr;
+    const d = new Date(normalized);
+    return isNaN(d.getTime()) ? new Date().toLocaleDateString('pt-BR') : d.toLocaleDateString('pt-BR');
+  } catch {
+    return new Date().toLocaleDateString('pt-BR');
+  }
+}
 
 export interface Order {
   id: string;
@@ -96,10 +110,13 @@ export function fileToBase64(file: File): Promise<string> {
 // ------------------- PRODUTOS (REAL DATA ONLY - SEM MOCKS) -------------------
 
 function sanitizeProduct(p: any): Product {
+  const isTcg = p?.category === 'TCG' || p?.department === 'TCG';
+  const category = isTcg ? 'TCG' : toProductCategory(p?.category);
+
   return {
     id: p?.id ? p.id.toString() : 'prod_' + Math.random().toString(36).substring(2, 8),
     name: p?.name || 'Figure',
-    category: p?.category || 'Figures Pokémon',
+    category,
     types: Array.isArray(p?.types) && p.types.length > 0 ? p.types : [p?.primaryType || 'Normal', p?.secondaryType].filter(Boolean),
     scales: Array.isArray(p?.scales) && p.scales.length ? p.scales : [p?.scale || '1:10'],
     materials: Array.isArray(p?.materials) && p.materials.length ? p.materials : ['PLA'],
@@ -110,6 +127,7 @@ function sanitizeProduct(p: any): Product {
     filamentG: typeof p?.filamentG === 'number' ? p.filamentG : (p?.defaultFilamentGrams || 0),
     active: p?.active !== false && p?.isActive !== false,
     featured: Boolean(p?.featured),
+    department: isTcg ? 'TCG' : 'PRINT_3D',
   };
 }
 
@@ -118,19 +136,19 @@ export function getStoredProducts(): Product[] {
     const local = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     if (local !== null) {
       const parsed = JSON.parse(local);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed.map(sanitizeProduct);
       }
     }
   } catch (e) {
     console.error('Erro ao ler produtos:', e);
   }
-  return []; // NUNCA restaura mock!
+  return products.map(sanitizeProduct); // Fallback seguro
 }
 
-export function saveProductsToStorage(products: Product[]): void {
+export function saveProductsToStorage(productsList: Product[]): void {
   try {
-    const sanitized = products.map(sanitizeProduct);
+    const sanitized = productsList.map(sanitizeProduct);
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(sanitized));
     window.dispatchEvent(new Event('forja_products_updated'));
   } catch (e) {
@@ -139,28 +157,31 @@ export function saveProductsToStorage(products: Product[]): void {
 }
 
 export async function fetchRemoteProducts(): Promise<Product[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 7000); // Timeout estrito de 7s para WebKit/Safari
+
   try {
     let allProducts: Product[] = [];
 
     // Fetch 3D Models
     try {
-      const data3d: any = await fetchApi('/models');
+      const data3d: any = await fetchApi('/models', { signal: controller.signal });
       const items3d = data3d?.content || (Array.isArray(data3d) ? data3d : []);
-      if (Array.isArray(items3d)) {
+      if (Array.isArray(items3d) && items3d.length > 0) {
         allProducts = [...items3d.map(sanitizeProduct)];
       }
     } catch (err) {
-      console.warn('API /models não respondeu ou retornou erro:', err);
+      console.warn('API /models não respondeu dentro de 7s ou retornou erro:', err);
     }
 
     // Fetch TCG Products
     try {
       const isAdmin = Boolean(typeof window !== 'undefined' && sessionStorage.getItem('__adm_token'));
       const tcgEndpoint = isAdmin ? '/admin/tcg-products?size=100' : '/tcg-products?size=100';
-      const dataTcg: any = await fetchApi(tcgEndpoint);
+      const dataTcg: any = await fetchApi(tcgEndpoint, { signal: controller.signal });
       const itemsTcg = dataTcg?.content || (Array.isArray(dataTcg) ? dataTcg : []);
-      if (Array.isArray(itemsTcg)) {
-        const mappedTcg = itemsTcg.map(tcg => ({
+      if (Array.isArray(itemsTcg) && itemsTcg.length > 0) {
+        const mappedTcg = itemsTcg.map((tcg: any) => ({
           id: tcg.id.toString(),
           name: tcg.name,
           category: 'TCG',
@@ -190,6 +211,8 @@ export async function fetchRemoteProducts(): Promise<Product[]> {
     }
   } catch (err) {
     console.warn('Erro geral em fetchRemoteProducts:', err);
+  } finally {
+    clearTimeout(timeoutId);
   }
   return getStoredProducts();
 }
@@ -213,10 +236,13 @@ export async function saveProduct(productData: Partial<Product>, initialId?: str
 
   saveProductsToStorage(updatedList);
 
+  const categoryEnum: ProductCategory = fullProduct.category === 'TCG' ? 'FIGURE_POKEMON' : toProductCategory(fullProduct.category);
+
   // Payload exatamente mapeado para o DTO do Spring Boot
   const payload = {
     pokedexNumber: 0,
     name: fullProduct.name,
+    category: categoryEnum,
     generation: 1,
     primaryType: fullProduct.types[0] || 'Normal',
     secondaryType: fullProduct.types[1] || null,
@@ -475,7 +501,7 @@ export async function fetchRemoteOrders(): Promise<Order[]> {
         id: o.id ? '#PED-' + o.id.toString() : '#PED-' + Math.floor(1000 + Math.random() * 9000),
         cliente: o.customerName || o.cliente || 'Cliente',
         produto: o.productName || o.produto || 'Figure',
-        data: o.createdAt ? new Date(o.createdAt).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+        data: safeFormatDate(o.createdAt),
         valor: typeof o.totalAmount === 'number' ? formatPrice(o.totalAmount) : (o.valor || '0,00'),
         status: o.status || 'Aguardando pgto',
       }));
@@ -494,7 +520,7 @@ export async function addOrder(order: Partial<Order>): Promise<Order> {
     id: '#PED-' + Math.floor(1000 + Math.random() * 9000),
     cliente: order.cliente || 'Cliente',
     produto: order.produto || 'Item da Forja',
-    data: new Date().toLocaleDateString('pt-BR'),
+    data: safeFormatDate(),
     valor: order.valor || '149,00',
     status: order.status || 'Em impressão',
     email: order.email,
@@ -604,7 +630,7 @@ export async function fetchRemoteQuotes(): Promise<Quote[]> {
         cliente: q.customerName || 'Cliente',
         arquivo: q.fileName || q.stlUrl || 'modelo.stl',
         status: q.status || 'Aguardando análise',
-        data: q.createdAt ? new Date(q.createdAt).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+        data: safeFormatDate(q.createdAt),
         contato: q.contact,
         precoEstimado: q.finalPrice,
       }));
@@ -624,7 +650,7 @@ export async function addQuote(quote: Partial<Quote>): Promise<Quote> {
     cliente: quote.cliente || 'Cliente',
     arquivo: quote.arquivo || 'modelo.stl',
     status: quote.status || 'Aguardando análise',
-    data: new Date().toLocaleDateString('pt-BR'),
+    data: safeFormatDate(),
     contato: quote.contato,
     escala: quote.escala,
     acabamento: quote.acabamento,

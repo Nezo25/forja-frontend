@@ -63,11 +63,12 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
 
       const observations = cart.map(i => i.observations ? `${i.product.name}: ${i.observations}` : null).filter(Boolean).join(' | ');
 
+      const activeCoupon = (appliedCoupon || coupon).trim().toUpperCase();
       const payload = {
         customerName: name,
         customerPhone: phone,
         customerEmail: email,
-        couponCode: appliedCoupon || null,
+        couponCode: activeCoupon ? activeCoupon : null,
         observations: observations || '',
         shippingAddressLine: 'A combinar',
         shippingCity: 'A combinar',
@@ -110,7 +111,7 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
       }
     } catch (e: any) {
       console.error(e);
-      alert('Erro ao registrar pedido. O cupom pode ser inválido ou expirado.');
+      alert(e.message || 'Erro ao registrar pedido. Tente novamente.');
     } finally {
       setIsLoading(false);
     }

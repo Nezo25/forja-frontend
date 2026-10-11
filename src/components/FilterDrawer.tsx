@@ -63,7 +63,7 @@ export function FilterDrawer({ filters, onChange, onClose, open, masterTab = 'AL
           </div>
 
           {/* TIPOS */}
-          {(!filters.categories.length || filters.categories.includes('Figures Pokémon')) && (
+          {(!filters.categories.length || filters.categories.includes('Figures Pokémon') || filters.categories.includes('FIGURE_POKEMON')) && (
             <div className="flex flex-col gap-3">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Tipo Pokémon</h3>
               <div className="flex flex-wrap gap-2">
@@ -89,7 +89,7 @@ export function FilterDrawer({ filters, onChange, onClose, open, masterTab = 'AL
           )}
 
           {/* ESCALAS */}
-          {(!filters.categories.length || filters.categories.includes('Figures Pokémon') || filters.categories.includes('Figures')) && (
+          {(!filters.categories.length || filters.categories.includes('Figures Pokémon') || filters.categories.includes('FIGURE_POKEMON') || filters.categories.includes('Figures')) && (
             <div className="flex flex-col gap-3">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Escala / Tamanho</h3>
               <div className="flex flex-wrap gap-2">

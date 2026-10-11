@@ -3,9 +3,12 @@ export type PokemonType =
   | 'Lutador' | 'Veneno' | 'Terra' | 'Voador' | 'Psíquico' | 'Inseto'
   | 'Pedra' | 'Fantasma' | 'Dragão' | 'Escuridão' | 'Metálico' | 'Fada';
 
+import { type ProductCategory, CATEGORY_LABELS, ENUM_BY_LABEL, toProductCategory } from '@/types/catalog';
+export { type ProductCategory, CATEGORY_LABELS, ENUM_BY_LABEL, toProductCategory };
+
 export type PrintCategory = 'Figures Pokémon' | 'Dioramas e Cenários' | 'Chibis / Miniaturas' | 'Acessórios Geek 3D' | 'Acessórios TCG (3D)';
 export type TcgCategory = 'Booster Avulso' | 'Booster Box' | 'ETB' | 'Blister' | 'Deck' | 'Acessório Oficial';
-export type Category = PrintCategory | TcgCategory | 'Figures' | 'Acessórios & Colecionáveis' | 'TCG';
+export type Category = PrintCategory | TcgCategory | ProductCategory | 'Figures' | 'Acessórios & Colecionáveis' | 'TCG';
 export type Scale = 'Mini (5 cm)' | 'Padrão (10 cm)' | 'Grande (20 cm)' | 'Escala 1:10 (~15 cm)' | 'Escala 1:1 (Real)';
 export type Finish = 'Peça Crua' | 'Com Primer' | 'Pintado à Mão';
 export type Material = 'PLA' | 'Resina';

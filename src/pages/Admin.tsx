@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import type { Product, Category, PokemonType } from '@/data/products';
-import { ALL_TYPES, ALL_CATEGORIES, ALL_SCALES } from '@/data/products';
+import type { Product, Category, PokemonType, ProductCategory } from '@/data/products';
+import { ALL_TYPES, ALL_CATEGORIES, ALL_SCALES, CATEGORY_LABELS, toProductCategory } from '@/data/products';
 import { NewTcgProductModal } from '../components/NewTcgProductModal';
 import { KanbanBoard } from '../components/KanbanBoard';
 import { TypeBadge } from '@/components/TypeBadge';
@@ -251,7 +251,7 @@ function OrderModal({ onClose, onSave }: { onClose: () => void; onSave: (o: Orde
 function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; onSave: (p: Product) => void; initialData?: Product }) {
   const [form, setForm] = useState({
     name: initialData?.name || '', 
-    category: initialData?.category || 'Figures Pokémon', 
+    category: (initialData?.category ? toProductCategory(initialData.category) : 'FIGURE_POKEMON') as ProductCategory, 
     types: initialData?.types?.join(', ') || '',
     scale: initialData?.scales?.[0] || '1:10', 
     material: initialData?.materials?.[0] || 'PLA', 
@@ -294,7 +294,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
       const saved = await saveProduct({
         id: initialData?.id,
         name: form.name.trim(),
-        category: form.category as Category,
+        category: form.category,
         types: parsedTypes.length > 0 ? parsedTypes : ['Normal' as PokemonType],
         scales: [form.scale as any],
         materials: [form.material as any],
@@ -341,11 +341,19 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Categoria">
-                <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as Category }))} className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100">
-                  {ALL_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                <select 
+                  value={form.category} 
+                  onChange={e => setForm(f => ({ ...f, category: e.target.value as ProductCategory }))} 
+                  className="w-full h-9 px-3 rounded-lg text-sm outline-none bg-gray-900 border border-gray-700 text-gray-100"
+                >
+                  {(Object.keys(CATEGORY_LABELS) as ProductCategory[]).map(key => (
+                    <option key={key} value={key}>
+                      {CATEGORY_LABELS[key]}
+                    </option>
+                  ))}
                 </select>
               </Field>
-              {form.category === 'Figures Pokémon' && (<Field label="Tipos de Pokémon (Múltipla escolha)">
+              {form.category === 'FIGURE_POKEMON' && (<Field label="Tipos de Pokémon (Múltipla escolha)">
   <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto p-2 border border-gray-700 rounded-lg bg-gray-900">
     {ALL_TYPES.map(t => (
       <label key={t} className="flex items-center gap-1.5 cursor-pointer hover:bg-gray-800 p-1 rounded transition-colors">
@@ -1003,7 +1011,7 @@ export default function Admin() {
                             </td>
                             {catalogTab === '3d' ? (
                                 <>
-                                  <td className="px-4 py-3 text-[12px] text-gray-300">{p.category}</td>
+                                  <td className="px-4 py-3 text-[12px] text-gray-300">{CATEGORY_LABELS[p.category as ProductCategory] || p.category}</td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-1">
                                 {(p.types || []).map((t, idx) => <TypeBadge key={t + idx} type={t} />)}
@@ -1358,7 +1366,7 @@ function PriceRow({ product, onSave }: { product: Product; onSave: (val: number)
       <img src={product.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'} alt={product.name} className="w-11 h-13 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-sm text-gray-100">{product.name}</div>
-        <div className="text-[11px] text-gray-400">{product.category} • {product.scales?.[0] || '1:10'}</div>
+        <div className="text-[11px] text-gray-400">{(CATEGORY_LABELS as any)[product.category] || product.category} • {product.scales?.[0] || '1:10'}</div>
       </div>
       <div className="flex items-center gap-2">
         <span className="text-[12px] font-bold text-gray-400">R$</span>
