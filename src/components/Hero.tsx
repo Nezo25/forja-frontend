@@ -56,7 +56,7 @@ export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure 
           {/* Metrics row */}
           <div className="grid grid-cols-3 gap-6 pt-6 border-t border-[#2A2A2A] max-w-md">
             <div>
-              <div className="font-display text-3xl md:text-4xl text-white">500+</div>
+              <div className="font-display text-3xl md:text-4xl text-white">100+</div>
               <div className="text-[11px] text-[#737373] mt-0.5">peças entregues</div>
             </div>
             <div>

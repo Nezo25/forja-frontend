@@ -59,6 +59,8 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
   const [slots, setSlots] = useState<AdminShowcaseSlot[]>(() => buildInitialSlots(products));
   const [savingSlot, setSavingSlot] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState<Record<number, string>>({ 1: '', 2: '', 3: '' });
+  const [promoInputs, setPromoInputs] = useState<Record<number, string>>({});
+  const [discountInputs, setDiscountInputs] = useState<Record<number, string>>({});
 
   useEffect(() => {
     let isMounted = true;
@@ -107,6 +109,15 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
     const diff = promo && promo > 0 && promo < origPrice ? origPrice - promo : 0;
     const pct = origPrice > 0 && diff > 0 ? Math.round((diff / origPrice) * 100) : 0;
 
+    // Sincroniza campos de digitação para o produto selecionado
+    if (promo && diff > 0) {
+      setPromoInputs(prev => ({ ...prev, [slotNumber]: (promo % 1 === 0 ? promo.toString() : promo.toFixed(2)).replace('.', ',') }));
+      setDiscountInputs(prev => ({ ...prev, [slotNumber]: (diff % 1 === 0 ? diff.toString() : diff.toFixed(2)).replace('.', ',') }));
+    } else {
+      setPromoInputs(prev => ({ ...prev, [slotNumber]: '' }));
+      setDiscountInputs(prev => ({ ...prev, [slotNumber]: '' }));
+    }
+
     handleSlotChange(slotNumber, {
       productId: Number(product.id) || null,
       productName: product.name,
@@ -121,12 +132,27 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
   }
 
   function handlePromoPriceChange(slotNumber: number, valStr: string) {
-    const clean = valStr.replace(',', '.');
-    const val = parseFloat(clean);
+    // Guarda o texto cru digitado pelo usuário para permitir apagar e digitar livremente
+    setPromoInputs(prev => ({ ...prev, [slotNumber]: valStr }));
+
     const currentSlot = slots.find(s => s.slotNumber === slotNumber);
     const orig = currentSlot?.originalPrice || 0;
 
+    if (!valStr.trim()) {
+      setDiscountInputs(prev => ({ ...prev, [slotNumber]: '' }));
+      handleSlotChange(slotNumber, {
+        promotionalPrice: null,
+        discountAmount: 0,
+        discountPercentage: 0,
+      });
+      return;
+    }
+
+    const clean = valStr.replace(',', '.');
+    const val = parseFloat(clean);
+
     if (isNaN(val) || val <= 0) {
+      setDiscountInputs(prev => ({ ...prev, [slotNumber]: '' }));
       handleSlotChange(slotNumber, {
         promotionalPrice: null,
         discountAmount: 0,
@@ -138,6 +164,13 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
     const diff = orig > val ? orig - val : 0;
     const pct = orig > 0 && diff > 0 ? Math.round((diff / orig) * 100) : 0;
 
+    if (diff > 0) {
+      const diffFormatted = diff % 1 === 0 ? diff.toString() : diff.toFixed(2).replace('.', ',');
+      setDiscountInputs(prev => ({ ...prev, [slotNumber]: diffFormatted }));
+    } else {
+      setDiscountInputs(prev => ({ ...prev, [slotNumber]: '' }));
+    }
+
     handleSlotChange(slotNumber, {
       promotionalPrice: val,
       discountAmount: diff,
@@ -146,12 +179,27 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
   }
 
   function handleDiscountAmountChange(slotNumber: number, discountStr: string) {
-    const clean = discountStr.replace(',', '.');
-    const discountVal = parseFloat(clean);
+    // Guarda o texto cru digitado pelo usuário (sem pular cursor nem forçar vírgulas)
+    setDiscountInputs(prev => ({ ...prev, [slotNumber]: discountStr }));
+
     const currentSlot = slots.find(s => s.slotNumber === slotNumber);
     const orig = currentSlot?.originalPrice || 0;
 
+    if (!discountStr.trim()) {
+      setPromoInputs(prev => ({ ...prev, [slotNumber]: '' }));
+      handleSlotChange(slotNumber, {
+        promotionalPrice: null,
+        discountAmount: 0,
+        discountPercentage: 0,
+      });
+      return;
+    }
+
+    const clean = discountStr.replace(',', '.');
+    const discountVal = parseFloat(clean);
+
     if (isNaN(discountVal) || discountVal <= 0) {
+      setPromoInputs(prev => ({ ...prev, [slotNumber]: '' }));
       handleSlotChange(slotNumber, {
         promotionalPrice: null,
         discountAmount: 0,
@@ -162,6 +210,9 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
 
     const newPromoPrice = Math.max(1, orig - discountVal);
     const pct = orig > 0 ? Math.round((discountVal / orig) * 100) : 0;
+
+    const promoFormatted = newPromoPrice % 1 === 0 ? newPromoPrice.toString() : newPromoPrice.toFixed(2).replace('.', ',');
+    setPromoInputs(prev => ({ ...prev, [slotNumber]: promoFormatted }));
 
     handleSlotChange(slotNumber, {
       promotionalPrice: newPromoPrice,
@@ -183,7 +234,28 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
     }
 
     const newPromoPrice = Math.max(1, orig - discount);
-    handlePromoPriceChange(slotNumber, newPromoPrice.toString());
+    const promoStr = (newPromoPrice % 1 === 0 ? newPromoPrice.toString() : newPromoPrice.toFixed(2)).replace('.', ',');
+    const discStr = (discount % 1 === 0 ? discount.toString() : discount.toFixed(2)).replace('.', ',');
+
+    setPromoInputs(prev => ({ ...prev, [slotNumber]: promoStr }));
+    setDiscountInputs(prev => ({ ...prev, [slotNumber]: discStr }));
+
+    const pct = orig > 0 ? Math.round((discount / orig) * 100) : 0;
+    handleSlotChange(slotNumber, {
+      promotionalPrice: newPromoPrice,
+      discountAmount: discount,
+      discountPercentage: pct,
+    });
+  }
+
+  function handleRemovePromo(slotNumber: number) {
+    setPromoInputs(prev => ({ ...prev, [slotNumber]: '' }));
+    setDiscountInputs(prev => ({ ...prev, [slotNumber]: '' }));
+    handleSlotChange(slotNumber, {
+      promotionalPrice: null,
+      discountAmount: 0,
+      discountPercentage: 0,
+    });
   }
 
   async function handleMysteryImageUpload(slotNumber: number, file: File) {
@@ -586,7 +658,7 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
                   {hasPromo && (
                     <button
                       type="button"
-                      onClick={() => handlePromoPriceChange(slot.slotNumber, '')}
+                      onClick={() => handleRemovePromo(slot.slotNumber)}
                       className="text-[10px] text-slate-400 hover:text-red-400 transition-colors font-medium cursor-pointer"
                     >
                       ✕ Remover desconto
@@ -599,39 +671,53 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
                 </p>
 
                 {/* Dois campos sincronizados: Preço Final vs Desconto */}
-                <div className="grid grid-cols-2 gap-2 pt-0.5">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-300 block mb-1">
-                      Preço Final da Peça (R$)
-                    </span>
-                    <input
-                      type="text"
-                      placeholder={origPrice > 0 ? `Ex: ${(origPrice - 10).toFixed(0)},00` : 'Ex: 45,00'}
-                      value={slot.promotionalPrice ? slot.promotionalPrice.toString().replace('.', ',') : ''}
-                      onChange={e => handlePromoPriceChange(slot.slotNumber, e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg bg-[#1E293B] border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-orange-500"
-                    />
-                    <span className="text-[9px] text-slate-400 block mt-1 leading-tight">
-                      Quanto ele paga no site
-                    </span>
-                  </div>
+                {(() => {
+                  const promoDisplay = promoInputs[slot.slotNumber] !== undefined
+                    ? promoInputs[slot.slotNumber]
+                    : (slot.promotionalPrice ? (slot.promotionalPrice % 1 === 0 ? slot.promotionalPrice.toString() : slot.promotionalPrice.toFixed(2)).replace('.', ',') : '');
 
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-300 block mb-1">
-                      Ou Dê um Desconto de (-R$)
-                    </span>
-                    <input
-                      type="text"
-                      placeholder="Ex: 10,00"
-                      value={savings > 0 ? savings.toFixed(2).replace('.', ',') : ''}
-                      onChange={e => handleDiscountAmountChange(slot.slotNumber, e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg bg-[#1E293B] border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-orange-500"
-                    />
-                    <span className="text-[9px] text-slate-400 block mt-1 leading-tight">
-                      Valor abatido do catálogo
-                    </span>
-                  </div>
-                </div>
+                  const discountDisplay = discountInputs[slot.slotNumber] !== undefined
+                    ? discountInputs[slot.slotNumber]
+                    : (savings > 0 ? (savings % 1 === 0 ? savings.toString() : savings.toFixed(2)).replace('.', ',') : '');
+
+                  return (
+                    <div className="grid grid-cols-2 gap-2 pt-0.5">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-300 block mb-1">
+                          Preço Final da Peça (R$)
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder={origPrice > 0 ? `Ex: ${(origPrice - 10).toFixed(0)}` : 'Ex: 45'}
+                          value={promoDisplay}
+                          onChange={e => handlePromoPriceChange(slot.slotNumber, e.target.value)}
+                          className="w-full h-9 px-3 rounded-lg bg-[#1E293B] border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-orange-500"
+                        />
+                        <span className="text-[9px] text-slate-400 block mt-1 leading-tight">
+                          Quanto ele paga no site
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-300 block mb-1">
+                          Ou Dê um Desconto de (-R$)
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="Ex: 10"
+                          value={discountDisplay}
+                          onChange={e => handleDiscountAmountChange(slot.slotNumber, e.target.value)}
+                          className="w-full h-9 px-3 rounded-lg bg-[#1E293B] border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-orange-500"
+                        />
+                        <span className="text-[9px] text-slate-400 block mt-1 leading-tight">
+                          Valor abatido do catálogo
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Atalhos Rápidos de Desconto */}
                 {origPrice > 0 && (
