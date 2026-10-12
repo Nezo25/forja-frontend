@@ -97,8 +97,19 @@ export function FeaturedPromotionsCarousel({
       types: slot.primaryType ? [slot.primaryType as any, slot.secondaryType as any].filter(Boolean) : (matched?.types || ['Normal']),
       scales: matched?.scales && matched.scales.length > 0 ? matched.scales : [(slot.scale as any) || '1:10 (~15 cm)'],
       materials: matched?.materials || ['PLA'],
-      basePrice: slot.originalPrice || matched?.basePrice || 75,
-      promoPrice: slot.promotionalPrice && slot.promotionalPrice > 0 ? slot.promotionalPrice : undefined,
+    const hasPromo = typeof slot.promotionalPrice === 'number' && slot.promotionalPrice > 0;
+    const basePrice = slot.originalPrice || matched?.basePrice || 75;
+    const promoPrice = hasPromo ? slot.promotionalPrice! : undefined;
+
+    const productPayload: Product = {
+      id: slot.productId ? slot.productId.toString() : (matched?.id || 'slot_' + slot.slotNumber),
+      name: slot.name || matched?.name || 'Figure da Forja',
+      category: (slot.category as any) || matched?.category || 'Figures Pokémon',
+      types: slot.primaryType ? [slot.primaryType as any, slot.secondaryType as any].filter(Boolean) : (matched?.types || ['Normal']),
+      scales: matched?.scales && matched.scales.length > 0 ? matched.scales : [(slot.scale as any) || '1:10 (~15 cm)'],
+      materials: matched?.materials || ['PLA'],
+      basePrice,
+      promoPrice,
       finishOptions: matched?.finishOptions || [],
       image: slot.imageUrl || matched?.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
       printTimeH: matched?.printTimeH || 8,
@@ -106,7 +117,8 @@ export function FeaturedPromotionsCarousel({
       active: true,
       // Metadata especial para o pedido e carrinho
       origin: 'HERO_SHOWCASE',
-      promoBadge: slot.badgeLabel || '⚡ OFERTA DE BANCADA',
+      promoBadge: '[Oferta do Destaque Aplicada]',
+      isHeroPromo: hasPromo,
       allowCouponStacking: slot.allowCouponStacking ?? false,
     } as any;
 
@@ -150,16 +162,16 @@ export function FeaturedPromotionsCarousel({
               {/* Degradê Editorial Dark */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/30 pointer-events-none" />
 
-              {/* Top Badges do Slide */}
+              {/* Top Badges do Slide com Justificativa Explícita */}
               <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-2 z-10">
                 {hasPromo ? (
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-500/30 text-orange-300 border border-orange-500/40 backdrop-blur-md flex items-center gap-1 shadow-sm">
-                    <span>{slot.badgeLabel || '🔥 Oferta da Forja'}</span>
-                    <span className="font-extrabold">(-R$ {discountDiff.toFixed(0)})</span>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-500/30 text-orange-300 border border-orange-500/50 backdrop-blur-md flex items-center gap-1.5 shadow-sm">
+                    <span>{slot.badgeLabel || '🔥 OFERTA DESTAQUE DA OFICINA'}</span>
+                    <span className="font-extrabold text-white">(-R$ {discountDiff.toFixed(0)})</span>
                   </span>
                 ) : (
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-sm">
-                    <span>{slot.badgeLabel || '⭐ Peça em Destaque'}</span>
+                    <span>{slot.badgeLabel || '⭐ PEÇA DA SEMANA'}</span>
                   </span>
                 )}
 
@@ -208,10 +220,18 @@ export function FeaturedPromotionsCarousel({
                   {slot.name}
                 </h3>
 
+                {/* Justificativa Explícita da Oferta de Bancada */}
+                {hasPromo && (
+                  <p className="text-[10px] text-amber-300/90 font-medium leading-tight flex items-center gap-1">
+                    <span className="text-orange-400">⚡</span>
+                    <span>Preço especial válido exclusivamente para esta unidade da bancada</span>
+                  </p>
+                )}
+
                 {/* Botão de Ação do Card */}
                 <div className="pt-1">
                   <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-orange-400 group-hover:text-orange-300 transition-colors">
-                    <span>Garantir Promoção</span>
+                    <span>Garantir Oferta de Destaque</span>
                     <span className="text-sm">→</span>
                   </span>
                 </div>

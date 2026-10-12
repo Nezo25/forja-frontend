@@ -35,7 +35,7 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
         return {
           slotNumber: num,
           isActive: true,
-          badgeLabel: num === 4 ? '❓ DROP MISTERIOSO' : '⚡ OFERTA DE BANCADA',
+          badgeLabel: num === 4 ? '❓ DROP MISTERIOSO' : '🔥 OFERTA DESTAQUE DA OFICINA',
           allowCouponStacking: false,
           mysteryCategory: 'FIGURE_POKEMON',
           mysteryTitle: 'Quem é esse Pokémon?',
@@ -544,9 +544,9 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
                 </label>
                 <input
                   type="text"
-                  value={slot.badgeLabel || '⚡ OFERTA DE BANCADA'}
+                  value={slot.badgeLabel || '🔥 OFERTA DESTAQUE DA OFICINA'}
                   onChange={e => handleSlotChange(slot.slotNumber, { badgeLabel: e.target.value })}
-                  placeholder="Ex: ⚡ OFERTA DE BANCADA"
+                  placeholder="Ex: 🔥 OFERTA DESTAQUE DA OFICINA"
                   className="h-8 px-3 rounded-lg bg-[#1E293B] border border-slate-700 text-xs text-white focus:outline-none focus:border-orange-500"
                 />
               </div>

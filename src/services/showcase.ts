@@ -98,7 +98,7 @@ export function getDefaultPublicShowcase(catalogProducts?: Product[]): PublicSho
       promotionalPrice: promo || null,
       discountAmount: diff > 0 ? diff : null,
       discountPercentage: pct > 0 ? pct : null,
-      badgeLabel: promo ? '⚡ OFERTA DE BANCADA' : '⭐ PEÇA DA SEMANA',
+      badgeLabel: promo ? '🔥 OFERTA DESTAQUE DA OFICINA' : '⭐ PEÇA DA SEMANA',
       allowCouponStacking: false,
     };
   };
@@ -162,7 +162,7 @@ export async function fetchAdminShowcase(catalog?: Product[]): Promise<AdminShow
       promotionalPrice: s.promotionalPrice,
       discountAmount: s.discountAmount,
       discountPercentage: s.discountPercentage,
-      badgeLabel: s.badgeLabel || '⚡ OFERTA DE BANCADA',
+      badgeLabel: s.badgeLabel || '🔥 OFERTA DESTAQUE DA OFICINA',
       allowCouponStacking: s.allowCouponStacking ?? false,
       isActive: true,
     })),

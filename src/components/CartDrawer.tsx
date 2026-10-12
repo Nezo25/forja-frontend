@@ -97,7 +97,7 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
         
         text += `\n📦 *Itens:*\n`;
         cart.forEach((item) => {
-          const promoTag = item.origin === 'HERO_SHOWCASE' ? ' [Oferta de Destaque]' : '';
+          const promoTag = item.origin === 'HERO_SHOWCASE' ? ' [Oferta do Destaque Aplicada]' : '';
           text += `• ${item.qty}x ${item.product.name} (${item.scale}, ${item.finish})${promoTag}\n`;
         });
         
@@ -157,8 +157,8 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
                       
                       {item.origin === 'HERO_SHOWCASE' && item.promoPrice && item.product.basePrice > item.promoPrice && (
                         <div className="mt-1">
-                          <span className="inline-block text-[10px] font-bold text-orange-400 bg-orange-950/70 px-1.5 py-0.5 rounded border border-orange-500/30">
-                            🏷️ Oferta de Bancada (-R$ {(item.product.basePrice - item.promoPrice).toFixed(2).replace('.', ',')})
+                          <span className="inline-block text-[10px] font-black text-orange-400 bg-orange-950/80 px-2 py-0.5 rounded border border-orange-500/40">
+                            🏷️ [Oferta do Destaque Aplicada] (-R$ {(item.product.basePrice - item.promoPrice).toFixed(2).replace('.', ',')})
                           </span>
                         </div>
                       )}

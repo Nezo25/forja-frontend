@@ -35,8 +35,12 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
     ? product.finishOptions
     : [{ label: 'Peça Crua' as Finish, extra: 0 }];
 
-  const hasPromo = typeof product.promoPrice === 'number' && product.promoPrice > 0 && product.promoPrice < product.basePrice;
-  const effectiveBasePrice = hasPromo ? product.promoPrice! : (product.basePrice || 0);
+  const isHeroPromo = Boolean(
+    (product as any)?.origin === 'HERO_SHOWCASE' ||
+    (product as any)?.isHeroPromo ||
+    (typeof product.promoPrice === 'number' && product.promoPrice > 0 && product.promoPrice < product.basePrice)
+  );
+  const effectiveBasePrice = isHeroPromo && product.promoPrice ? product.promoPrice : (product.basePrice || 0);
   const finishExtra = finishOptions.find(f => f.label === finish)?.extra ?? 0;
   const unitPrice = effectiveBasePrice + finishExtra;
   const total = unitPrice * qty;
@@ -53,9 +57,9 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
       unitPrice,
       observations: observations.trim() || undefined,
       customized: !isTcg,
-      origin: (product as any).origin || (hasPromo ? 'HERO_SHOWCASE' : 'CATALOG'),
-      promoPrice: hasPromo ? product.promoPrice : undefined,
-      promoBadge: (product as any).promoBadge,
+      origin: isHeroPromo ? 'HERO_SHOWCASE' : ((product as any).origin || 'CATALOG'),
+      promoPrice: isHeroPromo ? product.promoPrice : undefined,
+      promoBadge: isHeroPromo ? '[Oferta do Destaque Aplicada]' : (product as any).promoBadge,
       allowCouponStacking: (product as any).allowCouponStacking
     });
     setAdded(true);
@@ -98,6 +102,11 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
               <span className="text-[10px] font-bold tracking-[0.2em] text-[#EA580C] uppercase">
                 {categoryLabel}
               </span>
+              {isHeroPromo && (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500 text-white border border-orange-400 shadow-md flex items-center gap-1">
+                  <span>🔥 [Oferta do Destaque Aplicada]</span>
+                </span>
+              )}
               {product.types && product.types.length > 0 && (
                 <div className="flex gap-1">
                   {product.types.map(t => <TypeBadge key={t} type={t} />)}
@@ -113,6 +122,21 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
         {/* Modal Configuration Body */}
         <div className="p-5 sm:p-6 flex flex-col gap-6">
           
+          {/* Oferta do Destaque Contextual Banner */}
+          {isHeroPromo && (
+            <div className="flex gap-3 bg-gradient-to-r from-orange-950/80 to-[#1C1613] border-2 border-orange-500/50 rounded-xl p-3.5 text-xs text-orange-100 leading-relaxed shadow-lg">
+              <span className="text-xl leading-none text-orange-400 shrink-0 mt-0.5">🏷️</span>
+              <div>
+                <span className="font-extrabold text-white block mb-0.5 uppercase tracking-wide text-xs">
+                  [Oferta do Destaque Aplicada]
+                </span>
+                Esta peça foi selecionada da vitrine principal da oficina. O valor promocional de{' '}
+                <span className="text-orange-400 font-extrabold">R$ {product.promoPrice?.toFixed(2).replace('.', ',')}</span>{' '}
+                (de <span className="line-through text-slate-400 font-semibold">R$ {product.basePrice.toFixed(2).replace('.', ',')}</span>) está ativo como base desta personalização!
+              </div>
+            </div>
+          )}
+
           {/* Forge Notice Banner */}
           <div className="flex gap-3 bg-[#1C1613] border border-[#EA580C]/25 rounded-xl p-3.5 text-xs text-[#D4D4D4] leading-relaxed">
             <span className="text-base leading-none text-[#EA580C] shrink-0 mt-0.5">🔥</span>
@@ -240,11 +264,11 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
           {/* Bottom Bar: Total & High-Impact CTA */}
           <div className="pt-4 border-t border-[#262626] flex items-center justify-between gap-4">
             <div>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#A3A3A3] font-bold block mb-0.5 flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[#A3A3A3] font-bold block mb-0.5 flex items-center gap-1.5 flex-wrap">
                 <span>Estimativa Total</span>
-                {hasPromo && (
-                  <span className="text-orange-400 font-extrabold text-[9px] bg-orange-500/20 px-1.5 py-0.5 rounded border border-orange-500/30">
-                    🔥 PROMO ATIVA
+                {isHeroPromo && (
+                  <span className="text-orange-400 font-extrabold text-[9px] bg-orange-500/20 px-1.5 py-0.5 rounded border border-orange-500/40">
+                    🏷️ [Oferta do Destaque Aplicada]
                   </span>
                 )}
               </span>
@@ -253,7 +277,7 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
                 <span className="font-display text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
                   {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
-                {hasPromo && (
+                {isHeroPromo && (
                   <span className="ml-2 text-xs line-through text-slate-500 font-semibold">
                     R$ {((product.basePrice + finishExtra) * qty).toFixed(2).replace('.', ',')}
                   </span>
