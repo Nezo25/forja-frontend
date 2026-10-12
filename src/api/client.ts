@@ -1,6 +1,9 @@
 const getBaseUrl = () => {
-  const root = import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com';
-  return `${root}/api/v1`;
+  const custom = typeof window !== 'undefined' ? localStorage.getItem('forja_api_url') : null;
+  const root = custom || import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com';
+  const clean = root.trim().replace(/\/+$/, '');
+  if (clean.endsWith('/api/v1')) return clean;
+  return `${clean}/api/v1`;
 };
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {

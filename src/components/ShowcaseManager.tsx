@@ -4,6 +4,7 @@ import { toast } from './Toast';
 import {
   fetchAdminShowcase,
   updateShowcaseSlot,
+  getDefaultPublicShowcase,
   type AdminShowcaseSlot,
 } from '@/services/showcase';
 import { fileToBase64 } from '@/services/storage';
@@ -12,45 +13,88 @@ interface ShowcaseManagerProps {
   products: Product[];
 }
 
+const ADMIN_SHOWCASE_CACHE_KEY = 'forja_showcase_admin_cache_v1';
+
+function buildInitialSlots(products: Product[]): AdminShowcaseSlot[] {
+  if (typeof window !== 'undefined') {
+    const cached = localStorage.getItem(ADMIN_SHOWCASE_CACHE_KEY);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length === 4) return parsed;
+      } catch {}
+    }
+  }
+
+  const fallback = getDefaultPublicShowcase(products);
+  return [
+    ...fallback.slots.map(s => ({
+      slotNumber: s.slotNumber,
+      productId: s.productId,
+      productName: s.name,
+      productCategory: s.category,
+      productImageUrl: s.imageUrl,
+      originalPrice: s.originalPrice,
+      promotionalPrice: s.promotionalPrice,
+      discountAmount: s.discountAmount,
+      discountPercentage: s.discountPercentage,
+      badgeLabel: s.badgeLabel || '🔥 OFERTA DESTAQUE DA OFICINA',
+      allowCouponStacking: s.allowCouponStacking ?? false,
+      isActive: true,
+    })),
+    {
+      slotNumber: 4,
+      isActive: true,
+      badgeLabel: '❓ DROP MISTERIOSO',
+      mysteryTitle: fallback.mysteryDrop.title,
+      mysterySubtitle: fallback.mysteryDrop.subtitle,
+      mysteryCategory: fallback.mysteryDrop.category,
+      mysteryImageUrl: fallback.mysteryDrop.imageUrl,
+      mysteryWhatsappText: fallback.mysteryDrop.whatsappText,
+    },
+  ];
+}
+
 export function ShowcaseManager({ products }: ShowcaseManagerProps) {
-  const [slots, setSlots] = useState<AdminShowcaseSlot[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [slots, setSlots] = useState<AdminShowcaseSlot[]>(() => buildInitialSlots(products));
   const [savingSlot, setSavingSlot] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState<Record<number, string>>({ 1: '', 2: '', 3: '' });
 
   useEffect(() => {
-    loadSlots();
-  }, [products]);
+    let isMounted = true;
+    async function loadSlots() {
+      try {
+        const data = await fetchAdminShowcase(products);
+        if (!isMounted || !data || data.length === 0) return;
 
-  async function loadSlots() {
-    setLoading(true);
-    try {
-      const data = await fetchAdminShowcase(products);
-      // Garante que existam exatamente os slots 1, 2, 3 e 4
-      const slotMap = new Map<number, AdminShowcaseSlot>();
-      data.forEach(s => slotMap.set(s.slotNumber, s));
+        const slotMap = new Map<number, AdminShowcaseSlot>();
+        data.forEach(s => slotMap.set(s.slotNumber, s));
 
-      const finalSlots: AdminShowcaseSlot[] = [1, 2, 3, 4].map(num => {
-        if (slotMap.has(num)) return slotMap.get(num)!;
-        return {
-          slotNumber: num,
-          isActive: true,
-          badgeLabel: num === 4 ? '❓ DROP MISTERIOSO' : '🔥 OFERTA DESTAQUE DA OFICINA',
-          allowCouponStacking: false,
-          mysteryCategory: 'FIGURE_POKEMON',
-          mysteryTitle: 'Quem é esse Pokémon?',
-          mysterySubtitle: 'Próximo lançamento saindo da bancada',
-          mysteryWhatsappText: 'Olá Chico! Vi o drop misterioso da semana no site e quero garantir com desconto exclusivo!',
-        };
-      });
+        const finalSlots: AdminShowcaseSlot[] = [1, 2, 3, 4].map(num => {
+          if (slotMap.has(num)) return slotMap.get(num)!;
+          return {
+            slotNumber: num,
+            isActive: true,
+            badgeLabel: num === 4 ? '❓ DROP MISTERIOSO' : '🔥 OFERTA DESTAQUE DA OFICINA',
+            allowCouponStacking: false,
+            mysteryCategory: 'FIGURE_POKEMON',
+            mysteryTitle: 'Quem é esse Pokémon?',
+            mysterySubtitle: 'Próximo lançamento saindo da bancada',
+            mysteryWhatsappText: 'Olá Chico! Vi o drop misterioso da semana no site e quero garantir com desconto exclusivo!',
+          };
+        });
 
-      setSlots(finalSlots);
-    } catch (err) {
-      console.error('Erro ao carregar slots da vitrine:', err);
-    } finally {
-      setLoading(false);
+        setSlots(finalSlots);
+      } catch (err) {
+        console.warn('Erro ao carregar slots da vitrine em segundo plano:', err);
+      }
     }
-  }
+
+    loadSlots();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function handleSlotChange(slotNumber: number, updates: Partial<AdminShowcaseSlot>) {
     setSlots(prev => prev.map(s => (s.slotNumber === slotNumber ? { ...s, ...updates } : s)));
@@ -224,15 +268,6 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
         type: 'warning',
       });
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 text-slate-400 gap-3">
-        <span className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
-        <span className="text-xs">Carregando slots da vitrine principal...</span>
-      </div>
-    );
   }
 
   return (

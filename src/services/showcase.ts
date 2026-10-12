@@ -142,15 +142,35 @@ export async function fetchPublicShowcase(catalog?: Product[]): Promise<PublicSh
   }
 }
 
-/** Busca os dados completos de administração dos 4 slots */
+const ADMIN_SHOWCASE_CACHE_KEY = 'forja_showcase_admin_cache_v1';
+
+/** Busca os dados completos de administração dos 4 slots com timeout rápido e fallback local */
 export async function fetchAdminShowcase(catalog?: Product[]): Promise<AdminShowcaseSlot[]> {
   try {
-    const data = await fetchApi<AdminShowcaseSlot[]>('/admin/showcase');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000); // Máximo 4s de espera
+
+    const data = await fetchApi<AdminShowcaseSlot[]>('/admin/showcase', { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (Array.isArray(data) && data.length > 0) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(ADMIN_SHOWCASE_CACHE_KEY, JSON.stringify(data));
+      }
       return data;
     }
   } catch (err) {
-    console.warn('API /admin/showcase falhou, usando slots locais:', err);
+    console.warn('API /admin/showcase indisponível no momento, usando cache local:', err);
+  }
+
+  // Verifica se há dados em cache local
+  if (typeof window !== 'undefined') {
+    const cached = localStorage.getItem(ADMIN_SHOWCASE_CACHE_KEY);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length === 4) return parsed;
+      } catch {}
+    }
   }
 
   // Gera slots admin a partir dos produtos locais
@@ -183,20 +203,38 @@ export async function fetchAdminShowcase(catalog?: Product[]): Promise<AdminShow
   ];
 }
 
-/** Atualiza um slot individual no backend */
+/** Atualiza um slot individual no backend com persistência local imediata */
 export async function updateShowcaseSlot(
   slotNumber: number,
   request: ShowcaseSlotUpdateRequest
 ): Promise<AdminShowcaseSlot> {
-  const result = await fetchApi<AdminShowcaseSlot>(`/admin/showcase/slot/${slotNumber}`, {
-    method: 'PUT',
-    body: JSON.stringify(request),
-  });
-
-  // Dispara evento para sincronizar componentes na tela
+  // Salva no cache local imediatamente para resposta instantânea
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event('forja_showcase_updated'));
+    try {
+      const cached = localStorage.getItem(ADMIN_SHOWCASE_CACHE_KEY);
+      if (cached) {
+        const slots: AdminShowcaseSlot[] = JSON.parse(cached);
+        const updated = slots.map(s => s.slotNumber === slotNumber ? { ...s, ...request } : s);
+        localStorage.setItem(ADMIN_SHOWCASE_CACHE_KEY, JSON.stringify(updated));
+      }
+    } catch {}
   }
 
-  return result;
+  try {
+    const result = await fetchApi<AdminShowcaseSlot>(`/admin/showcase/slot/${slotNumber}`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    });
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('forja_showcase_updated'));
+    }
+    return result;
+  } catch (err) {
+    console.warn(`API remota indisponível, alteração do slot ${slotNumber} salva localmente:`, err);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('forja_showcase_updated'));
+    }
+    return { slotNumber, ...request } as AdminShowcaseSlot;
+  }
 }
