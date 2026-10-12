@@ -6,7 +6,7 @@ import { ProductCustomizeModal } from '@/components/ProductCustomizeModal';
 import { CartDrawer } from '@/components/CartDrawer';
 import { OrcamentoModal } from '@/components/OrcamentoModal';
 import { type CartItem, type Product, CATEGORY_LABELS, type ProductCategory, toProductCategory } from '@/data/products';
-import { getStoredProducts, fetchRemoteProducts } from '@/services/storage';
+import { getStoredProducts, fetchRemoteProducts, getFeaturedProductId } from '@/services/storage';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>(getStoredProducts());
@@ -77,7 +77,12 @@ export default function Home() {
   }, [products, search, activeCategory]);
 
   const featuredProduct = useMemo(() => {
-    return products.find(p => p.featured && p.active) || products.find(p => p.featured) || products[0] || null;
+    const fid = getFeaturedProductId();
+    if (fid) {
+      const match = products.find(p => p.id === fid && p.active) || products.find(p => p.id === fid);
+      if (match) return match;
+    }
+    return products.find(p => p.featured && p.active) || products.find(p => p.featured) || null;
   }, [products]);
 
   function addToCart(item: CartItem) {

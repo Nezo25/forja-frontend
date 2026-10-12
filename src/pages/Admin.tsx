@@ -16,6 +16,7 @@ import {
   toggleProductActive,
   toggleProductFeatured,
   setFeaturedProduct,
+  incrementProductStock,
   updateProductPrice,
   getStoredFilaments,
   fetchRemoteFilaments,
@@ -195,8 +196,8 @@ function OrderModal({ onClose, onSave }: { onClose: () => void; onSave: (o: Orde
     });
 
     toast.show({
-      title: 'Pedido registrado no Banco de Dados!',
-      message: `Pedido para "${saved.cliente}" no valor de R$ ${saved.valor} registrado.`,
+      title: 'Pedido registrado com sucesso!',
+      message: `Pedido para "${saved.cliente}" no valor de R$ ${saved.valor} foi cadastrado.`,
       type: 'success',
       icon: '🛒',
     });
@@ -263,6 +264,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     image: initialData?.image || '', 
     active: initialData ? initialData.active : true,
     featured: initialData ? Boolean(initialData.featured) : false,
+    stock: (initialData?.stock ?? 1).toString(),
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -307,11 +309,12 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
         image: form.image.trim() || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
         active: form.active,
         featured: form.featured,
+        stock: parseInt(form.stock, 10) || 1,
       }, initialData?.id);
 
       toast.show({
-        title: initialData ? 'Produto atualizado!' : 'Produto salvo no Banco de Dados!',
-        message: `Figure "${saved.name}" foi salva com sucesso no catálogo.`,
+        title: initialData ? 'Produto atualizado!' : 'Produto cadastrado com sucesso!',
+        message: `"${saved.name}" foi salvo com sucesso no catálogo.`,
         type: 'success',
         icon: '💾',
       });
@@ -427,10 +430,20 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
               </div>
             )}
 
+            <Field label="Unidades em Estoque">
+              <Input 
+                type="number" 
+                min="0" 
+                placeholder="1" 
+                value={form.stock} 
+                onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} 
+              />
+            </Field>
+
             <label className="flex items-center gap-2 cursor-pointer pt-1">
               <input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} className="w-4 h-4 rounded accent-orange-500 cursor-pointer" />
               <span className="text-sm font-semibold text-amber-400 flex items-center gap-1.5">
-                ⭐ Peça em Destaque na Vitrine Principal (Hero)
+                ⭐ Destacar esta peça no topo da vitrine da loja
               </span>
             </label>
 
@@ -736,25 +749,37 @@ export default function Admin() {
     return totalFaturamento / orders.length;
   }, [orders, totalFaturamento]);
 
-  // Catálogo: Toggle Destaque no Hero
+  // Catálogo: Alternar Peça em Destaque da Loja
   function handleToggleFeatured(p: Product) {
     const isNowFeatured = toggleProductFeatured(p.id);
     setCatalog(getStoredProducts());
     toast.show({
-      title: isNowFeatured ? 'Peça em Destaque!' : 'Destaque removido',
-      message: isNowFeatured ? `"${p.name}" agora é a peça exibida no Hero da vitrine.` : `"${p.name}" não é mais o destaque do Hero.`,
+      title: isNowFeatured ? 'Peça colocada em destaque!' : 'Destaque removido',
+      message: isNowFeatured ? `"${p.name}" agora é a peça exibida no topo da loja.` : `"${p.name}" não está mais no topo da loja.`,
       type: 'success',
       icon: '⭐'
     });
   }
 
-  // Catálogo: Toggle Ativo / Pausado
+  // Catálogo: Ajuste Rápido de Unidades em Estoque
+  function handleAdjustStock(p: Product, delta: number) {
+    const newStock = incrementProductStock(p.id, delta);
+    setCatalog(getStoredProducts());
+    toast.show({
+      title: 'Estoque atualizado!',
+      message: `${delta > 0 ? `+${delta}` : delta} unidade(s) de "${p.name}". Total em estoque: ${newStock} un.`,
+      type: 'success',
+      icon: '📦'
+    });
+  }
+
+  // Catálogo: Ativar ou Pausar Produto
   async function handleToggleActive(p: Product) {
     const isNowActive = await toggleProductActive(p.id);
     setCatalog(prev => prev.map(x => x.id === p.id ? { ...x, active: isNowActive } : x));
     toast.show({
-      title: isNowActive ? 'Figure ativada no banco!' : 'Figure pausada no banco!',
-      message: `"${p.name}" foi ${isNowActive ? 'ativada na loja' : 'pausada'}.`,
+      title: isNowActive ? 'Produto ativado!' : 'Produto pausado',
+      message: `"${p.name}" ${isNowActive ? 'já está visível na vitrine da loja' : 'foi pausado e ocultado'}.`,
       type: 'info',
       icon: isNowActive ? '▶️' : '⏸️'
     });
@@ -762,12 +787,12 @@ export default function Admin() {
 
   // Catálogo: Deletar Figure
   async function handleDeleteProduct(p: Product) {
-    if (confirm(`Tem certeza que deseja deletar "${p.name}" do banco de dados?`)) {
+    if (confirm(`Tem certeza que deseja remover "${p.name}" do catálogo?`)) {
       await deleteProduct(p.id);
       setCatalog(prev => prev.filter(x => x.id !== p.id));
       toast.show({
         title: 'Produto excluído!',
-        message: `Figure "${p.name}" foi removida definitivamente do banco.`,
+        message: `"${p.name}" foi removido do catálogo.`,
         type: 'info',
         icon: '🗑️'
       });
@@ -820,7 +845,7 @@ export default function Admin() {
     await updateFilamentStock(f.id, newStock);
     setFilamentos(prev => prev.map(x => x.id === f.id ? { ...x, stockGrams: newStock } : x));
     toast.show({
-      title: 'Estoque atualizado no banco!',
+      title: 'Estoque atualizado!',
       message: `Bobina "${f.color}" ajustada para ${newStock}g.`,
       type: 'info',
       icon: '🧵'
@@ -846,8 +871,8 @@ export default function Admin() {
     await updateProductPrice(p.id, newPrice);
     setCatalog(prev => prev.map(x => x.id === p.id ? { ...x, basePrice: newPrice } : x));
     toast.show({
-      title: 'Preço salvo no Banco de Dados!',
-      message: `Preço de "${p.name}" atualizado para R$ ${newPrice.toFixed(2)}.`,
+      title: 'Preço atualizado com sucesso!',
+      message: `Preço de "${p.name}" alterado para R$ ${newPrice.toFixed(2)}.`,
       type: 'success',
       icon: '💰'
     });
@@ -1015,7 +1040,7 @@ export default function Admin() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-gray-800 border-b border-gray-700">
-                          {(catalogTab === '3d' ? ['Produto','Categoria','Tipos','Escalas','Tempo','Filamento','Preço','Status','Ações'] : ['Produto','Coleção','Idioma','Estoque','Preço','Status','Ações']).map(h => (
+                          {(catalogTab === '3d' ? ['Produto','Categoria','Tipos','Escalas','Preço','Estoque','Status','Ações'] : ['Produto','Coleção','Idioma','Preço','Estoque','Status','Ações']).map(h => (
                             <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-gray-400">{h}</th>
                           ))}
                         </tr>
@@ -1031,7 +1056,7 @@ export default function Admin() {
                                     <span>{p.name}</span>
                                     {p.featured && (
                                       <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                        ⭐ Destaque Hero
+                                        ⭐ Destaque da Loja
                                       </span>
                                     )}
                                   </div>
@@ -1055,8 +1080,31 @@ export default function Admin() {
                                 ))}
                               </div>
                             </td>
-                            <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.printTimeH ?? 0}h</td>
-                            <td className="px-4 py-3 font-mono text-[12px] text-gray-400">{p.filamentG ?? 0}g</td>
+                            <td className="px-4 py-3 font-bold text-sm text-orange-400">R$ {formatPrice(p.basePrice ?? 0)}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdjustStock(p, -1)}
+                                  disabled={(p.stock ?? 1) <= 0}
+                                  className="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center font-bold text-xs border border-gray-700 disabled:opacity-30 cursor-pointer"
+                                  title="Remover 1 unidade"
+                                >
+                                  −
+                                </button>
+                                <span className="px-2 py-0.5 rounded text-xs font-bold bg-gray-800 text-gray-100 border border-gray-700 font-mono min-w-[38px] text-center">
+                                  {p.stock ?? 1} un
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdjustStock(p, 1)}
+                                  className="w-6 h-6 rounded bg-emerald-950/70 hover:bg-emerald-900 text-emerald-400 flex items-center justify-center font-bold text-xs border border-emerald-700/60 cursor-pointer"
+                                  title="Adicionar +1 unidade"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
                                 </>
                               ) : (
                                 <>
@@ -1066,14 +1114,33 @@ export default function Admin() {
                                       {p.materials && p.materials[0] ? p.materials[0] : '—'}
                                     </span>
                                   </td>
+                                  <td className="px-4 py-3 font-bold text-sm text-orange-400">R$ {formatPrice(p.basePrice ?? 0)}</td>
                                   <td className="px-4 py-3">
-                                    <span className="px-2 py-1 rounded text-[11px] font-bold bg-gray-800 text-gray-300 border border-gray-700">
-                                      {(p as any).stockQuantity ?? 0} un
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAdjustStock(p, -1)}
+                                        disabled={(p.stock ?? 1) <= 0}
+                                        className="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center font-bold text-xs border border-gray-700 disabled:opacity-30 cursor-pointer"
+                                        title="Remover 1 unidade"
+                                      >
+                                        −
+                                      </button>
+                                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-gray-800 text-gray-100 border border-gray-700 font-mono min-w-[38px] text-center">
+                                        {p.stock ?? 1} un
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAdjustStock(p, 1)}
+                                        className="w-6 h-6 rounded bg-emerald-950/70 hover:bg-emerald-900 text-emerald-400 flex items-center justify-center font-bold text-xs border border-emerald-700/60 cursor-pointer"
+                                        title="Adicionar +1 unidade"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
                                   </td>
                                 </>
                               )}
-                            <td className="px-4 py-3 font-bold text-sm text-orange-400">R$ {formatPrice(p.basePrice ?? 0)}</td>
                             <td className="px-4 py-3">
                               <span className="px-2 py-0.5 rounded text-[11px] font-semibold" style={p.active ? { background: 'rgba(34,197,94,0.15)', color: '#22C55E' } : { background: '#1F2937', color: '#6B7280' }}>
                                 {p.active ? 'Ativo' : 'Pausado'}
@@ -1083,15 +1150,23 @@ export default function Admin() {
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
+                                  onClick={() => handleAdjustStock(p, 1)}
+                                  title="Adicionar +1 unidade pronta ao estoque"
+                                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all bg-emerald-950/40 text-emerald-400 border border-emerald-700/50 hover:bg-emerald-900/60 active:scale-95 cursor-pointer flex items-center gap-1"
+                                >
+                                  +1 Unidade
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => handleToggleFeatured(p)}
-                                  title={p.featured ? "Remover do destaque do Hero" : "Definir como peça em destaque no Hero"}
+                                  title={p.featured ? "Remover do destaque principal" : "Destacar esta peça no topo da loja"}
                                   className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer ${
                                     p.featured 
                                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30' 
                                       : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-amber-400 hover:bg-gray-700'
                                   }`}
                                 >
-                                  {p.featured ? '⭐ Destaque' : '☆ Destacar'}
+                                  {p.featured ? '⭐ Em Destaque' : '☆ Destacar'}
                                 </button>
                                 <button
                                   onClick={() => setEditingProduct(p)}

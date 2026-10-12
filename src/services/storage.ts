@@ -54,8 +54,29 @@ const STORAGE_KEYS = {
   ORDERS: 'forja_prod_orders',
   QUOTES: 'forja_prod_quotes',
   FILAMENTS: 'forja_prod_filaments',
-  INITIALIZED: 'forja_prod_initialized_v4'
+  INITIALIZED: 'forja_prod_initialized_v4',
+  FEATURED_ID: 'forja_featured_product_id'
 };
+
+export function getFeaturedProductId(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.FEATURED_ID);
+  } catch {
+    return null;
+  }
+}
+
+export function setFeaturedProductId(id: string | null): void {
+  try {
+    if (id) {
+      localStorage.setItem(STORAGE_KEYS.FEATURED_ID, id);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.FEATURED_ID);
+    }
+  } catch (e) {
+    console.error('Erro ao salvar destaque:', e);
+  }
+}
 
 export function parsePrice(val: string | number | undefined): number {
   if (typeof val === 'number') return val;
@@ -112,6 +133,9 @@ export function fileToBase64(file: File): Promise<string> {
 function sanitizeProduct(p: any): Product {
   const isTcg = p?.category === 'TCG' || p?.department === 'TCG';
   const category = isTcg ? 'TCG' : toProductCategory(p?.category);
+  const featuredId = getFeaturedProductId();
+  const isFeatured = featuredId ? p?.id?.toString() === featuredId : Boolean(p?.featured);
+  const stock = typeof p?.stock === 'number' ? p.stock : ((p as any)?.stockQuantity ?? 1);
 
   return {
     id: p?.id ? p.id.toString() : 'prod_' + Math.random().toString(36).substring(2, 8),
@@ -126,9 +150,52 @@ function sanitizeProduct(p: any): Product {
     printTimeH: typeof p?.printTimeH === 'number' ? p.printTimeH : Math.floor((p?.basePrintTimeMinutes || 0) / 60),
     filamentG: typeof p?.filamentG === 'number' ? p.filamentG : (p?.defaultFilamentGrams || 0),
     active: p?.active !== false && p?.isActive !== false,
-    featured: Boolean(p?.featured),
+    featured: isFeatured,
+    stock,
     department: isTcg ? 'TCG' : 'PRINT_3D',
   };
+}
+
+/**
+ * Consolida e deduplica produtos com o mesmo nome:
+ * Em vez de criar duplicatas no catálogo, soma as unidades em estoque!
+ */
+export function consolidateProducts(rawList: Product[]): Product[] {
+  const map = new Map<string, Product>();
+  const activeFeaturedId = getFeaturedProductId();
+
+  for (const item of rawList) {
+    if (!item || !item.name) continue;
+    const normKey = item.name.trim().toLowerCase();
+    const itemStock = typeof item.stock === 'number' ? item.stock : ((item as any).stockQuantity ?? 1);
+
+    if (!map.has(normKey)) {
+      map.set(normKey, {
+        ...item,
+        stock: itemStock,
+        featured: activeFeaturedId ? item.id === activeFeaturedId : Boolean(item.featured)
+      });
+    } else {
+      const existing = map.get(normKey)!;
+      // Incorpora unidades no estoque existente
+      existing.stock = (existing.stock || 1) + itemStock;
+
+      // Se um deles tem ID real do banco (numérico), prioriza o ID do banco
+      if (item.id && !item.id.toString().startsWith('prod_') && existing.id.startsWith('prod_')) {
+        existing.id = item.id.toString();
+      }
+      // Se um deles tem imagem real (não placeholder), preserva a imagem real
+      if (item.image && (!existing.image || existing.image.includes('placehold.co'))) {
+        existing.image = item.image;
+      }
+      if (item.active) existing.active = true;
+      if (item.featured || (activeFeaturedId && (item.id === activeFeaturedId || existing.id === activeFeaturedId))) {
+        existing.featured = true;
+      }
+    }
+  }
+
+  return Array.from(map.values());
 }
 
 export function getStoredProducts(): Product[] {
@@ -137,23 +204,38 @@ export function getStoredProducts(): Product[] {
     if (local !== null) {
       const parsed = JSON.parse(local);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map(sanitizeProduct);
+        return consolidateProducts(parsed.map(sanitizeProduct));
       }
     }
   } catch (e) {
     console.error('Erro ao ler produtos:', e);
   }
-  return products.map(sanitizeProduct); // Fallback seguro
+  return consolidateProducts(products.map(sanitizeProduct)); // Fallback seguro
 }
 
 export function saveProductsToStorage(productsList: Product[]): void {
   try {
-    const sanitized = productsList.map(sanitizeProduct);
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(sanitized));
+    const consolidated = consolidateProducts(productsList.map(sanitizeProduct));
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(consolidated));
     window.dispatchEvent(new Event('forja_products_updated'));
   } catch (e) {
     console.error('Erro ao salvar produtos:', e);
   }
+}
+
+export function incrementProductStock(id: string, delta: number = 1): number {
+  const current = getStoredProducts();
+  let finalStock = 1;
+  const updated = current.map(p => {
+    if (p.id === id) {
+      const currentStock = typeof p.stock === 'number' ? p.stock : ((p as any).stockQuantity ?? 1);
+      finalStock = Math.max(0, currentStock + delta);
+      return { ...p, stock: finalStock };
+    }
+    return p;
+  });
+  saveProductsToStorage(updated);
+  return finalStock;
 }
 
 export async function fetchRemoteProducts(): Promise<Product[]> {
@@ -196,7 +278,7 @@ export async function fetchRemoteProducts(): Promise<Product[]> {
           active: tcg.isActive,
           featured: false,
           expansionName: tcg.expansionName,
-          stockQuantity: tcg.stockQuantity,
+          stock: tcg.stockQuantity || 1,
           department: 'TCG'
         } as any));
         allProducts = [...allProducts, ...mappedTcg];
@@ -206,8 +288,9 @@ export async function fetchRemoteProducts(): Promise<Product[]> {
     }
 
     if (allProducts.length > 0) {
-      saveProductsToStorage(allProducts);
-      return allProducts;
+      const consolidated = consolidateProducts(allProducts);
+      saveProductsToStorage(consolidated);
+      return consolidated;
     }
   } catch (err) {
     console.warn('Erro geral em fetchRemoteProducts:', err);
@@ -218,18 +301,22 @@ export async function fetchRemoteProducts(): Promise<Product[]> {
 }
 
 export function toggleProductFeatured(id: string): boolean {
+  const currentFeaturedId = getFeaturedProductId();
+  const willBeFeatured = currentFeaturedId !== id;
+  
+  setFeaturedProductId(willBeFeatured ? id : null);
+
   const current = getStoredProducts();
-  const target = current.find(p => p.id === id);
-  const willBeFeatured = !target?.featured;
   const updated = current.map(p => ({
     ...p,
-    featured: p.id === id ? willBeFeatured : false
+    featured: willBeFeatured && p.id === id
   }));
   saveProductsToStorage(updated);
   return willBeFeatured;
 }
 
-export function setFeaturedProduct(id: string): void {
+export function setFeaturedProduct(id: string | null): void {
+  setFeaturedProductId(id);
   const current = getStoredProducts();
   const updated = current.map(p => ({
     ...p,
@@ -243,17 +330,34 @@ export async function saveProduct(productData: Partial<Product>, initialId?: str
   const isEditing = Boolean(initialId);
   const id = initialId || (productData.id ? productData.id : 'prod_' + Date.now());
 
-  // Se este produto foi marcado como destaque, desmarca os outros para manter o destaque principal único
-  if (productData.featured) {
-    current.forEach(p => {
-      if (p.id !== id) p.featured = false;
-    });
-  }
-
   const fullProduct: Product = sanitizeProduct({
     ...productData,
     id,
   });
+
+  // Se já existe um produto com o mesmo nome registrado e não estamos editando o mesmo:
+  // Em vez de criar duplicatas no catálogo, incorpora as unidades no produto existente!
+  const existingSameName = current.find(p => 
+    p.name.trim().toLowerCase() === fullProduct.name.trim().toLowerCase() && p.id !== id
+  );
+
+  if (existingSameName && !isEditing) {
+    existingSameName.stock = (existingSameName.stock || 1) + (fullProduct.stock || 1);
+    if (productData.featured) {
+      setFeaturedProductId(existingSameName.id);
+      existingSameName.featured = true;
+    }
+    saveProductsToStorage(current);
+    return existingSameName;
+  }
+
+  // Se este produto foi marcado como destaque, sincroniza o ID persistente do destaque
+  if (productData.featured) {
+    setFeaturedProductId(id);
+    current.forEach(p => {
+      if (p.id !== id) p.featured = false;
+    });
+  }
 
   let updatedList: Product[];
   if (isEditing) {

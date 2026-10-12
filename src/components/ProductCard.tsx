@@ -18,11 +18,12 @@ export function ProductCard({ product, index = 1, onConfigure, onBuyNow }: Props
   const lowestPrice = (product.basePrice || 0) + (isFinite(extraMin) ? extraMin : 0);
   const categoryLabel = (CATEGORY_LABELS as Record<string, string>)[product.category] || product.category;
   const itemNumber = (index).toString().padStart(2, '0');
+  const stock = typeof product.stock === 'number' ? product.stock : ((product as any).stockQuantity ?? 1);
 
-  // Badge label (finish or scale or type)
+  // Badge label (unidades em estoque, escala ou expansão TCG)
   const badgeText = product.department === 'TCG' 
     ? (product.expansionName || 'PRONTA ENTREGA') 
-    : (product.scales?.[0] || 'ESCALA 1:10');
+    : (stock > 1 ? `${stock} UNIDADES` : (product.scales?.[0] || 'PADRÃO (10 CM)'));
 
   return (
     <article

@@ -88,14 +88,18 @@ export function Hero({ onOrcamento, featuredProduct, onConfigure }: Props) {
             {/* Bottom Tag */}
             <div className="absolute bottom-5 left-5 right-24 z-10">
               <span className="text-[10px] font-bold tracking-[0.2em] text-[#EA580C] uppercase block mb-1">
-                ⭐ Peça em Destaque {featuredProduct ? `• R$ ${featuredProduct.basePrice}` : ''}
+                {featuredProduct ? `⭐ Peça em Destaque • A partir de R$ ${featuredProduct.basePrice}` : 'Coleção Artesanal'}
               </span>
               <span className="font-display text-2xl md:text-3xl text-white uppercase tracking-wide block line-clamp-2">
                 {featuredProduct?.name || "Gengar Sorridente Sombrio"}
               </span>
-              {featuredProduct && (
+              {featuredProduct ? (
                 <span className="text-[11px] font-semibold text-[#A3A3A3] mt-1 flex items-center gap-1 group-hover:text-white transition-colors">
                   Toque para personalizar <span className="text-[#EA580C]">→</span>
+                </span>
+              ) : (
+                <span className="text-[11px] font-semibold text-[#A3A3A3] mt-1 flex items-center gap-1 group-hover:text-white transition-colors">
+                  Produzido sob encomenda <span className="text-[#EA580C]">✦</span>
                 </span>
               )}
             </div>
