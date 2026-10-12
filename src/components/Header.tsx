@@ -35,6 +35,7 @@ export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Prop
 
         {/* Center Nav Links (Figma Make Style) */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#A3A3A3]">
+          <a href="#destaques" className="hover:text-white transition-colors">Destaques</a>
           <a href="#catalogo" className="hover:text-white transition-colors">Coleção</a>
           <a href="#oficina" className="hover:text-white transition-colors">A oficina</a>
           <button onClick={onOrcamento} className="hover:text-white transition-colors cursor-pointer">Sob medida</button>

@@ -69,7 +69,7 @@ export function FeaturedPromotionsCarousel({
   };
 
   return (
-    <section className="relative w-full bg-[#111622] text-white py-12 md:py-16 border-y border-slate-800/80 overflow-hidden">
+    <section id="destaques" className="relative w-full bg-[#111622] text-white py-12 md:py-16 border-y border-slate-800/80 overflow-hidden">
       
       {/* Background glow sutil */}
       <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
