@@ -101,6 +101,47 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
     });
   }
 
+  function handleDiscountAmountChange(slotNumber: number, discountStr: string) {
+    const clean = discountStr.replace(',', '.');
+    const discountVal = parseFloat(clean);
+    const currentSlot = slots.find(s => s.slotNumber === slotNumber);
+    const orig = currentSlot?.originalPrice || 0;
+
+    if (isNaN(discountVal) || discountVal <= 0) {
+      handleSlotChange(slotNumber, {
+        promotionalPrice: null,
+        discountAmount: 0,
+        discountPercentage: 0,
+      });
+      return;
+    }
+
+    const newPromoPrice = Math.max(1, orig - discountVal);
+    const pct = orig > 0 ? Math.round((discountVal / orig) * 100) : 0;
+
+    handleSlotChange(slotNumber, {
+      promotionalPrice: newPromoPrice,
+      discountAmount: discountVal,
+      discountPercentage: pct,
+    });
+  }
+
+  function applyQuickDiscount(slotNumber: number, type: 'reais' | 'percent', amount: number) {
+    const currentSlot = slots.find(s => s.slotNumber === slotNumber);
+    const orig = currentSlot?.originalPrice || 0;
+    if (orig <= 0) return;
+
+    let discount = 0;
+    if (type === 'reais') {
+      discount = amount;
+    } else if (type === 'percent') {
+      discount = Math.round(orig * (amount / 100));
+    }
+
+    const newPromoPrice = Math.max(1, orig - discount);
+    handlePromoPriceChange(slotNumber, newPromoPrice.toString());
+  }
+
   async function handleMysteryImageUpload(slotNumber: number, file: File) {
     try {
       const base64 = await fileToBase64(file);
@@ -204,8 +245,8 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
             <h2 className="font-extrabold text-base text-white">Gestão de Destaques & Vitrine Principal</h2>
           </div>
           <p className="text-xs text-slate-400 mt-1 max-w-xl">
-            Configure individualmente as 3 peças em oferta e o 4º card misterioso do Hero. 
-            <strong className="text-slate-200 ml-1">O catálogo geral permanece com preços base intactos.</strong>
+            Configure as 3 peças em oferta e o 4º card misterioso da vitrine no topo da loja. 
+            <strong className="text-slate-200 ml-1">O catálogo geral permanece com preços normais intactos.</strong>
           </p>
         </div>
 
@@ -500,41 +541,147 @@ export function ShowcaseManager({ products }: ShowcaseManagerProps) {
                 </div>
               </div>
 
-              {/* Input: Preço Especial da Semana */}
-              <div className="flex flex-col gap-1 mb-3">
+              {/* Bloco de Preço da Oferta */}
+              <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-slate-900/70 border border-slate-800 mb-3.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-orange-400">
-                    Preço Promocional do Hero (R$)
+                  <label className="text-[11px] font-black uppercase tracking-wider text-orange-400 flex items-center gap-1.5">
+                    <span>🔥</span>
+                    <span>Novo Preço da Peça na Vitrine</span>
                   </label>
                   {hasPromo && (
                     <button
                       type="button"
                       onClick={() => handlePromoPriceChange(slot.slotNumber, '')}
-                      className="text-[10px] text-slate-400 hover:text-red-400 transition-colors"
+                      className="text-[10px] text-slate-400 hover:text-red-400 transition-colors font-medium cursor-pointer"
                     >
-                      Remover Promo
+                      ✕ Remover desconto
                     </button>
                   )}
                 </div>
-                <input
-                  type="text"
-                  placeholder="Ex: 65,00 (deixe vazio para usar preço base)"
-                  value={slot.promotionalPrice ? slot.promotionalPrice.toString().replace('.', ',') : ''}
-                  onChange={e => handlePromoPriceChange(slot.slotNumber, e.target.value)}
-                  className="h-9 px-3 rounded-lg bg-[#1E293B] border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-orange-500"
-                />
-              </div>
 
-              {/* Indicador Automático de Economia */}
-              <div className="p-2.5 rounded-lg bg-orange-950/30 border border-orange-500/20 flex items-center justify-between mb-3 text-xs">
-                <span className="text-slate-400">Vantagem ao Cliente:</span>
-                {savings > 0 ? (
-                  <span className="font-extrabold text-emerald-400">
-                    Economia de R$ {savings.toFixed(2).replace('.', ',')} (-{pct}% OFF)
-                  </span>
-                ) : (
-                  <span className="text-slate-500 font-semibold">Preço normal (sem desconto)</span>
+                <p className="text-[11px] text-slate-400 leading-tight">
+                  Preencha o <strong className="text-slate-200">valor final com desconto</strong> que o cliente vai pagar no site:
+                </p>
+
+                {/* Dois campos sincronizados: Preço Final vs Desconto */}
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-300 block mb-1">
+                      Preço Final da Peça (R$)
+                    </span>
+                    <input
+                      type="text"
+                      placeholder={origPrice > 0 ? `Ex: ${(origPrice - 10).toFixed(0)},00` : 'Ex: 45,00'}
+                      value={slot.promotionalPrice ? slot.promotionalPrice.toString().replace('.', ',') : ''}
+                      onChange={e => handlePromoPriceChange(slot.slotNumber, e.target.value)}
+                      className="w-full h-9 px-3 rounded-lg bg-[#1E293B] border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-orange-500"
+                    />
+                    <span className="text-[9px] text-slate-400 block mt-1 leading-tight">
+                      Quanto ele paga no site
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-300 block mb-1">
+                      Ou Dê um Desconto de (-R$)
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Ex: 10,00"
+                      value={savings > 0 ? savings.toFixed(2).replace('.', ',') : ''}
+                      onChange={e => handleDiscountAmountChange(slot.slotNumber, e.target.value)}
+                      className="w-full h-9 px-3 rounded-lg bg-[#1E293B] border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-orange-500"
+                    />
+                    <span className="text-[9px] text-slate-400 block mt-1 leading-tight">
+                      Valor abatido do catálogo
+                    </span>
+                  </div>
+                </div>
+
+                {/* Atalhos Rápidos de Desconto */}
+                {origPrice > 0 && (
+                  <div className="pt-1.5 border-t border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                      Atalhos Rápidos de Desconto:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => applyQuickDiscount(slot.slotNumber, 'reais', 5)}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-orange-600 text-[11px] font-bold text-slate-200 hover:text-white transition-colors border border-slate-700 cursor-pointer"
+                      >
+                        -R$ 5
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyQuickDiscount(slot.slotNumber, 'reais', 10)}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-orange-600 text-[11px] font-bold text-slate-200 hover:text-white transition-colors border border-slate-700 cursor-pointer"
+                      >
+                        -R$ 10
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyQuickDiscount(slot.slotNumber, 'reais', 15)}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-orange-600 text-[11px] font-bold text-slate-200 hover:text-white transition-colors border border-slate-700 cursor-pointer"
+                      >
+                        -R$ 15
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyQuickDiscount(slot.slotNumber, 'percent', 10)}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-orange-600 text-[11px] font-bold text-slate-200 hover:text-white transition-colors border border-slate-700 cursor-pointer"
+                      >
+                        -10%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyQuickDiscount(slot.slotNumber, 'percent', 20)}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-orange-600 text-[11px] font-bold text-slate-200 hover:text-white transition-colors border border-slate-700 cursor-pointer"
+                      >
+                        -20%
+                      </button>
+                    </div>
+                  </div>
                 )}
+
+                {/* Resumo Visual Claro do Cálculo */}
+                <div className="p-2.5 rounded-lg bg-[#0B1120] border border-slate-800 text-xs flex flex-col gap-1">
+                  {savings > 0 && slot.promotionalPrice && slot.promotionalPrice < origPrice ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">Resumo da Oferta:</span>
+                        <span className="font-extrabold text-emerald-400">
+                          Economia de R$ {savings.toFixed(2).replace('.', ',')} (-{pct}% OFF)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 pt-1 border-t border-slate-800 text-slate-300">
+                        <span>De <span className="line-through text-slate-500 font-semibold">R$ {origPrice.toFixed(2).replace('.', ',')}</span></span>
+                        <span>➔</span>
+                        <span className="text-orange-400 font-extrabold text-sm">
+                          Por R$ {slot.promotionalPrice.toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+                      {/* Alerta inteligente caso tenha digitado um valor muito baixo achando que era o desconto */}
+                      {slot.promotionalPrice <= 15 && origPrice >= 35 && (
+                        <div className="mt-1.5 p-2 rounded bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200 leading-tight">
+                          💡 <strong>Atenção:</strong> Você definiu que a peça vai custar <span className="font-bold underline">R$ {slot.promotionalPrice.toFixed(2).replace('.', ',')}</span> no total. Se a sua intenção era dar R$ {slot.promotionalPrice.toFixed(2).replace('.', ',')} de desconto, preencha <span className="font-bold text-white underline">R$ {(origPrice - slot.promotionalPrice).toFixed(2).replace('.', ',')}</span> no campo "Preço Final".
+                        </div>
+                      )}
+                    </>
+                  ) : slot.promotionalPrice && slot.promotionalPrice >= origPrice ? (
+                    <div className="text-amber-400 text-[11px] leading-tight flex items-center gap-1.5">
+                      <span>⚠️</span>
+                      <span>O valor digitado (R$ {slot.promotionalPrice.toFixed(2).replace('.', ',')}) é igual ou maior que o preço normal do catálogo (R$ {origPrice.toFixed(2).replace('.', ',')}). Para ter promoção, coloque um valor menor ou use os botões rápidos.</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>Preço atual:</span>
+                      <span className="font-bold text-slate-200">
+                        R$ {origPrice.toFixed(2).replace('.', ',')} (sem desconto)
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Input: Etiqueta / Badge */}
