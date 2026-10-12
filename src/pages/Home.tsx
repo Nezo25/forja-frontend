@@ -6,6 +6,8 @@ import { ProductCustomizeModal } from '@/components/ProductCustomizeModal';
 import { CartDrawer } from '@/components/CartDrawer';
 import { OrcamentoModal } from '@/components/OrcamentoModal';
 import { WorkshopProcessModal } from '@/components/WorkshopProcessModal';
+import { ReviewsSection } from '@/components/ReviewsSection';
+import { SubmitReviewModal } from '@/components/SubmitReviewModal';
 import { type CartItem, type Product, CATEGORY_LABELS, type ProductCategory, toProductCategory } from '@/data/products';
 import { getStoredProducts, fetchRemoteProducts, getFeaturedProductId } from '@/services/storage';
 
@@ -54,6 +56,7 @@ export default function Home() {
   const [cartOpen, setCartOpen] = useState(false);
   const [orcamentoOpen, setOrcamentoOpen] = useState(false);
   const [workshopModalOpen, setWorkshopModalOpen] = useState(false);
+  const [submitReviewOpen, setSubmitReviewOpen] = useState(false);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
@@ -347,6 +350,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* SECTION 05 — Avaliações Autênticas de Colecionadores */}
+      <ReviewsSection onOpenSubmitReview={() => setSubmitReviewOpen(true)} />
+
       {/* Footer Minimalista (Figma Make) */}
       <footer className="bg-[#141414] text-white py-12 px-4 md:px-8 border-t border-[#262626]">
         <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8 pb-8 border-b border-[#262626]">
@@ -368,6 +374,7 @@ export default function Home() {
           <div className="flex items-center gap-6">
             <a href="#catalogo" className="hover:text-white transition-colors">Catálogo</a>
             <a href="#oficina" className="hover:text-white transition-colors">Processo</a>
+            <a href="#avaliacoes" className="hover:text-white transition-colors">Avaliações</a>
             <button onClick={() => setOrcamentoOpen(true)} className="hover:text-white transition-colors">Orçamentos</button>
           </div>
           <div>
@@ -400,6 +407,10 @@ export default function Home() {
           setWorkshopModalOpen(false);
           setOrcamentoOpen(true);
         }}
+      />
+      <SubmitReviewModal
+        open={submitReviewOpen}
+        onClose={() => setSubmitReviewOpen(false)}
       />
     </div>
   );

@@ -60,12 +60,26 @@ export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure,
               <div className="font-display text-3xl md:text-4xl text-white">100+</div>
               <div className="text-[11px] text-[#737373] mt-0.5">peças entregues</div>
             </div>
-            <div>
-              <div className="font-display text-3xl md:text-4xl text-white flex items-center gap-1.5">
-                4,9 <span className="text-[#EA580C] text-xl leading-none">★</span>
+            <a
+              href="#avaliacoes"
+              onClick={(e) => {
+                e.preventDefault();
+                const el = document.getElementById('avaliacoes');
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              className="group rounded-xl p-2 -m-2 transition-all cursor-pointer hover:border-orange-500/50 hover:bg-orange-950/20 border border-transparent block"
+              title="Ver depoimentos e avaliações de colecionadores"
+            >
+              <div className="font-display text-3xl md:text-4xl text-white group-hover:text-orange-400 transition-colors flex items-center gap-1.5">
+                4,9 <span className="text-[#EA580C] text-xl leading-none group-hover:scale-110 transition-transform">★</span>
               </div>
-              <div className="text-[11px] text-[#737373] mt-0.5">avaliação média</div>
-            </div>
+              <div className="text-[11px] text-[#737373] group-hover:text-gray-300 transition-colors mt-0.5 flex items-center justify-between">
+                <span>avaliação média</span>
+                <span className="text-[9px] text-orange-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">Ver ↓</span>
+              </div>
+            </a>
             <div
               onClick={onOpenWorkshopModal}
               className={`group rounded-xl p-2 -m-2 transition-all ${

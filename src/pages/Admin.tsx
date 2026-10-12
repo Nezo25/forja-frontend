@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { Product, Category, PokemonType, ProductCategory } from '@/data/products';
@@ -43,14 +43,21 @@ import {
   type Quote,
   type Filament
 } from '@/services/storage';
+import {
+  fetchAdminReviews,
+  toggleReviewApproval,
+  deleteReview as deleteReviewService,
+  type CustomerReview
+} from '@/services/reviews';
 
-type Section = 'catalogo' | 'destaques' | 'kanban' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos' | 'cupons';
+type Section = 'catalogo' | 'destaques' | 'kanban' | 'pedidos' | 'avaliacoes' | 'cupons' | 'orcamentos' | 'estoque' | 'precos';
 
 const NAV: { id: Section; icon: string; label: string }[] = [
   { id: 'catalogo', icon: '📦', label: 'Catálogo' },
   { id: 'destaques', icon: '⭐', label: 'Destaques & Vitrine' },
   { id: 'kanban', icon: '📋', label: 'Kanban de Produção' },
   { id: 'pedidos', icon: '🛒', label: 'Pedidos e Finanças' },
+  { id: 'avaliacoes', icon: '💬', label: 'Avaliações' },
   { id: 'cupons', icon: '🏷️', label: 'Cupons de Desconto' },
   { id: 'orcamentos', icon: '📐', label: 'Orçamentos STL' },
   { id: 'estoque', icon: '🎨', label: 'Cores Disponíveis' },
@@ -845,6 +852,72 @@ export default function Admin({ defaultSection = 'catalogo' }: { defaultSection?
     ? remoteFinances.monthlySales
     : chartData;
 
+  // Avaliações & Depoimentos Reais
+  const [adminReviews, setAdminReviews] = useState<CustomerReview[]>([]);
+  const [reviewFilter, setReviewFilter] = useState<'ALL' | 'PENDING' | 'APPROVED'>('ALL');
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+
+  const loadAdminReviews = useCallback(async (filter?: string) => {
+    setIsLoadingReviews(true);
+    try {
+      const data = await fetchAdminReviews(filter || reviewFilter);
+      setAdminReviews(data);
+    } catch (e) {
+      console.warn('Erro ao carregar avaliações no admin:', e);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  }, [reviewFilter]);
+
+  useEffect(() => {
+    loadAdminReviews(reviewFilter);
+    const handleReviewUpdate = () => {
+      loadAdminReviews(reviewFilter);
+    };
+    window.addEventListener('forja_reviews_updated', handleReviewUpdate);
+    return () => {
+      window.removeEventListener('forja_reviews_updated', handleReviewUpdate);
+    };
+  }, [loadAdminReviews, reviewFilter]);
+
+  async function handleToggleReviewApproval(r: CustomerReview) {
+    const updated = await toggleReviewApproval(r.id);
+    setAdminReviews(prev => prev.map(item => item.id === r.id ? { ...item, isApproved: updated.isApproved } : item));
+    toast.show({
+      title: updated.isApproved ? 'Avaliação aprovada para a vitrine!' : 'Avaliação ocultada da vitrine',
+      message: updated.isApproved 
+        ? `A avaliação de "${r.customerName}" agora está visível no site.`
+        : `A avaliação de "${r.customerName}" foi ocultada do site.`,
+      type: updated.isApproved ? 'success' : 'info',
+      icon: updated.isApproved ? '⭐' : '👁️'
+    });
+  }
+
+  async function handleDeleteReview(r: CustomerReview) {
+    if (confirm(`Tem certeza que deseja excluir a avaliação de "${r.customerName}"?`)) {
+      await deleteReviewService(r.id);
+      setAdminReviews(prev => prev.filter(item => item.id !== r.id));
+      toast.show({
+        title: 'Avaliação excluída!',
+        message: `Depoimento de "${r.customerName}" foi removido com sucesso.`,
+        type: 'info',
+        icon: '🗑️'
+      });
+    }
+  }
+
+  function handleCopyReviewLink() {
+    const link = `${window.location.origin}/#avaliacoes`;
+    const message = `Olá! Sua encomenda da Forja do Chico chegou? Adoraríamos saber o que achou da peça! Você pode deixar sua avaliação rápida aqui: ${link}`;
+    navigator.clipboard.writeText(message);
+    toast.show({
+      title: 'Mensagem e link copiados!',
+      message: 'Texto pronto para colar no WhatsApp do cliente após a entrega do pacote.',
+      type: 'success',
+      icon: '📱'
+    });
+  }
+
   // Catálogo: Alternar Peça em Destaque da Loja
   function handleToggleFeatured(p: Product) {
     const isNowFeatured = toggleProductFeatured(p.id);
@@ -1077,6 +1150,17 @@ export default function Admin({ defaultSection = 'catalogo' }: { defaultSection?
                 style={{ background: '#F97316', color: '#fff' }}
               >
                 + Nova Cor
+              </button>
+            )}
+            {section === 'avaliacoes' && (
+              <button 
+                onClick={handleCopyReviewLink} 
+                className="h-9 px-4 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all hover:opacity-90 shadow-md shadow-emerald-950/40 cursor-pointer" 
+                style={{ background: '#059669', color: '#fff' }}
+                title="Copiar mensagem com link de avaliação"
+              >
+                <span>📱</span>
+                <span>Copiar Link p/ WhatsApp</span>
               </button>
             )}
           </div>
@@ -1433,6 +1517,192 @@ export default function Admin({ defaultSection = 'catalogo' }: { defaultSection?
                 <button onClick={() => setShowNewOrderModal(true)} className="text-xs text-orange-400 hover:underline font-bold cursor-pointer">+ Novo Pedido</button>
               </div>
               <KanbanBoard />
+            </div>
+          )}
+          {/* ⭐💬 AVALIAÇÕES E DEPOIMENTOS AUTÊNTICOS 💬⭐ */}
+          {section === 'avaliacoes' && (
+            <div className="flex flex-col gap-5">
+              {/* Barra superior com botão do WhatsApp */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 bg-gray-800 border border-gray-700 rounded-xl shadow-lg">
+                <div>
+                  <h3 className="font-bold text-base text-gray-100 flex items-center gap-2">
+                    <span>💬</span>
+                    <span>Avaliações & Depoimentos Autênticos</span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Modere os depoimentos reais enviados pelos clientes para exibir na vitrine da loja.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleCopyReviewLink}
+                    className="h-10 px-4 rounded-lg text-xs font-bold flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40 transition-all cursor-pointer whitespace-nowrap active:scale-95"
+                    title="Copiar mensagem pronta com link para enviar pelo WhatsApp após a entrega"
+                  >
+                    <span>📱</span>
+                    <span>Copiar Link para WhatsApp</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Filtros por Status */}
+              <div className="flex items-center gap-2">
+                {[
+                  { key: 'ALL', label: 'Todas', count: adminReviews.length },
+                  { key: 'PENDING', label: 'Pendentes de Revisão', count: adminReviews.filter(r => !r.isApproved).length },
+                  { key: 'APPROVED', label: 'Aprovadas na Vitrine', count: adminReviews.filter(r => r.isApproved).length },
+                ].map(f => (
+                  <button
+                    key={f.key}
+                    onClick={() => {
+                      setReviewFilter(f.key as any);
+                      loadAdminReviews(f.key);
+                    }}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      reviewFilter === f.key
+                        ? 'bg-orange-500 text-white shadow-md shadow-orange-950/30'
+                        : 'bg-gray-800/80 text-gray-400 hover:text-white border border-gray-700/60'
+                    }`}
+                  >
+                    <span>{f.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      reviewFilter === f.key ? 'bg-orange-700 text-white' : 'bg-gray-700 text-gray-300'
+                    }`}>
+                      {f.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Tabela de Avaliações */}
+              <div className="rounded-xl overflow-hidden shadow-xl border border-gray-700">
+                {isLoadingReviews ? (
+                  <div className="py-12 text-center text-xs text-gray-400 bg-[#111827]">
+                    Carregando avaliações...
+                  </div>
+                ) : adminReviews.length === 0 ? (
+                  <div className="py-14 text-center px-6 text-xs text-gray-400 bg-[#111827] flex flex-col items-center gap-3">
+                    <span className="text-3xl">⭐</span>
+                    <span className="font-bold text-gray-300 text-sm">
+                      Nenhuma avaliação encontrada neste filtro
+                    </span>
+                    <p className="max-w-md text-gray-400 leading-relaxed">
+                      Clique em <strong>"Copiar Link para WhatsApp"</strong> acima e envie para seus clientes quando eles receberem as figures em casa para coletar seus primeiros depoimentos autênticos!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-800 border-b border-gray-700 text-gray-400 text-[11px] font-semibold uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left">Data</th>
+                          <th className="px-4 py-3 text-left">Cliente</th>
+                          <th className="px-4 py-3 text-left">Estrelas</th>
+                          <th className="px-4 py-3 text-left">Peça Encomendada</th>
+                          <th className="px-4 py-3 text-left max-w-xs">Depoimento</th>
+                          <th className="px-4 py-3 text-left">Status</th>
+                          <th className="px-4 py-3 text-right">Ações Rápidas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {adminReviews.map((r, i) => (
+                          <tr
+                            key={r.id}
+                            style={{
+                              background: i % 2 === 0 ? '#111827' : '#161B24',
+                              borderBottom: '1px solid #1F2937'
+                            }}
+                            className="hover:bg-gray-800/40 transition-colors"
+                          >
+                            {/* Data */}
+                            <td className="px-4 py-3 font-mono text-[11px] text-gray-400 whitespace-nowrap">
+                              {new Date(r.createdAt).toLocaleDateString('pt-BR')}
+                            </td>
+
+                            {/* Cliente */}
+                            <td className="px-4 py-3 font-medium text-gray-100 whitespace-nowrap">
+                              <div>{r.customerName}</div>
+                              {r.customerCity && (
+                                <div className="text-[10px] text-gray-500 font-normal">
+                                  📍 {r.customerCity}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Estrelas */}
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center gap-0.5">
+                                {[1, 2, 3, 4, 5].map(star => (
+                                  <span
+                                    key={star}
+                                    className={`text-xs ${star <= r.rating ? 'text-orange-400' : 'text-gray-600'}`}
+                                  >
+                                    ★
+                                  </span>
+                                ))}
+                                <span className="font-mono text-[11px] text-gray-400 ml-1">
+                                  ({r.rating})
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Peça */}
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="text-xs font-semibold text-orange-400 bg-orange-950/60 border border-orange-800/40 px-2 py-0.5 rounded-md">
+                                {r.productName}
+                              </span>
+                            </td>
+
+                            {/* Depoimento */}
+                            <td className="px-4 py-3 text-xs text-gray-300 italic max-w-xs leading-relaxed">
+                              "{r.comment}"
+                            </td>
+
+                            {/* Status */}
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {r.isApproved ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2.5 py-0.5 rounded-full">
+                                  <span>●</span> Aprovada na Vitrine
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-800/40 px-2.5 py-0.5 rounded-full">
+                                  <span>●</span> Pendente de Revisão
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Ações */}
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleToggleReviewApproval(r)}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    r.isApproved
+                                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700'
+                                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40'
+                                  }`}
+                                  title={r.isApproved ? 'Ocultar esta avaliação do site' : 'Aprovar para ser exibida na vitrine'}
+                                >
+                                  {r.isApproved ? '👁️ Ocultar da Vitrine' : '⭐ Aprovar para Vitrine'}
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteReview(r)}
+                                  className="p-1.5 rounded-lg text-xs font-bold bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-800/40 transition-colors cursor-pointer"
+                                  title="Excluir avaliação definitivamente"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {/* 🎟️🎟️ CUPONS DE DESCONTO 🎟️🎟️ */}
