@@ -55,11 +55,20 @@ export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure,
           </div>
 
           {/* Metrics row */}
-          <div className="grid grid-cols-3 gap-6 pt-6 border-t border-[#2A2A2A] max-w-md">
-            <div>
-              <div className="font-display text-3xl md:text-4xl text-white">100+</div>
-              <div className="text-[11px] text-[#737373] mt-0.5">peças entregues</div>
-            </div>
+          <div className="grid grid-cols-3 gap-3 sm:gap-6 pt-6 border-t border-[#2A2A2A] max-w-xl lg:max-w-2xl">
+            <a
+              href="#catalogo"
+              className="group rounded-xl p-2 -m-2 transition-all cursor-pointer hover:border-orange-500/50 hover:bg-orange-950/20 border border-transparent block"
+              title="Explorar peças entregues no catálogo"
+            >
+              <div className="font-display text-3xl md:text-4xl text-white group-hover:text-orange-400 transition-colors">
+                100+
+              </div>
+              <div className="text-[11px] text-[#737373] group-hover:text-gray-300 transition-colors mt-0.5">
+                peças entregues
+              </div>
+            </a>
+
             <a
               href="#avaliacoes"
               onClick={(e) => {
@@ -72,14 +81,20 @@ export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure,
               className="group rounded-xl p-2 -m-2 transition-all cursor-pointer hover:border-orange-500/50 hover:bg-orange-950/20 border border-transparent block"
               title="Ver depoimentos e avaliações de colecionadores"
             >
-              <div className="font-display text-3xl md:text-4xl text-white group-hover:text-orange-400 transition-colors flex items-center gap-1.5">
-                4,9 <span className="text-[#EA580C] text-xl leading-none group-hover:scale-110 transition-transform">★</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-1.5">
+                <span className="font-display text-3xl md:text-4xl text-white group-hover:text-orange-400 transition-colors flex items-center gap-1">
+                  4,9 <span className="text-[#EA580C] text-xl leading-none group-hover:scale-110 transition-transform">★</span>
+                </span>
+                <span className="text-[10px] font-bold text-orange-400 bg-orange-950/70 border border-orange-500/40 px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-sm group-hover:border-orange-400 group-hover:bg-orange-900/90 transition-all inline-flex items-center gap-0.5 self-start sm:self-auto">
+                  <span>Avaliações</span>
+                  <span className="text-[11px] leading-none">↓</span>
+                </span>
               </div>
-              <div className="text-[11px] text-[#737373] group-hover:text-gray-300 transition-colors mt-0.5 flex items-center justify-between">
-                <span>avaliação média</span>
-                <span className="text-[9px] text-orange-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">Ver ↓</span>
+              <div className="text-[11px] text-[#737373] group-hover:text-gray-300 transition-colors mt-0.5">
+                avaliação média
               </div>
             </a>
+
             <div
               onClick={onOpenWorkshopModal}
               className={`group rounded-xl p-2 -m-2 transition-all ${
@@ -89,11 +104,14 @@ export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure,
               }`}
               title="Conheça o processo da nossa oficina"
             >
-              <div className="flex items-center gap-1.5">
-                <span className="font-display text-3xl md:text-4xl text-white group-hover:text-orange-400 transition-colors">100%</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-1.5">
+                <span className="font-display text-3xl md:text-4xl text-white group-hover:text-orange-400 transition-colors">
+                  100%
+                </span>
                 {onOpenWorkshopModal && (
-                  <span className="text-[10px] font-bold text-orange-400 bg-orange-950/70 border border-orange-500/40 px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-sm group-hover:border-orange-400 transition-all">
-                    Ver bastidores ▶
+                  <span className="text-[10px] font-bold text-orange-400 bg-orange-950/70 border border-orange-500/40 px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-sm group-hover:border-orange-400 group-hover:bg-orange-900/90 transition-all inline-flex items-center gap-0.5 self-start sm:self-auto">
+                    <span>Ver bastidores</span>
+                    <span className="text-[9px] leading-none">▶</span>
                   </span>
                 )}
               </div>
