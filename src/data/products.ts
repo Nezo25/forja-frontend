@@ -218,4 +218,8 @@ export interface CartItem {
   unitPrice: number;
   observations?: string;
   customized?: boolean;
+  origin?: 'HERO_SHOWCASE' | 'CATALOG';
+  promoPrice?: number;
+  promoBadge?: string;
+  allowCouponStacking?: boolean;
 }

@@ -1,5 +1,6 @@
 import type { Product } from '@/data/products';
 import { HeroShowcaseSlider } from './HeroShowcaseSlider';
+import { ContactForgeBanner } from './ContactForgeBanner';
 
 interface Props {
   onOrcamento: () => void;
@@ -72,12 +73,13 @@ export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure 
         </div>
 
         {/* Right Studio Showcase Card (Carrossel Interativo com Drop Misterioso) */}
-        <div className="lg:col-span-5 relative flex justify-center">
+        <div className="lg:col-span-5 relative flex flex-col items-center">
           <HeroShowcaseSlider
             featuredProduct={featuredProduct}
             products={products}
             onConfigure={onConfigure}
           />
+          <ContactForgeBanner />
 
           {/* Right vertical text */}
           <div className="hidden xl:flex absolute -right-10 top-1/2 -translate-y-1/2 rotate-90 origin-center text-[10px] tracking-[0.3em] font-semibold text-[#525252] uppercase pointer-events-none">

@@ -52,7 +52,11 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
       qty, 
       unitPrice,
       observations: observations.trim() || undefined,
-      customized: !isTcg
+      customized: !isTcg,
+      origin: (product as any).origin || (hasPromo ? 'HERO_SHOWCASE' : 'CATALOG'),
+      promoPrice: hasPromo ? product.promoPrice : undefined,
+      promoBadge: (product as any).promoBadge,
+      allowCouponStacking: (product as any).allowCouponStacking
     });
     setAdded(true);
     setTimeout(onClose, 750);

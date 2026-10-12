@@ -8,6 +8,7 @@ import { KanbanBoard } from '../components/KanbanBoard';
 import { TypeBadge } from '@/components/TypeBadge';
 import { toast } from '@/components/Toast';
 import { fetchApi } from '@/api/client';
+import { ShowcaseManager } from '@/components/ShowcaseManager';
 import {
   getStoredProducts,
   fetchRemoteProducts,
@@ -41,12 +42,14 @@ import {
   type Filament
 } from '@/services/storage';
 
-type Section = 'catalogo' | 'kanban' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos' | 'cupons';
+type Section = 'catalogo' | 'destaques' | 'kanban' | 'pedidos' | 'orcamentos' | 'estoque' | 'precos' | 'cupons';
 
 const NAV: { id: Section; icon: string; label: string }[] = [
   { id: 'catalogo', icon: '📦', label: 'Catálogo' },
+  { id: 'destaques', icon: '⭐', label: 'Destaques & Vitrine' },
   { id: 'kanban', icon: '📋', label: 'Kanban de Produção' },
   { id: 'pedidos', icon: '🛒', label: 'Pedidos e Finanças' },
+  { id: 'cupons', icon: '🏷️', label: 'Cupons de Desconto' },
   { id: 'orcamentos', icon: '📐', label: 'Orçamentos STL' },
   { id: 'estoque', icon: '🎨', label: 'Cores Disponíveis' },
   { id: 'precos', icon: '💰', label: 'Ajuste de Preços' },
@@ -689,8 +692,8 @@ function QuoteModal({ quote, onClose, onSave }: { quote: Quote; onClose: () => v
 }
 
 // ------------------- PRINCIPAL: ADMIN DASHBOARD -------------------
-export default function Admin() {
-  const [section, setSection] = useState<Section>('catalogo');
+export default function Admin({ defaultSection = 'catalogo' }: { defaultSection?: Section } = {}) {
+  const [section, setSection] = useState<Section>(defaultSection);
   const [catalog, setCatalog] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [orcamentos, setOrcamentos] = useState<Quote[]>([]);
@@ -1275,6 +1278,10 @@ export default function Admin() {
 
               {/* Tabela de Pedidos Antiga (Oculta ou mantida aqui caso queira) */}
             </div>
+          )}
+          {/* ⭐⭐ GESTÃO DE DESTAQUES & VITRINE PRINCIPAL ⭐⭐ */}
+          {section === 'destaques' && (
+            <ShowcaseManager products={catalog} />
           )}
           {section === 'kanban' && (
             <div className="flex flex-col gap-4">

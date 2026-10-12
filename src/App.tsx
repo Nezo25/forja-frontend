@@ -6,12 +6,12 @@ import { ToastContainer } from '@/components/Toast';
 import { LanguageProvider } from '@/components/LanguageContext';
 import { MaintenanceProvider } from '@/components/MaintenanceProvider';
 
-function ProtectedAdmin() {
+function ProtectedAdmin({ defaultSection }: { defaultSection?: any }) {
   const token = sessionStorage.getItem('__adm_token');
   if (!token) {
     return <Navigate to="/admin/login" replace />;
   }
-  return <Admin />;
+  return <Admin defaultSection={defaultSection} />;
 }
 
 export default function App() {
@@ -24,6 +24,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<ProtectedAdmin />} />
+        <Route path="/admin/destaques" element={<ProtectedAdmin defaultSection="destaques" />} />
       </Routes>
     </BrowserRouter>
     </LanguageProvider>

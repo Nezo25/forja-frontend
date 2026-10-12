@@ -26,14 +26,13 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
   async function handleApplyCoupon() {
     if (!coupon.trim()) return;
     
-    // Simulate coupon check via an endpoint or basic logic if endpoint doesn't exist yet for frontend checking
-    // Since we only have validate on backend during capture, we can just assume it will be checked there,
-    // OR we could just accept the code here and let the backend do the math. 
-    // Wait, the user asked for real-time feedback! 
-    // I don't have a GET /coupon/validate endpoint. Let me just simulate a basic check or just set it and let backend do it.
-    // Actually, I can just trust the user typed it and we validate at checkout. 
-    // But to fulfill "real-time feedback", I can do a fake check or just apply it optimistically without discount (calculated at checkout).
-    // Let's just set the coupon string.
+    // Validação preventiva de anti-stacking
+    const nonStackableItem = cart.find(i => i.origin === 'HERO_SHOWCASE' && i.allowCouponStacking === false);
+    if (nonStackableItem) {
+      alert(`O item ${nonStackableItem.product.name} já possui desconto promocional de bancada e não acumula com este cupom.`);
+      return;
+    }
+
     setAppliedCoupon(coupon.toUpperCase());
     toast.success(`Cupom ${coupon.toUpperCase()} adicionado! O valor será recalculado na finalização.`);
   }
@@ -57,8 +56,11 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
         pokemonModelId: item.product.category !== 'TCG' ? Number(item.product.id) || 1 : null,
         tcgProductId: item.product.category === 'TCG' ? Number(item.product.id) || null : null,
         quantity: item.qty,
-        finishType: item.finish === 'Pintado' ? 'PAINTED' : 'RAW',
-        customScale: item.scale
+        finishType: item.finish === 'Pintado à Mão' || item.finish === 'Pintado' ? 'PAINTED' : 'RAW',
+        customScale: item.scale,
+        origin: item.origin || 'CATALOG',
+        promoPrice: item.promoPrice,
+        promoBadge: item.promoBadge,
       }));
 
       const observations = cart.map(i => i.observations ? `${i.product.name}: ${i.observations}` : null).filter(Boolean).join(' | ');
@@ -94,8 +96,9 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
         }
         
         text += `\n📦 *Itens:*\n`;
-        cart.forEach((item, idx) => {
-          text += `• ${item.qty}x ${item.product.name} (${item.scale}, ${item.finish})\n`;
+        cart.forEach((item) => {
+          const promoTag = item.origin === 'HERO_SHOWCASE' ? ' [Oferta de Destaque]' : '';
+          text += `• ${item.qty}x ${item.product.name} (${item.scale}, ${item.finish})${promoTag}\n`;
         });
         
         text += `\n💰 *Total Estimado:* R$ ${resp.totalAmount.toFixed(2).replace('.', ',')}\n`;
@@ -151,6 +154,14 @@ export function CartDrawer({ open, cart, onClose, onRemove, onClear }: Props) {
                       </div>
                       
                       <div className="text-xs text-gray-400 line-clamp-1">{item.scale} • {item.finish}</div>
+                      
+                      {item.origin === 'HERO_SHOWCASE' && item.promoPrice && item.product.basePrice > item.promoPrice && (
+                        <div className="mt-1">
+                          <span className="inline-block text-[10px] font-bold text-orange-400 bg-orange-950/70 px-1.5 py-0.5 rounded border border-orange-500/30">
+                            🏷️ Oferta de Bancada (-R$ {(item.product.basePrice - item.promoPrice).toFixed(2).replace('.', ',')})
+                          </span>
+                        </div>
+                      )}
                       
                       <div className="flex items-end justify-between mt-auto">
                         <div className="text-xs text-gray-400">Qtd: {item.qty}</div>
