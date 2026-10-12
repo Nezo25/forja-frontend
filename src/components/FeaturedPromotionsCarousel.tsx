@@ -4,6 +4,7 @@ import { TypeBadge } from './TypeBadge';
 import { MysteryDropCard } from './MysteryDropCard';
 import {
   fetchPublicShowcase,
+  getDefaultPublicShowcase,
   type PublicShowcaseResponse,
   type PublicShowcaseSlot,
 } from '@/services/showcase';
@@ -19,7 +20,7 @@ export function FeaturedPromotionsCarousel({
   onConfigure,
   whatsappNumber = '5511982563005',
 }: FeaturedPromotionsCarouselProps) {
-  const [showcase, setShowcase] = useState<PublicShowcaseResponse | null>(null);
+  const [showcase, setShowcase] = useState<PublicShowcaseResponse>(() => getDefaultPublicShowcase(products));
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -90,16 +91,10 @@ export function FeaturedPromotionsCarousel({
     // Localiza o produto real no catálogo pelo productId ou nome para opções de materiais/escalas
     const matched = products.find(p => p.id === slot.productId?.toString() || p.name.toLowerCase() === slot.name?.toLowerCase());
 
-    const productPayload: Product = {
-      id: slot.productId ? slot.productId.toString() : (matched?.id || 'slot_' + slot.slotNumber),
-      name: slot.name || matched?.name || 'Figure da Forja',
-      category: (slot.category as any) || matched?.category || 'Figures Pokémon',
-      types: slot.primaryType ? [slot.primaryType as any, slot.secondaryType as any].filter(Boolean) : (matched?.types || ['Normal']),
-      scales: matched?.scales && matched.scales.length > 0 ? matched.scales : [(slot.scale as any) || '1:10 (~15 cm)'],
-      materials: matched?.materials || ['PLA'],
-    const hasPromo = typeof slot.promotionalPrice === 'number' && slot.promotionalPrice > 0;
-    const basePrice = slot.originalPrice || matched?.basePrice || 75;
-    const promoPrice = hasPromo ? slot.promotionalPrice! : undefined;
+    const origPrice = slot.originalPrice || matched?.basePrice || 75;
+    const defaultDiscount = origPrice >= 80 ? 16 : (origPrice >= 50 ? 10 : 8);
+    const hasCustomPromo = typeof slot.promotionalPrice === 'number' && slot.promotionalPrice > 0 && slot.promotionalPrice < origPrice;
+    const promoPrice = hasCustomPromo ? slot.promotionalPrice! : Math.max(15, origPrice - defaultDiscount);
 
     const productPayload: Product = {
       id: slot.productId ? slot.productId.toString() : (matched?.id || 'slot_' + slot.slotNumber),
@@ -108,8 +103,8 @@ export function FeaturedPromotionsCarousel({
       types: slot.primaryType ? [slot.primaryType as any, slot.secondaryType as any].filter(Boolean) : (matched?.types || ['Normal']),
       scales: matched?.scales && matched.scales.length > 0 ? matched.scales : [(slot.scale as any) || '1:10 (~15 cm)'],
       materials: matched?.materials || ['PLA'],
-      basePrice,
-      promoPrice,
+      basePrice: origPrice,
+      promoPrice: promoPrice,
       finishOptions: matched?.finishOptions || [],
       image: slot.imageUrl || matched?.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
       printTimeH: matched?.printTimeH || 8,
@@ -118,7 +113,7 @@ export function FeaturedPromotionsCarousel({
       // Metadata especial para o pedido e carrinho
       origin: 'HERO_SHOWCASE',
       promoBadge: '[Oferta do Destaque Aplicada]',
-      isHeroPromo: hasPromo,
+      isHeroPromo: true,
       allowCouponStacking: slot.allowCouponStacking ?? false,
     } as any;
 
@@ -140,16 +135,21 @@ export function FeaturedPromotionsCarousel({
       >
         {/* SLIDES DE PRODUTOS EM DESTAQUE (SLOTS 01 a 03) */}
         {productSlots.map((slot, idx) => {
-          const hasPromo = typeof slot.promotionalPrice === 'number' && slot.promotionalPrice > 0 && slot.promotionalPrice < (slot.originalPrice || 0);
           const origPrice = slot.originalPrice || 75;
-          const promoPrice = hasPromo ? slot.promotionalPrice! : origPrice;
-          const discountDiff = hasPromo ? origPrice - promoPrice : 0;
-          const discountPct = slot.discountPercentage || (hasPromo ? Math.round((discountDiff / origPrice) * 100) : 0);
+          // Se ainda não houver preço de promoção customizado salvo pelo Chico, aplica a oferta especial de bancada
+          const defaultDiscount = origPrice >= 80 ? 16 : (origPrice >= 50 ? 10 : 8);
+          const hasCustomPromo = typeof slot.promotionalPrice === 'number' && slot.promotionalPrice > 0 && slot.promotionalPrice < origPrice;
+          const promoPrice = hasCustomPromo ? slot.promotionalPrice! : Math.max(15, origPrice - defaultDiscount);
+          const discountDiff = origPrice - promoPrice;
+          const discountPct = Math.round((discountDiff / origPrice) * 100);
+          const badgeText = slot.badgeLabel && slot.badgeLabel !== '⚡ OFERTA DE BANCADA' && slot.badgeLabel !== '⭐ PEÇA DA SEMANA'
+            ? slot.badgeLabel
+            : '🔥 OFERTA DESTAQUE DA OFICINA';
 
           return (
             <div
               key={slot.slotNumber}
-              onClick={() => handleProductAction(slot)}
+              onClick={() => handleProductAction({ ...slot, promotionalPrice: promoPrice, badgeLabel: badgeText })}
               className="w-full h-full shrink-0 relative cursor-pointer"
             >
               {/* Foto da Figure em Alta Resolução */}
@@ -164,16 +164,10 @@ export function FeaturedPromotionsCarousel({
 
               {/* Top Badges do Slide com Justificativa Explícita */}
               <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-2 z-10">
-                {hasPromo ? (
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-500/30 text-orange-300 border border-orange-500/50 backdrop-blur-md flex items-center gap-1.5 shadow-sm">
-                    <span>{slot.badgeLabel || '🔥 OFERTA DESTAQUE DA OFICINA'}</span>
-                    <span className="font-extrabold text-white">(-R$ {discountDiff.toFixed(0)})</span>
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/20 backdrop-blur-md flex items-center gap-1 shadow-sm">
-                    <span>{slot.badgeLabel || '⭐ PEÇA DA SEMANA'}</span>
-                  </span>
-                )}
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500/35 text-orange-200 border border-orange-500/60 backdrop-blur-md flex items-center gap-1.5 shadow-md">
+                  <span>{badgeText}</span>
+                  <span className="font-extrabold text-white">(-R$ {discountDiff.toFixed(0)})</span>
+                </span>
 
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider bg-black/60 backdrop-blur-md text-slate-300 border border-white/10">
                   {(idx + 1).toString().padStart(2, '0')} / {totalSlides.toString().padStart(2, '0')}
@@ -194,26 +188,17 @@ export function FeaturedPromotionsCarousel({
                 </div>
 
                 {/* Preço Visual: Normal Riscado vs Promoção de Destaque */}
-                {hasPromo ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs line-through text-slate-500 font-semibold">
-                      R$ {origPrice.toFixed(2).replace('.', ',')}
-                    </span>
-                    <span className="text-xl font-extrabold text-orange-500 bg-orange-950/80 px-2.5 py-0.5 rounded-lg border border-orange-500/40 shadow-sm">
-                      R$ {promoPrice.toFixed(2).replace('.', ',')}
-                    </span>
-                    <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-500/30">
-                      ({discountPct}% OFF)
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">A partir de</span>
-                    <span className="text-lg font-extrabold text-white">
-                      R$ {origPrice.toFixed(2).replace('.', ',')}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs line-through text-slate-500 font-semibold">
+                    R$ {origPrice.toFixed(2).replace('.', ',')}
+                  </span>
+                  <span className="text-xl font-extrabold text-orange-500 bg-orange-950/90 px-2.5 py-0.5 rounded-lg border border-orange-500/50 shadow-md">
+                    R$ {promoPrice.toFixed(2).replace('.', ',')}
+                  </span>
+                  <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-950/70 px-1.5 py-0.5 rounded border border-emerald-500/40">
+                    ({discountPct}% OFF)
+                  </span>
+                </div>
 
                 {/* Nome da Peça */}
                 <h3 className="font-display text-2xl sm:text-3xl text-white uppercase tracking-wide line-clamp-1 group-hover:text-orange-300 transition-colors">
@@ -221,12 +206,10 @@ export function FeaturedPromotionsCarousel({
                 </h3>
 
                 {/* Justificativa Explícita da Oferta de Bancada */}
-                {hasPromo && (
-                  <p className="text-[10px] text-amber-300/90 font-medium leading-tight flex items-center gap-1">
-                    <span className="text-orange-400">⚡</span>
-                    <span>Preço especial válido exclusivamente para esta unidade da bancada</span>
-                  </p>
-                )}
+                <p className="text-[10px] text-amber-300/90 font-medium leading-tight flex items-center gap-1">
+                  <span className="text-orange-400">⚡</span>
+                  <span>Preço especial válido exclusivamente para esta unidade da bancada</span>
+                </p>
 
                 {/* Botão de Ação do Card */}
                 <div className="pt-1">

@@ -81,9 +81,13 @@ export function getDefaultPublicShowcase(catalogProducts?: Product[]): PublicSho
 
   const makeSlot = (num: number, p?: Product): PublicShowcaseSlot => {
     const orig = p ? (p.basePrice || 75) : 75;
-    const promo = p?.promoPrice && p.promoPrice > 0 && p.promoPrice < orig ? p.promoPrice : undefined;
-    const diff = promo ? orig - promo : 0;
-    const pct = orig > 0 && diff > 0 ? Math.round((diff / orig) * 100) : 0;
+    // Se ainda não houver preço customizado no slot, aplica a oferta especial da oficina
+    const defaultDiff = orig >= 80 ? 16 : (orig >= 50 ? 10 : 8);
+    const promo = p?.promoPrice && p.promoPrice > 0 && p.promoPrice < orig 
+      ? p.promoPrice 
+      : Math.max(15, orig - defaultDiff);
+    const diff = orig - promo;
+    const pct = Math.round((diff / orig) * 100);
 
     return {
       slotNumber: num,
@@ -95,10 +99,10 @@ export function getDefaultPublicShowcase(catalogProducts?: Product[]): PublicSho
       scale: p?.scales?.[0] || '1:10 (~15 cm)',
       imageUrl: p?.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
       originalPrice: orig,
-      promotionalPrice: promo || null,
-      discountAmount: diff > 0 ? diff : null,
-      discountPercentage: pct > 0 ? pct : null,
-      badgeLabel: promo ? '🔥 OFERTA DESTAQUE DA OFICINA' : '⭐ PEÇA DA SEMANA',
+      promotionalPrice: promo,
+      discountAmount: diff,
+      discountPercentage: pct,
+      badgeLabel: '🔥 OFERTA DESTAQUE DA OFICINA',
       allowCouponStacking: false,
     };
   };
