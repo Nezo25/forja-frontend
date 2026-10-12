@@ -25,6 +25,7 @@ export default function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<ProtectedAdmin />} />
         <Route path="/admin/destaques" element={<ProtectedAdmin defaultSection="destaques" />} />
+        <Route path="/admin/pedidos-financas" element={<ProtectedAdmin defaultSection="pedidos" />} />
       </Routes>
     </BrowserRouter>
     </LanguageProvider>

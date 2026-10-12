@@ -35,6 +35,8 @@ import {
   deleteQuote,
   fileToBase64,
   calculateMonthlySales,
+  isConfirmedSale,
+  isLeadProposal,
   parsePrice,
   formatPrice,
   type Order,
@@ -758,20 +760,90 @@ export default function Admin({ defaultSection = 'catalogo' }: { defaultSection?
     };
   }, []);
 
-  // Gráfico financeiro 100% dinâmico baseado nos pedidos reais
+  // Separação estrita: Vendas confirmadas vs Propostas/Leads no WhatsApp
+  const confirmedOrders = useMemo(() => {
+    return orders.filter(o => isConfirmedSale(o.status));
+  }, [orders]);
+
+  const leadOrders = useMemo(() => {
+    return orders.filter(o => isLeadProposal(o.status));
+  }, [orders]);
+
+  // Gráfico financeiro 100% dinâmico baseado exclusivamente em pedidos confirmados
   const chartData = useMemo(() => {
     return calculateMonthlySales(orders);
   }, [orders]);
 
-  // KPIs dinâmicos calculados em tempo real
-  const totalFaturamento = useMemo(() => {
-    return orders.reduce((sum, o) => sum + parsePrice(o.valor), 0);
+  // KPIs dinâmicos locais
+  const totalRealRevenue = useMemo(() => {
+    return confirmedOrders.reduce((sum, o) => sum + parsePrice(o.valor), 0);
+  }, [confirmedOrders]);
+
+  const totalConfirmedOrders = confirmedOrders.length;
+
+  const pipelinePotentialRevenue = useMemo(() => {
+    return leadOrders.reduce((sum, o) => sum + parsePrice(o.valor), 0);
+  }, [leadOrders]);
+
+  const activeLeadsCount = leadOrders.length;
+
+  const ticketMedioReal = useMemo(() => {
+    if (totalConfirmedOrders === 0) return 0;
+    return totalRealRevenue / totalConfirmedOrders;
+  }, [totalRealRevenue, totalConfirmedOrders]);
+
+  // Sincronização opcional com backend (/api/v1/admin/finances/summary)
+  const [remoteFinances, setRemoteFinances] = useState<{
+    totalRealRevenue?: number;
+    totalConfirmedOrders?: number;
+    pipelinePotentialRevenue?: number;
+    activeLeadsCount?: number;
+    averageTicket?: number;
+    monthlySales?: { mes: string; vendas: number }[];
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchApi('/admin/finances/summary')
+      .then((data: any) => {
+        if (active && data) {
+          setRemoteFinances({
+            totalRealRevenue: typeof data.totalRealRevenue === 'number' ? data.totalRealRevenue : undefined,
+            totalConfirmedOrders: typeof data.totalConfirmedOrders === 'number' ? data.totalConfirmedOrders : undefined,
+            pipelinePotentialRevenue: typeof data.pipelinePotentialRevenue === 'number' ? data.pipelinePotentialRevenue : undefined,
+            activeLeadsCount: typeof data.activeLeadsCount === 'number' ? data.activeLeadsCount : undefined,
+            averageTicket: typeof data.averageTicket === 'number' ? data.averageTicket : undefined,
+            monthlySales: Array.isArray(data.monthlySales) ? data.monthlySales : undefined,
+          });
+        }
+      })
+      .catch(() => {});
+    return () => { active = false; };
   }, [orders]);
 
-  const ticketMedio = useMemo(() => {
-    if (orders.length === 0) return 0;
-    return totalFaturamento / orders.length;
-  }, [orders, totalFaturamento]);
+  const displayRealRevenue = remoteFinances?.totalRealRevenue !== undefined && remoteFinances.totalRealRevenue > 0
+    ? remoteFinances.totalRealRevenue
+    : totalRealRevenue;
+
+  const displayConfirmedCount = remoteFinances?.totalConfirmedOrders !== undefined && remoteFinances.totalConfirmedOrders > 0
+    ? remoteFinances.totalConfirmedOrders
+    : totalConfirmedOrders;
+
+  const displayPipelineRevenue = remoteFinances?.pipelinePotentialRevenue !== undefined && remoteFinances.pipelinePotentialRevenue > 0
+    ? remoteFinances.pipelinePotentialRevenue
+    : pipelinePotentialRevenue;
+
+  const displayLeadsCount = remoteFinances?.activeLeadsCount !== undefined && remoteFinances.activeLeadsCount > 0
+    ? remoteFinances.activeLeadsCount
+    : activeLeadsCount;
+
+  const displayTicketMedio = remoteFinances?.averageTicket !== undefined && remoteFinances.averageTicket > 0
+    ? remoteFinances.averageTicket
+    : ticketMedioReal;
+
+  const displayChartData = remoteFinances?.monthlySales && remoteFinances.monthlySales.length > 0
+    ? remoteFinances.monthlySales
+    : chartData;
 
   // Catálogo: Alternar Peça em Destaque da Loja
   function handleToggleFeatured(p: Product) {
@@ -1230,20 +1302,91 @@ export default function Admin({ defaultSection = 'catalogo' }: { defaultSection?
           {/* ── PEDIDOS E FINANÇAS ── */}
           {section === 'pedidos' && (
             <div className="flex flex-col gap-5">
-              {/* KPIs 100% dinâmicos */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { label: 'Faturamento Total Real', value: `R$ ${formatPrice(totalFaturamento)}`, icon: '💰', highlight: true },
-                  { label: 'Total de Pedidos', value: orders.length.toString(), icon: '📋' },
-                  { label: 'Em impressão ativa', value: orders.filter(o => o.status === 'Em impressão').length.toString(), icon: '🖨️' },
-                  { label: 'Ticket Médio', value: `R$ ${formatPrice(ticketMedio)}`, icon: '📊' },
-                ].map(k => (
-                  <div key={k.label} className="p-4 rounded-xl bg-gray-800/80 border border-gray-700/60 shadow-lg">
-                    <div className="text-xl mb-1">{k.icon}</div>
-                    <div className={`text-2xl font-extrabold ${k.highlight ? 'text-orange-400' : 'text-gray-100'}`}>{k.value}</div>
-                    <div className="text-[11px] text-gray-400">{k.label}</div>
+              {/* KPIs com Regras Estritas de Faturamento */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {/* Card 1: Faturamento Real Confirmado */}
+                <div className="p-4 rounded-xl bg-gray-800/90 border border-gray-700/70 shadow-lg flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xl">💰</span>
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full">
+                      Confirmado
+                    </span>
                   </div>
-                ))}
+                  <div>
+                    <div className="text-2xl font-extrabold text-orange-400">
+                      R$ {formatPrice(displayRealRevenue)}
+                    </div>
+                    <div className="text-[11px] font-semibold text-gray-300 mt-0.5">
+                      Faturamento Real Confirmado
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">
+                      Apenas vendas aprovadas e em produção
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Vendas Concluídas */}
+                <div className="p-4 rounded-xl bg-gray-800/90 border border-gray-700/70 shadow-lg flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xl">✅</span>
+                    <span className="text-[10px] font-bold text-blue-400 bg-blue-950/60 border border-blue-800/40 px-2 py-0.5 rounded-full">
+                      Fechados
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-extrabold text-gray-100">
+                      {displayConfirmedCount}
+                    </div>
+                    <div className="text-[11px] font-semibold text-gray-300 mt-0.5">
+                      Vendas Concluídas
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">
+                      Pedidos com pagamento confirmado
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Pipeline em Negociação */}
+                <div className="p-4 rounded-xl bg-gray-800/90 border border-gray-700/70 shadow-lg flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xl">⏳</span>
+                    <span className="text-[10px] font-bold text-sky-300 bg-slate-700/60 border border-sky-800/40 px-2 py-0.5 rounded-full">
+                      {displayLeadsCount} {displayLeadsCount === 1 ? 'proposta aberta' : 'propostas abertas'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-extrabold text-sky-200">
+                      R$ {formatPrice(displayPipelineRevenue)}
+                    </div>
+                    <div className="text-[11px] font-semibold text-gray-300 mt-0.5">
+                      Pipeline em Negociação
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">
+                      Leads WhatsApp e propostas em análise
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 4: Ticket Médio Real */}
+                <div className="p-4 rounded-xl bg-gray-800/90 border border-gray-700/70 shadow-lg flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xl">📊</span>
+                    <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 border border-amber-800/40 px-2 py-0.5 rounded-full">
+                      Média Real
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-extrabold text-gray-100">
+                      R$ {formatPrice(displayTicketMedio)}
+                    </div>
+                    <div className="text-[11px] font-semibold text-gray-300 mt-0.5">
+                      Ticket Médio Real
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">
+                      Calculado exclusivamente sobre vendas pagas
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Gráfico Dinâmico */}
@@ -1251,16 +1394,16 @@ export default function Admin({ defaultSection = 'catalogo' }: { defaultSection?
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-sm font-bold text-gray-100">Vendas Mensais Dinâmicas (R$)</h3>
-                    <p className="text-xs text-gray-400">As colunas sobem e descem em tempo real conforme vendas reais são cadastradas ou modificadas.</p>
+                    <p className="text-xs text-gray-400">Plotando apenas vendas confirmadas e liquidadas. Leads em negociação não afetam este gráfico.</p>
                   </div>
                   <span className="text-xs font-mono text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-800/40">
-                    ● Gráfico Real
+                    ● Faturamento Liquidado
                   </span>
                 </div>
 
                 <div className="h-48 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} barSize={32}>
+                    <BarChart data={displayChartData} barSize={32}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                       <XAxis dataKey="mes" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
@@ -1268,7 +1411,7 @@ export default function Admin({ defaultSection = 'catalogo' }: { defaultSection?
                         contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
                         labelStyle={{ color: '#F9FAFB' }}
                         itemStyle={{ color: '#F97316' }}
-                        formatter={(v) => [`R$ ${Number(v).toLocaleString('pt-BR')}`, 'Total de Vendas']}
+                        formatter={(v) => [`R$ ${Number(v).toLocaleString('pt-BR')}`, 'Faturamento Confirmado']}
                       />
                       <Bar dataKey="vendas" fill="#F97316" radius={[6, 6, 0, 0]} />
                     </BarChart>

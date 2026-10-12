@@ -6,11 +6,12 @@ interface Props {
   cart: CartItem[];
   onCartOpen: () => void;
   onOrcamento: () => void;
+  onOpenWorkshopModal?: () => void;
   search: string;
   onSearch: (v: string) => void;
 }
 
-export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Props) {
+export function Header({ cart, onCartOpen, onOrcamento, onOpenWorkshopModal, search, onSearch }: Props) {
   const [showSearch, setShowSearch] = useState(false);
   const total = cart.reduce((s, i) => s + i.qty, 0);
 
@@ -37,7 +38,16 @@ export function Header({ cart, onCartOpen, onOrcamento, search, onSearch }: Prop
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#A3A3A3]">
           <a href="#destaques" className="hover:text-white transition-colors">Destaques</a>
           <a href="#catalogo" className="hover:text-white transition-colors">Coleção</a>
-          <a href="#oficina" className="hover:text-white transition-colors">A oficina</a>
+          {onOpenWorkshopModal ? (
+            <button
+              onClick={onOpenWorkshopModal}
+              className="hover:text-white transition-colors cursor-pointer text-sm font-medium"
+            >
+              A oficina
+            </button>
+          ) : (
+            <a href="#oficina" className="hover:text-white transition-colors">A oficina</a>
+          )}
           <button onClick={onOrcamento} className="hover:text-white transition-colors cursor-pointer">Sob medida</button>
         </nav>
 

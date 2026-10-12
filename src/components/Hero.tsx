@@ -7,9 +7,10 @@ interface Props {
   featuredProduct?: Product | null;
   products?: Product[];
   onConfigure?: (p: Product) => void;
+  onOpenWorkshopModal?: () => void;
 }
 
-export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure }: Props) {
+export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure, onOpenWorkshopModal }: Props) {
   return (
     <section id="destaques" className="relative overflow-hidden bg-[#161616] text-white pt-10 pb-16 md:py-20 px-4 md:px-8 border-b border-[#262626]">
       <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -65,9 +66,26 @@ export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure 
               </div>
               <div className="text-[11px] text-[#737373] mt-0.5">avaliação média</div>
             </div>
-            <div>
-              <div className="font-display text-3xl md:text-4xl text-white">100%</div>
-              <div className="text-[11px] text-[#737373] mt-0.5">acabamento manual</div>
+            <div
+              onClick={onOpenWorkshopModal}
+              className={`group rounded-xl p-2 -m-2 transition-all ${
+                onOpenWorkshopModal
+                  ? 'cursor-pointer hover:border-orange-500/50 hover:bg-orange-950/20 border border-transparent'
+                  : ''
+              }`}
+              title="Conheça o processo da nossa oficina"
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="font-display text-3xl md:text-4xl text-white group-hover:text-orange-400 transition-colors">100%</span>
+                {onOpenWorkshopModal && (
+                  <span className="text-[10px] font-bold text-orange-400 bg-orange-950/70 border border-orange-500/40 px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-sm group-hover:border-orange-400 transition-all">
+                    Ver bastidores ▶
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-[#737373] group-hover:text-gray-300 transition-colors mt-0.5">
+                acabamento manual
+              </div>
             </div>
           </div>
         </div>

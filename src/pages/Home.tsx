@@ -5,6 +5,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { ProductCustomizeModal } from '@/components/ProductCustomizeModal';
 import { CartDrawer } from '@/components/CartDrawer';
 import { OrcamentoModal } from '@/components/OrcamentoModal';
+import { WorkshopProcessModal } from '@/components/WorkshopProcessModal';
 import { type CartItem, type Product, CATEGORY_LABELS, type ProductCategory, toProductCategory } from '@/data/products';
 import { getStoredProducts, fetchRemoteProducts, getFeaturedProductId } from '@/services/storage';
 
@@ -52,6 +53,7 @@ export default function Home() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [orcamentoOpen, setOrcamentoOpen] = useState(false);
+  const [workshopModalOpen, setWorkshopModalOpen] = useState(false);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
@@ -127,6 +129,7 @@ export default function Home() {
         cart={cart}
         onCartOpen={() => setCartOpen(true)}
         onOrcamento={() => setOrcamentoOpen(true)}
+        onOpenWorkshopModal={() => setWorkshopModalOpen(true)}
         search={search}
         onSearch={setSearch}
       />
@@ -137,6 +140,7 @@ export default function Home() {
         featuredProduct={featuredProduct}
         products={products}
         onConfigure={setConfigProduct}
+        onOpenWorkshopModal={() => setWorkshopModalOpen(true)}
       />
 
       {/* SECTION 01 — Orange Transition Banner (Figma Make) */}
@@ -388,6 +392,14 @@ export default function Home() {
       <OrcamentoModal
         open={orcamentoOpen}
         onClose={() => setOrcamentoOpen(false)}
+      />
+      <WorkshopProcessModal
+        isOpen={workshopModalOpen}
+        onClose={() => setWorkshopModalOpen(false)}
+        onRequestCustomQuote={() => {
+          setWorkshopModalOpen(false);
+          setOrcamentoOpen(true);
+        }}
       />
     </div>
   );

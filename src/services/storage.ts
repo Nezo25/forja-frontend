@@ -715,6 +715,38 @@ export async function deleteOrder(id: string): Promise<void> {
 // ------------------- CÁLCULO DINÂMICO DE VENDAS -------------------
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
+export function isConfirmedSale(status?: string | null): boolean {
+  if (!status) return false;
+  const s = status.toUpperCase().trim();
+  // Leads, propostas iniciais e orçamentos aguardando NUNCA entram em faturamento real
+  if (
+    s === 'LEAD_WHATSAPP' ||
+    s === 'NEW_LEAD' ||
+    s === 'PENDING_PAYMENT' ||
+    s.includes('AGUARDANDO') ||
+    s.includes('PROPOSTA') ||
+    s.includes('LEAD') ||
+    s.includes('WHATSAPP')
+  ) {
+    return false;
+  }
+  // Cancelados e rejeitados
+  if (s.includes('CANCEL') || s.includes('REJEIT') || s === 'REJECTED') {
+    return false;
+  }
+  // Vendas reais em produção, finalizadas ou pagas
+  return true;
+}
+
+export function isLeadProposal(status?: string | null): boolean {
+  if (!status) return false;
+  const s = status.toUpperCase().trim();
+  if (s.includes('CANCEL') || s.includes('REJEIT') || s === 'REJECTED') {
+    return false;
+  }
+  return !isConfirmedSale(status);
+}
+
 export function calculateMonthlySales(orders: Order[]): { mes: string; vendas: number }[] {
   const currentMonthIdx = new Date().getMonth();
   const monthsWindow: { mes: string; monthNum: number; vendas: number }[] = [];
@@ -728,7 +760,10 @@ export function calculateMonthlySales(orders: Order[]): { mes: string; vendas: n
     });
   }
 
-  orders.forEach(o => {
+  // Apenas pedidos confirmados entram no gráfico contábil
+  const confirmed = orders.filter(o => isConfirmedSale(o.status));
+
+  confirmed.forEach(o => {
     let mNum = -1;
     if (o.data && o.data.includes('/')) {
       const parts = o.data.split('/');
