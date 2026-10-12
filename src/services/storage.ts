@@ -205,24 +205,55 @@ export function consolidateProducts(rawList: Product[]): Product[] {
   return Array.from(map.values());
 }
 
+export function isFakeMockProduct(p: any): boolean {
+  if (!p || !p.name) return true;
+  const idStr = String(p.id || '');
+  if (/^p\d+$/.test(idStr)) return true; // p1, p2, p3...
+  const nameLower = p.name.trim().toLowerCase();
+  const fakeNames = [
+    'charizard stance',
+    'gengar sorridente',
+    'gyarados emergindo',
+    'pikachu thunder',
+    'mewtwo armadura',
+    'bulbasaur chibi',
+    'garchomp diorama',
+    'suporte pokébola',
+    'suporte pokebola',
+    'dialga lendário',
+    'dialga lendario'
+  ];
+  if (fakeNames.includes(nameLower)) return true;
+  if (p.image && typeof p.image === 'string' && p.image.includes('placehold.co')) return true;
+  return false;
+}
+
 export function getStoredProducts(): Product[] {
   try {
     const local = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     if (local !== null) {
       const parsed = JSON.parse(local);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return consolidateProducts(parsed.map(sanitizeProduct));
+        const clean = parsed.filter(p => !isFakeMockProduct(p));
+        // Se houver resquícios de testes antigos ou mocks no aparelho, higieniza o cache
+        if (clean.length !== parsed.length) {
+          localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(clean));
+        }
+        if (clean.length > 0) {
+          return consolidateProducts(clean.map(sanitizeProduct));
+        }
       }
     }
   } catch (e) {
     console.error('Erro ao ler produtos:', e);
   }
-  return consolidateProducts(products.map(sanitizeProduct)); // Fallback seguro
+  return []; // NUNCA retorna produtos fictícios!
 }
 
 export function saveProductsToStorage(productsList: Product[]): void {
   try {
-    const consolidated = consolidateProducts(productsList.map(sanitizeProduct));
+    const cleanList = productsList.filter(p => !isFakeMockProduct(p));
+    const consolidated = consolidateProducts(cleanList.map(sanitizeProduct));
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(consolidated));
     window.dispatchEvent(new Event('forja_products_updated'));
   } catch (e) {
@@ -246,28 +277,25 @@ export function incrementProductStock(id: string, delta: number = 1): number {
 }
 
 export async function fetchRemoteProducts(): Promise<Product[]> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 7000); // Timeout estrito de 7s para WebKit/Safari
-
-  try {
+  const executeFetch = async (): Promise<Product[]> => {
     let allProducts: Product[] = [];
 
-    // Fetch 3D Models
+    // Fetch 3D Models reais cadastrados na oficina
     try {
-      const data3d: any = await fetchApi('/models', { signal: controller.signal });
+      const data3d: any = await fetchApi('/models?size=100');
       const items3d = data3d?.content || (Array.isArray(data3d) ? data3d : []);
       if (Array.isArray(items3d) && items3d.length > 0) {
         allProducts = [...items3d.map(sanitizeProduct)];
       }
     } catch (err) {
-      console.warn('API /models não respondeu dentro de 7s ou retornou erro:', err);
+      console.warn('Tentativa na API de modelos:', err);
     }
 
-    // Fetch TCG Products
+    // Fetch TCG Products reais cadastrados na oficina
     try {
       const isAdmin = Boolean(typeof window !== 'undefined' && sessionStorage.getItem('__adm_token'));
       const tcgEndpoint = isAdmin ? '/admin/tcg-products?size=100' : '/tcg-products?size=100';
-      const dataTcg: any = await fetchApi(tcgEndpoint, { signal: controller.signal });
+      const dataTcg: any = await fetchApi(tcgEndpoint);
       const itemsTcg = dataTcg?.content || (Array.isArray(dataTcg) ? dataTcg : []);
       if (Array.isArray(itemsTcg) && itemsTcg.length > 0) {
         const mappedTcg = itemsTcg.map((tcg: any) => ({
@@ -291,19 +319,30 @@ export async function fetchRemoteProducts(): Promise<Product[]> {
         allProducts = [...allProducts, ...mappedTcg];
       }
     } catch (err) {
-      console.warn('API de TCG não respondeu ou retornou erro:', err);
+      console.warn('Tentativa na API de TCG:', err);
     }
 
-    if (allProducts.length > 0) {
-      const consolidated = consolidateProducts(allProducts);
+    return allProducts.filter(p => !isFakeMockProduct(p));
+  };
+
+  try {
+    let results = await executeFetch();
+
+    // Se o servidor estava em repouso e respondeu vazio inicialmente, aguarda 2.5s e tenta novamente
+    if (results.length === 0) {
+      await new Promise(r => setTimeout(r, 2500));
+      results = await executeFetch();
+    }
+
+    if (results.length > 0) {
+      const consolidated = consolidateProducts(results);
       saveProductsToStorage(consolidated);
       return consolidated;
     }
   } catch (err) {
-    console.warn('Erro geral em fetchRemoteProducts:', err);
-  } finally {
-    clearTimeout(timeoutId);
+    console.warn('Erro ao sincronizar produtos reais:', err);
   }
+
   return getStoredProducts();
 }
 

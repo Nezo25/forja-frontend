@@ -70,20 +70,15 @@ export interface ShowcaseSlotUpdateRequest {
 
 const LOCAL_STORAGE_SHOWCASE_KEY = 'forja_showcase_slots_cache_v2';
 
-/** Retorna fallback seguro a partir do catálogo local quando a API não estiver disponível */
+/** Retorna vitrine pública montada exclusivamente a partir de produtos reais cadastrados */
 export function getDefaultPublicShowcase(catalogProducts?: Product[]): PublicShowcaseResponse {
   const products = catalogProducts && catalogProducts.length > 0 ? catalogProducts : getStoredProducts();
   const activeProducts = products.filter(p => p.active);
 
-  const p1 = activeProducts[0];
-  const p2 = activeProducts[1] || p1;
-  const p3 = activeProducts[2] || p1;
-
-  const makeSlot = (num: number, p?: Product): PublicShowcaseSlot => {
-    const orig = p ? (p.basePrice || 75) : 75;
-    // Se ainda não houver preço customizado no slot, aplica a oferta especial da oficina
+  const makeSlot = (num: number, p: Product): PublicShowcaseSlot => {
+    const orig = p.basePrice || 75;
     const defaultDiff = orig >= 80 ? 16 : (orig >= 50 ? 10 : 8);
-    const promo = p?.promoPrice && p.promoPrice > 0 && p.promoPrice < orig 
+    const promo = p.promoPrice && p.promoPrice > 0 && p.promoPrice < orig 
       ? p.promoPrice 
       : Math.max(15, orig - defaultDiff);
     const diff = orig - promo;
@@ -91,13 +86,13 @@ export function getDefaultPublicShowcase(catalogProducts?: Product[]): PublicSho
 
     return {
       slotNumber: num,
-      productId: p ? Number(p.id) || null : null,
-      name: p?.name || `Figure da Semana ${num}`,
-      category: p?.category || 'FIGURE_POKEMON',
-      primaryType: p?.types?.[0] || 'Normal',
-      secondaryType: p?.types?.[1] || null,
-      scale: p?.scales?.[0] || '1:10 (~15 cm)',
-      imageUrl: p?.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
+      productId: Number(p.id) || null,
+      name: p.name,
+      category: p.category || 'FIGURE_POKEMON',
+      primaryType: p.types?.[0] || 'Normal',
+      secondaryType: p.types?.[1] || null,
+      scale: p.scales?.[0] || '1:10 (~15 cm)',
+      imageUrl: p.image,
       originalPrice: orig,
       promotionalPrice: promo,
       discountAmount: diff,
@@ -107,24 +102,50 @@ export function getDefaultPublicShowcase(catalogProducts?: Product[]): PublicSho
     };
   };
 
+  const slots: PublicShowcaseSlot[] = [];
+  if (activeProducts.length > 0) {
+    const maxSlots = Math.min(3, activeProducts.length);
+    for (let i = 0; i < maxSlots; i++) {
+      slots.push(makeSlot(i + 1, activeProducts[i]));
+    }
+  }
+
+  const pFirst = activeProducts[0];
+
   return {
-    slots: [makeSlot(1, p1), makeSlot(2, p2), makeSlot(3, p3)],
+    slots,
     mysteryDrop: {
       slotNumber: 4,
       title: 'Quem é esse Pokémon?',
       subtitle: 'Próximo lançamento saindo da bancada',
       category: 'FIGURE_POKEMON',
-      imageUrl: p1?.image || 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=1000&auto=format&fit=crop',
+      imageUrl: pFirst?.image || 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=1000&auto=format&fit=crop',
       whatsappText: 'Olá Chico! Vi o drop misterioso da semana no site e quero garantir com desconto exclusivo!',
     },
   };
 }
 
-/** Busca a vitrine pública do Hero da API com timeout e fallback imediato */
+/** Busca a vitrine pública do Hero da API com persistência segura */
 export async function fetchPublicShowcase(catalog?: Product[]): Promise<PublicShowcaseResponse> {
   try {
     const cached = localStorage.getItem(LOCAL_STORAGE_SHOWCASE_KEY);
-    const initialFallback = cached ? JSON.parse(cached) : getDefaultPublicShowcase(catalog);
+    let initialFallback: PublicShowcaseResponse;
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.slots)) {
+          // Higieniza resquícios de testes antigos
+          parsed.slots = parsed.slots.filter((s: any) => 
+            s && s.name && !s.name.includes('Figure da Semana') && (!s.imageUrl || !s.imageUrl.includes('placehold.co'))
+          );
+        }
+        initialFallback = parsed && parsed.slots && parsed.slots.length > 0 ? parsed : getDefaultPublicShowcase(catalog);
+      } catch {
+        initialFallback = getDefaultPublicShowcase(catalog);
+      }
+    } else {
+      initialFallback = getDefaultPublicShowcase(catalog);
+    }
 
     try {
       const data = await fetchApi<PublicShowcaseResponse>('/showcase');
@@ -133,7 +154,7 @@ export async function fetchPublicShowcase(catalog?: Product[]): Promise<PublicSh
         return data;
       }
     } catch (apiErr) {
-      console.warn('API /showcase indisponível ou iniciando no Render, usando cache/fallback:', apiErr);
+      console.warn('API /showcase indisponível no momento:', apiErr);
     }
 
     return initialFallback;
@@ -144,14 +165,10 @@ export async function fetchPublicShowcase(catalog?: Product[]): Promise<PublicSh
 
 const ADMIN_SHOWCASE_CACHE_KEY = 'forja_showcase_admin_cache_v1';
 
-/** Busca os dados completos de administração dos 4 slots com timeout rápido e fallback local */
+/** Busca os dados completos de administração dos slots com persistência real */
 export async function fetchAdminShowcase(catalog?: Product[]): Promise<AdminShowcaseSlot[]> {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000); // Máximo 4s de espera
-
-    const data = await fetchApi<AdminShowcaseSlot[]>('/admin/showcase', { signal: controller.signal });
-    clearTimeout(timeoutId);
+    const data = await fetchApi<AdminShowcaseSlot[]>('/admin/showcase');
     if (Array.isArray(data) && data.length > 0) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(ADMIN_SHOWCASE_CACHE_KEY, JSON.stringify(data));
@@ -159,21 +176,21 @@ export async function fetchAdminShowcase(catalog?: Product[]): Promise<AdminShow
       return data;
     }
   } catch (err) {
-    console.warn('API /admin/showcase indisponível no momento, usando cache local:', err);
+    console.warn('API /admin/showcase indisponível no momento:', err);
   }
 
-  // Verifica se há dados em cache local
+  // Verifica se há dados válidos em cache local
   if (typeof window !== 'undefined') {
     const cached = localStorage.getItem(ADMIN_SHOWCASE_CACHE_KEY);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length === 4) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch {}
     }
   }
 
-  // Gera slots admin a partir dos produtos locais
+  // Gera slots a partir de produtos reais existentes
   const fallback = getDefaultPublicShowcase(catalog);
   return [
     ...fallback.slots.map(s => ({

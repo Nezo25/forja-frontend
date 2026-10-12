@@ -25,12 +25,19 @@ export default function Home() {
       if (res && res.length > 0) {
         setProducts(res);
       } else {
-        setProducts(getStoredProducts());
+        const stored = getStoredProducts();
+        setProducts(stored);
+        if (stored.length === 0) {
+          setLoadError('A bancada está sendo organizada.');
+        }
       }
     } catch (err: any) {
-      console.warn('Falha na busca remota do catálogo, ativando fallback:', err);
-      setProducts(getStoredProducts());
-      setLoadError('A conexão com o servidor demorou ou falhou. Exibindo catálogo em cache.');
+      console.warn('Falha na sincronização do catálogo:', err);
+      const stored = getStoredProducts();
+      setProducts(stored);
+      if (stored.length === 0) {
+        setLoadError('A bancada está sendo organizada.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -223,16 +230,16 @@ export default function Home() {
             </div>
           ) : loadError && filteredProducts.length === 0 ? (
             <div className="py-20 flex flex-col items-center justify-center text-center max-w-md mx-auto gap-4">
-              <div className="text-3xl">⚠️</div>
-              <h3 className="font-display text-2xl uppercase">Falha na conexão com o servidor</h3>
+              <div className="text-3xl">⚒️</div>
+              <h3 className="font-display text-2xl uppercase">Oficina em preparação</h3>
               <p className="text-xs text-[#737373]">
-                O backend pode estar iniciando no Render. Clique abaixo para tentar novamente.
+                As peças estão sendo organizadas na bancada. Toque no botão abaixo para atualizar a vitrine.
               </p>
               <button
                 onClick={() => loadCatalog()}
                 className="px-6 py-2.5 rounded-full bg-[#171717] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#EA580C] transition-colors"
               >
-                Tentar Novamente
+                Atualizar Vitrine
               </button>
             </div>
           ) : filteredProducts.length === 0 ? (

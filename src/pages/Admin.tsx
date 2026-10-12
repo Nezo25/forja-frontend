@@ -359,7 +359,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
 
           <div className="p-5 flex flex-col gap-4">
             <Field label="Nome do produto *">
-              <Input required placeholder="Ex: Charizard Stance Gigantamax" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              <Input required placeholder="Ex: Figure Fuecoco 1:10" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             </Field>
 
             <div className="grid grid-cols-2 gap-3">

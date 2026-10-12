@@ -106,7 +106,7 @@ export function FeaturedPromotionsCarousel({
       basePrice: origPrice,
       promoPrice: promoPrice,
       finishOptions: matched?.finishOptions || [],
-      image: slot.imageUrl || matched?.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
+      image: slot.imageUrl || matched?.image || 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=1000&auto=format&fit=crop',
       printTimeH: matched?.printTimeH || 8,
       filamentG: matched?.filamentG || 120,
       active: true,
@@ -118,6 +118,23 @@ export function FeaturedPromotionsCarousel({
     } as any;
 
     onConfigure(productPayload);
+  }
+
+  if (productSlots.length === 0 && products.length === 0) {
+    return (
+      <div className="relative w-full max-w-md aspect-[4/5] rounded-2xl overflow-hidden bg-[#1E1E1E] border border-[#2E2E2E] shadow-2xl flex flex-col items-center justify-center p-6 text-center select-none">
+        <div className="w-10 h-10 border-3 border-[#EA580C] border-t-transparent rounded-full animate-spin mb-4" />
+        <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-orange-400 mb-1">
+          OFICINA DA FORJA
+        </span>
+        <h4 className="font-display text-2xl text-white uppercase tracking-wider mb-2">
+          Organizando a Bancada
+        </h4>
+        <p className="text-xs text-[#737373] max-w-xs">
+          Preparando as peças e ofertas da semana para você...
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -154,7 +171,7 @@ export function FeaturedPromotionsCarousel({
             >
               {/* Foto da Figure em Alta Resolução */}
               <img
-                src={slot.imageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'}
+                src={slot.imageUrl || 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=1000&auto=format&fit=crop'}
                 alt={slot.name || 'Figure'}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
