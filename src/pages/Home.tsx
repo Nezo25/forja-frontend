@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { ProductCard } from '@/components/ProductCard';
+import { FeaturedPromotionsCarousel } from '@/components/FeaturedPromotionsCarousel';
+import { ContactForgeBanner } from '@/components/ContactForgeBanner';
 import { ProductCustomizeModal } from '@/components/ProductCustomizeModal';
 import { CartDrawer } from '@/components/CartDrawer';
 import { OrcamentoModal } from '@/components/OrcamentoModal';
@@ -154,6 +156,18 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* CARROSSEL DE PROMOÇÕES & DROP MISTERIOSO (TOUCH/SWIPE & DESKTOP) */}
+      <FeaturedPromotionsCarousel
+        products={products}
+        onConfigure={setConfigProduct}
+        onBuyPromo={handleBuyNow}
+      />
+
+      {/* BLOCO "FALE COM O VENDEDOR" (PRESENÇA DO CHICO NA OFICINA) */}
+      <ContactForgeBanner
+        onCustomQuote={() => setOrcamentoOpen(true)}
+      />
 
       {/* SECTION 02 — Catálogo de Produtos (Warm Bone/Cream Figma Make) */}
       <section id="catalogo" className="bg-[#ECE8DE] text-[#171717] py-14 md:py-24 px-4 md:px-8">
