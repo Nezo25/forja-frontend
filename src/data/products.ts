@@ -27,6 +27,7 @@ export interface Product {
   scales: Scale[];
   materials: Material[];
   basePrice: number;
+  promoPrice?: number;
   finishOptions: FinishOption[];
   image: string;
   printTimeH: number;
@@ -52,6 +53,7 @@ export const products: Product[] = [
     scales: ['Escala 1:10 (~15 cm)', 'Escala 1:1 (Real)'],
     materials: ['PLA', 'Resina'],
     basePrice: 149,
+    promoPrice: 129,
     finishOptions: FINISH_OPTIONS,
     image: 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
     printTimeH: 18,
@@ -67,6 +69,7 @@ export const products: Product[] = [
     scales: ['Escala 1:10 (~15 cm)', 'Grande (20 cm)'],
     materials: ['PLA', 'Resina'],
     basePrice: 89,
+    promoPrice: 69,
     finishOptions: FINISH_OPTIONS,
     image: 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
     printTimeH: 10,

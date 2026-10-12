@@ -12,10 +12,12 @@ interface Props {
 export function ProductCard({ product, index = 1, onConfigure, onBuyNow }: Props) {
   const [hovered, setHovered] = useState(false);
 
+  const hasPromo = typeof product.promoPrice === 'number' && product.promoPrice > 0 && product.promoPrice < product.basePrice;
   const extraMin = product.finishOptions && product.finishOptions.length > 0
     ? Math.min(...product.finishOptions.map(f => f.extra))
     : 0;
-  const lowestPrice = (product.basePrice || 0) + (isFinite(extraMin) ? extraMin : 0);
+  const effectiveBasePrice = hasPromo ? product.promoPrice! : (product.basePrice || 0);
+  const lowestPrice = effectiveBasePrice + (isFinite(extraMin) ? extraMin : 0);
   const categoryLabel = (CATEGORY_LABELS as Record<string, string>)[product.category] || product.category;
   const itemNumber = (index).toString().padStart(2, '0');
   const stock = typeof product.stock === 'number' ? product.stock : ((product as any).stockQuantity ?? 1);
@@ -83,14 +85,24 @@ export function ProductCard({ product, index = 1, onConfigure, onBuyNow }: Props
         {/* Grounded & Prominent Price Container */}
         <div className="mt-1 pt-2 border-t border-black/10 flex items-end justify-between">
           <div className="flex flex-col">
-            <span className="text-[9px] font-bold tracking-[0.18em] text-[#8C8C8C] uppercase">
-              A partir de
+            <span className="text-[9px] font-bold tracking-[0.18em] text-[#8C8C8C] uppercase flex items-center gap-1.5">
+              <span>A partir de</span>
+              {hasPromo && (
+                <span className="line-through text-slate-400 font-semibold text-[10px]">
+                  R$ {product.basePrice}
+                </span>
+              )}
             </span>
             <div className="flex items-baseline gap-1">
               <span className="text-xs font-black text-[#EA580C]">R$</span>
               <span className="font-display text-2xl md:text-3xl font-black text-[#171717] tracking-tight leading-none">
                 {lowestPrice.toLocaleString('pt-BR', { minimumFractionDigits: lowestPrice % 1 === 0 ? 0 : 2 })}
               </span>
+              {hasPromo && (
+                <span className="ml-1 text-[9px] font-extrabold text-orange-600 bg-orange-100 px-1 py-0.5 rounded uppercase">
+                  Promo
+                </span>
+              )}
             </div>
           </div>
 

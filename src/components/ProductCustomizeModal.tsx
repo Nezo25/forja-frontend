@@ -35,8 +35,10 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
     ? product.finishOptions
     : [{ label: 'Peça Crua' as Finish, extra: 0 }];
 
+  const hasPromo = typeof product.promoPrice === 'number' && product.promoPrice > 0 && product.promoPrice < product.basePrice;
+  const effectiveBasePrice = hasPromo ? product.promoPrice! : (product.basePrice || 0);
   const finishExtra = finishOptions.find(f => f.label === finish)?.extra ?? 0;
-  const unitPrice = (product.basePrice || 0) + finishExtra;
+  const unitPrice = effectiveBasePrice + finishExtra;
   const total = unitPrice * qty;
   const categoryLabel = (CATEGORY_LABELS as Record<string, string>)[product.category] || product.category;
 
@@ -234,14 +236,24 @@ export function ProductCustomizeModal({ product, onClose, onAdd }: Props) {
           {/* Bottom Bar: Total & High-Impact CTA */}
           <div className="pt-4 border-t border-[#262626] flex items-center justify-between gap-4">
             <div>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#A3A3A3] font-bold block mb-0.5">
-                Estimativa Total
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[#A3A3A3] font-bold block mb-0.5 flex items-center gap-1.5">
+                <span>Estimativa Total</span>
+                {hasPromo && (
+                  <span className="text-orange-400 font-extrabold text-[9px] bg-orange-500/20 px-1.5 py-0.5 rounded border border-orange-500/30">
+                    🔥 PROMO ATIVA
+                  </span>
+                )}
               </span>
               <div className="flex items-baseline gap-1">
                 <span className="text-xs font-black text-[#EA580C]">R$</span>
                 <span className="font-display text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
                   {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
+                {hasPromo && (
+                  <span className="ml-2 text-xs line-through text-slate-500 font-semibold">
+                    R$ {((product.basePrice + finishExtra) * qty).toFixed(2).replace('.', ',')}
+                  </span>
+                )}
               </div>
             </div>
 

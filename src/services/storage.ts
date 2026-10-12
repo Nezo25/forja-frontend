@@ -136,6 +136,10 @@ function sanitizeProduct(p: any): Product {
   const featuredId = getFeaturedProductId();
   const isFeatured = featuredId ? p?.id?.toString() === featuredId : Boolean(p?.featured);
   const stock = typeof p?.stock === 'number' ? p.stock : ((p as any)?.stockQuantity ?? 1);
+  const rawPromo = p?.promoPrice ?? p?.promotionalPrice;
+  const promoPrice = typeof rawPromo === 'number' && rawPromo > 0 
+    ? rawPromo 
+    : (rawPromo ? parsePrice(rawPromo) : undefined);
 
   return {
     id: p?.id ? p.id.toString() : 'prod_' + Math.random().toString(36).substring(2, 8),
@@ -145,6 +149,7 @@ function sanitizeProduct(p: any): Product {
     scales: Array.isArray(p?.scales) && p.scales.length ? p.scales : [p?.scale || '1:10'],
     materials: Array.isArray(p?.materials) && p.materials.length ? p.materials : ['PLA'],
     basePrice: typeof p?.basePrice === 'number' ? p.basePrice : parsePrice(p?.basePrice) || 0,
+    promoPrice: promoPrice && promoPrice > 0 ? promoPrice : undefined,
     finishOptions: p?.finishOptions || [],
     image: p?.image || p?.imageUrl || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
     printTimeH: typeof p?.printTimeH === 'number' ? p.printTimeH : Math.floor((p?.basePrintTimeMinutes || 0) / 60),
@@ -173,7 +178,8 @@ export function consolidateProducts(rawList: Product[]): Product[] {
       map.set(normKey, {
         ...item,
         stock: itemStock,
-        featured: activeFeaturedId ? item.id === activeFeaturedId : Boolean(item.featured)
+        featured: activeFeaturedId ? item.id === activeFeaturedId : Boolean(item.featured),
+        promoPrice: item.promoPrice
       });
     } else {
       const existing = map.get(normKey)!;
@@ -188,6 +194,7 @@ export function consolidateProducts(rawList: Product[]): Product[] {
       if (item.image && (!existing.image || existing.image.includes('placehold.co'))) {
         existing.image = item.image;
       }
+      if (item.promoPrice) existing.promoPrice = item.promoPrice;
       if (item.active) existing.active = true;
       if (item.featured || (activeFeaturedId && (item.id === activeFeaturedId || existing.id === activeFeaturedId))) {
         existing.featured = true;
@@ -462,13 +469,20 @@ export async function toggleProductActive(id: string): Promise<boolean> {
   return newStatus;
 }
 
-export async function updateProductPrice(id: string, newPrice: number): Promise<void> {
+export async function updateProductPrice(id: string, newPrice: number, newPromoPrice?: number | null): Promise<void> {
   const current = getStoredProducts();
   const product = current.find(p => p.id === id);
   if (!product) return;
   const isTcg = product.category === 'TCG';
 
-  const updated = current.map(p => p.id === id ? { ...p, basePrice: newPrice } : p);
+  const updated = current.map(p => {
+    if (p.id !== id) return p;
+    return {
+      ...p,
+      basePrice: newPrice,
+      promoPrice: newPromoPrice === null ? undefined : (newPromoPrice !== undefined ? newPromoPrice : p.promoPrice)
+    };
+  });
   saveProductsToStorage(updated);
 
   try {

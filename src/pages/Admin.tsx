@@ -261,6 +261,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
     printTimeH: (initialData?.printTimeH ?? 14).toString(), 
     filamentG: (initialData?.filamentG ?? 320).toString(), 
     basePrice: (initialData?.basePrice ?? 149).toString(), 
+    promoPrice: initialData?.promoPrice ? initialData.promoPrice.toString() : '',
     image: initialData?.image || '', 
     active: initialData ? initialData.active : true,
     featured: initialData ? Boolean(initialData.featured) : false,
@@ -296,6 +297,8 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
         .map(t => t.trim())
         .filter(Boolean) as PokemonType[];
 
+      const parsedPromo = parseFloat(form.promoPrice);
+
       const saved = await saveProduct({
         id: initialData?.id,
         name: form.name.trim(),
@@ -304,6 +307,7 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
         scales: [form.scale as any],
         materials: [form.material as any],
         basePrice: parseFloat(form.basePrice) || 0,
+        promoPrice: (!isNaN(parsedPromo) && parsedPromo > 0) ? parsedPromo : undefined,
         printTimeH: parseInt(form.printTimeH, 10) || 0,
         filamentG: parseInt(form.filamentG, 10) || 0,
         image: form.image.trim() || 'https://placehold.co/600x700/1F2937/F97316?text=Figure',
@@ -394,8 +398,25 @@ function ProductModal({ onClose, onSave, initialData }: { onClose: () => void; o
               </Field>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <Field label="Preço base (R$) *"><Input required type="number" placeholder="149" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: e.target.value }))} /></Field>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Preço base normal (R$) *">
+                <Input required type="number" step="0.01" placeholder="149.00" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: e.target.value }))} />
+              </Field>
+              <Field label="Preço Promocional (R$ - Opcional)">
+                <Input type="number" step="0.01" placeholder="Ex: 119.00 (deixe vazio se sem promo)" value={form.promoPrice} onChange={e => setForm(f => ({ ...f, promoPrice: e.target.value }))} />
+              </Field>
+            </div>
+
+            {form.promoPrice && parseFloat(form.promoPrice) > 0 && parseFloat(form.basePrice) > parseFloat(form.promoPrice) && (
+              <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-between text-xs text-orange-400">
+                <span className="font-bold">🔥 Oferta Ativa: Preço riscado de R$ {parseFloat(form.basePrice).toFixed(2)}</span>
+                <span className="font-extrabold font-mono text-emerald-400">
+                  Economia de R$ {(parseFloat(form.basePrice) - parseFloat(form.promoPrice)).toFixed(2)} ({Math.round((1 - parseFloat(form.promoPrice)/parseFloat(form.basePrice))*100)}% OFF)
+                </span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
               <Field label="Tempo impressão (h)"><Input type="number" placeholder="18" value={form.printTimeH} onChange={e => setForm(f => ({ ...f, printTimeH: e.target.value }))} /></Field>
               <Field label="Filamento (g)"><Input type="number" placeholder="320" value={form.filamentG} onChange={e => setForm(f => ({ ...f, filamentG: e.target.value }))} /></Field>
             </div>
@@ -867,12 +888,16 @@ export default function Admin() {
   }
 
   // Preços: Salvar Preço
-  async function handleSavePrice(p: Product, newPrice: number) {
-    await updateProductPrice(p.id, newPrice);
-    setCatalog(prev => prev.map(x => x.id === p.id ? { ...x, basePrice: newPrice } : x));
+  async function handleSavePrice(p: Product, newPrice: number, newPromoPrice?: number | null) {
+    await updateProductPrice(p.id, newPrice, newPromoPrice);
+    setCatalog(prev => prev.map(x => x.id === p.id ? { 
+      ...x, 
+      basePrice: newPrice, 
+      promoPrice: newPromoPrice === null ? undefined : (newPromoPrice !== undefined ? newPromoPrice : x.promoPrice) 
+    } : x));
     toast.show({
       title: 'Preço atualizado com sucesso!',
-      message: `Preço de "${p.name}" alterado para R$ ${newPrice.toFixed(2)}.`,
+      message: `Preço de "${p.name}" alterado para R$ ${newPrice.toFixed(2)}${newPromoPrice ? ` (Promo: R$ ${newPromoPrice.toFixed(2)})` : ''}.`,
       type: 'success',
       icon: '💰'
     });
@@ -1400,7 +1425,7 @@ export default function Admin() {
                   </div>
                 ) : (
                   catalog.map(p => (
-                    <PriceRow key={p.id} product={p} onSave={newPrice => handleSavePrice(p, newPrice)} />
+                    <PriceRow key={p.id} product={p} onSave={(newPrice, promoPrice) => handleSavePrice(p, newPrice, promoPrice)} />
                   ))
                 )}
               </div>
@@ -1465,40 +1490,73 @@ export default function Admin() {
 }
 
 // Linha de Preço
-function PriceRow({ product, onSave }: { product: Product; onSave: (val: number) => void }) {
+function PriceRow({ product, onSave }: { product: Product; onSave: (val: number, promoVal?: number | null) => void }) {
   const [val, setVal] = useState((product.basePrice ?? 0).toString());
+  const [promoVal, setPromoVal] = useState((product.promoPrice ?? '').toString());
   const [isSaved, setIsSaved] = useState(false);
 
   function handleSave() {
     const num = parseFloat(val);
+    const pNum = parseFloat(promoVal);
+    const validPromo = (!isNaN(pNum) && pNum > 0) ? pNum : (promoVal === '' ? null : undefined);
+
     if (!isNaN(num) && num >= 0) {
-      onSave(num);
+      onSave(num, validPromo);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
     }
   }
 
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl shadow-sm transition-all bg-gray-800/80 border border-gray-700">
-      <img src={product.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'} alt={product.name} className="w-11 h-13 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-sm text-gray-100">{product.name}</div>
-        <div className="text-[11px] text-gray-400">{(CATEGORY_LABELS as any)[product.category] || product.category} • {product.scales?.[0] || '1:10'}</div>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl shadow-sm transition-all bg-gray-800/80 border border-gray-700">
+      <div className="flex items-center gap-3 min-w-0">
+        <img src={product.image || 'https://placehold.co/600x700/1F2937/F97316?text=Figure'} alt={product.name} className="w-11 h-13 object-cover rounded-lg shrink-0 border border-gray-700 bg-black/40" />
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-sm text-gray-100 flex items-center gap-2">
+            <span>{product.name}</span>
+            {product.promoPrice && product.promoPrice > 0 && product.promoPrice < product.basePrice && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                PROMO ATIVA
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-gray-400">{(CATEGORY_LABELS as any)[product.category] || product.category} • {product.scales?.[0] || '1:10'}</div>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[12px] font-bold text-gray-400">R$</span>
-        <input
-          type="number"
-          value={val}
-          onChange={e => setVal(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
-          className="w-24 h-9 px-3 rounded-lg text-sm font-bold outline-none text-right transition-colors bg-gray-900 border border-gray-700 text-orange-400"
-          onFocus={e => (e.target.style.borderColor = '#F97316')}
-          onBlur={e => (e.target.style.borderColor = '#374151')}
-        />
+
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 self-end sm:self-auto">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-bold text-gray-400 uppercase">Normal:</span>
+          <span className="text-[11px] font-bold text-gray-400">R$</span>
+          <input
+            type="number"
+            step="0.01"
+            value={val}
+            onChange={e => setVal(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
+            className="w-20 h-9 px-2 rounded-lg text-sm font-bold outline-none text-right transition-colors bg-gray-900 border border-gray-700 text-orange-400"
+            title="Preço normal de tabela"
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-bold text-amber-400 uppercase">Promo:</span>
+          <span className="text-[11px] font-bold text-gray-400">R$</span>
+          <input
+            type="number"
+            step="0.01"
+            placeholder="—"
+            value={promoVal}
+            onChange={e => setPromoVal(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
+            className="w-20 h-9 px-2 rounded-lg text-sm font-bold outline-none text-right transition-colors bg-gray-900 border border-orange-500/40 text-amber-400 placeholder-gray-600"
+            title="Preço promocional com desconto (opcional)"
+          />
+        </div>
+
         <button
           onClick={handleSave}
-          className="h-9 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+          className="h-9 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
           style={{
             background: isSaved ? '#22C55E' : '#F97316',
             color: '#fff'

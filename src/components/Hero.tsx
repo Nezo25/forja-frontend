@@ -1,14 +1,16 @@
 import type { Product } from '@/data/products';
+import { HeroShowcaseSlider } from './HeroShowcaseSlider';
 
 interface Props {
   onOrcamento: () => void;
   featuredProduct?: Product | null;
+  products?: Product[];
   onConfigure?: (p: Product) => void;
 }
 
-export function Hero({ onOrcamento, featuredProduct, onConfigure }: Props) {
+export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure }: Props) {
   return (
-    <section className="relative overflow-hidden bg-[#161616] text-white pt-10 pb-16 md:py-20 px-4 md:px-8 border-b border-[#262626]">
+    <section id="destaques" className="relative overflow-hidden bg-[#161616] text-white pt-10 pb-16 md:py-20 px-4 md:px-8 border-b border-[#262626]">
       <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         
         {/* Left Editorial Content */}
@@ -69,48 +71,13 @@ export function Hero({ onOrcamento, featuredProduct, onConfigure }: Props) {
           </div>
         </div>
 
-        {/* Right Studio Showcase Card (Dinâmico com Peça em Destaque) */}
+        {/* Right Studio Showcase Card (Carrossel Interativo com Drop Misterioso) */}
         <div className="lg:col-span-5 relative flex justify-center">
-          <div 
-            onClick={() => {
-              if (featuredProduct && onConfigure) onConfigure(featuredProduct);
-            }}
-            className={`relative w-full max-w-md aspect-[4/5] rounded-2xl overflow-hidden bg-[#1E1E1E] border border-[#2E2E2E] shadow-2xl group transition-all ${featuredProduct && onConfigure ? 'cursor-pointer hover:border-[#EA580C]/60 hover:shadow-orange-950/20' : ''}`}
-          >
-            <img
-              src={featuredProduct?.image || "https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=1000&auto=format&fit=crop"}
-              alt={featuredProduct?.name || "Peça em destaque na Forja"}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            {/* Dark gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/30 pointer-events-none" />
-
-            {/* Bottom Tag */}
-            <div className="absolute bottom-5 left-5 right-24 z-10">
-              <span className="text-[10px] font-bold tracking-[0.2em] text-[#EA580C] uppercase block mb-1">
-                {featuredProduct ? `⭐ Peça em Destaque • A partir de R$ ${featuredProduct.basePrice}` : 'Coleção Artesanal'}
-              </span>
-              <span className="font-display text-2xl md:text-3xl text-white uppercase tracking-wide block line-clamp-2">
-                {featuredProduct?.name || "Gengar Sorridente Sombrio"}
-              </span>
-              {featuredProduct ? (
-                <span className="text-[11px] font-semibold text-[#A3A3A3] mt-1 flex items-center gap-1 group-hover:text-white transition-colors">
-                  Toque para personalizar <span className="text-[#EA580C]">→</span>
-                </span>
-              ) : (
-                <span className="text-[11px] font-semibold text-[#A3A3A3] mt-1 flex items-center gap-1 group-hover:text-white transition-colors">
-                  Produzido sob encomenda <span className="text-[#EA580C]">✦</span>
-                </span>
-              )}
-            </div>
-
-            {/* Round Seal: Forjando desde 2022 */}
-            <div className="absolute -bottom-3 -right-3 md:bottom-6 md:-right-6 z-20 w-24 h-24 rounded-full bg-[#EAE5D9] text-[#161616] p-2 flex flex-col items-center justify-center text-center shadow-2xl border-4 border-[#161616] transform rotate-12 group-hover:rotate-0 transition-transform">
-              <span className="text-base leading-none mb-0.5">✦</span>
-              <span className="font-display text-xs font-bold leading-tight uppercase">FORJANDO</span>
-              <span className="text-[9px] font-bold text-[#555] leading-none">DESDE 2022</span>
-            </div>
-          </div>
+          <HeroShowcaseSlider
+            featuredProduct={featuredProduct}
+            products={products}
+            onConfigure={onConfigure}
+          />
 
           {/* Right vertical text */}
           <div className="hidden xl:flex absolute -right-10 top-1/2 -translate-y-1/2 rotate-90 origin-center text-[10px] tracking-[0.3em] font-semibold text-[#525252] uppercase pointer-events-none">
