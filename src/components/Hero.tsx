@@ -21,7 +21,7 @@ export function Hero({ onOrcamento, featuredProduct, products = [], onConfigure,
           <div className="flex items-center gap-3 mb-6">
             <span className="w-8 h-[2px] bg-[#EA580C]" />
             <span className="text-[11px] md:text-xs font-bold tracking-[0.2em] text-[#A3A3A3] uppercase">
-              Colecionáveis feitos em Santa Catarina
+              COLECIONÁVEIS ARTESANAIS • ENVIO PARA TODO O BRASIL
             </span>
           </div>
 

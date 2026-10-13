@@ -13,9 +13,9 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
 
   const token = typeof window !== 'undefined' ? sessionStorage.getItem('__adm_token') : null;
   
-  // AbortController para evitar requests infinitos no Safari, aumentado para 60s devido ao cold start do Render
+  // AbortController para evitar requests infinitos no Safari, ajustado para 90s devido ao cold start do Render Free
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos
+  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 segundos
 
   try {
     const response = await fetch(url, {
@@ -53,7 +53,7 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   } catch (error: any) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
-      throw new Error('A requisição demorou muito e foi cancelada (Timeout de 8s).');
+      throw new Error('O servidor do Render estava hibernando e acabou de acordar. Por favor, clique novamente no botão!');
     }
     throw error;
   }

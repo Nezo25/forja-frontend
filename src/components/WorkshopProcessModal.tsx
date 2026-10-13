@@ -62,15 +62,15 @@ export function WorkshopProcessModal({
     },
     {
       num: '03',
-      icon: '🛠️',
-      title: 'Pós-Processamento Rigoroso',
-      desc: 'Cura controlada, remoção cirúrgica de suportes, lixamento progressivo e aplicação de primer nivelador.'
+      icon: '🎨',
+      title: 'Pós-Processamento & Pintura Manual',
+      desc: 'Cura controlada, remoção de suportes, lixamento e pintura artesanal feita à mão pelo Chico com acabamento em verniz protetor.'
     },
     {
       num: '04',
-      icon: '🎨',
-      title: 'Pintura & Acabamento Manual',
-      desc: 'Cada peça é pintada individualmente à mão pelo Chico com aerógrafo e pincéis de precisão, finalizada com verniz protetor fosco ou brilhante.'
+      icon: '📦',
+      title: 'Embalagem Blindada & Envio Nacional',
+      desc: 'Cada figure passa por inspeção visual detalhada antes de receber embalagem multicamada antichoque, garantindo que o colecionável chegue 100% perfeito à sua estante em qualquer lugar do Brasil.'
     }
   ];
 
@@ -167,7 +167,7 @@ export function WorkshopProcessModal({
                   <div className="flex items-center gap-3 text-[11px] text-slate-500">
                     <span>⏱️ ~2 min de vídeo</span>
                     <span>•</span>
-                    <span>📍 Bancada Forja em SC</span>
+                    <span>📍 Bancada Forja do Chico</span>
                     <span>•</span>
                     <span className="text-emerald-400">100% Manual</span>
                   </div>
@@ -225,13 +225,19 @@ export function WorkshopProcessModal({
         </div>
 
         {/* Rodapé do Modal */}
-        <div className="px-6 py-5 border-t border-slate-800/80 bg-[#0F172A]/60 flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Texto de Garantia */}
-          <div className="flex items-center gap-2.5 text-xs text-slate-300 text-center sm:text-left">
-            <span className="text-emerald-400 text-base">🛡️</span>
-            <span>
-              <strong>Garantia de Qualidade:</strong> Nenhuma peça sai da oficina sem inspeção visual completa.
+        <div className="px-6 py-5 border-t border-slate-800/80 bg-[#0F172A]/60 flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Badge e Texto de Garantia */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-800/80 border border-slate-700/80 text-slate-300 shadow-sm">
+              <span>📦</span>
+              <span>Envios rastreados para todo o território nacional</span>
             </span>
+            <div className="flex items-center gap-2 text-xs text-slate-300">
+              <span className="text-emerald-400 text-base">🛡️</span>
+              <span>
+                <strong>Garantia de Qualidade:</strong> Nenhuma peça sai da oficina sem inspeção visual completa.
+              </span>
+            </div>
           </div>
 
           {/* Botão de Ação Primária */}
