@@ -272,7 +272,7 @@ export function incrementProductStock(id: string, delta: number = 1): number {
   return finalStock;
 }
 
-export async function fetchRemoteProducts(): Promise<Product[]> {
+export async function fetchRemoteProducts(maxAttempts = 5): Promise<Product[]> {
   const executeFetch = async (): Promise<Product[]> => {
     let allProducts: Product[] = [];
 
@@ -321,22 +321,23 @@ export async function fetchRemoteProducts(): Promise<Product[]> {
     return allProducts.filter(p => !isFakeMockProduct(p));
   };
 
-  try {
-    let results = await executeFetch();
+  const delays = [2500, 3500, 5000, 6000, 8000];
 
-    // Se o servidor estava em repouso e respondeu vazio inicialmente, aguarda 2.5s e tenta novamente
-    if (results.length === 0) {
-      await new Promise(r => setTimeout(r, 2500));
-      results = await executeFetch();
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const results = await executeFetch();
+      if (results.length > 0) {
+        const consolidated = consolidateProducts(results);
+        saveProductsToStorage(consolidated);
+        return consolidated;
+      }
+    } catch (err) {
+      console.warn(`Tentativa ${attempt + 1}/${maxAttempts} falhou:`, err);
     }
 
-    if (results.length > 0) {
-      const consolidated = consolidateProducts(results);
-      saveProductsToStorage(consolidated);
-      return consolidated;
+    if (attempt < maxAttempts - 1) {
+      await new Promise(r => setTimeout(r, delays[attempt] || 4000));
     }
-  } catch (err) {
-    console.warn('Erro ao sincronizar produtos reais:', err);
   }
 
   return getStoredProducts();

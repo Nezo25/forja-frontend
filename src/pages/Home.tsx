@@ -222,11 +222,36 @@ export default function Home() {
 
           {/* Product Grid */}
           {isLoading && filteredProducts.length === 0 ? (
-            <div className="py-24 flex flex-col items-center justify-center text-center gap-4">
-              <div className="w-10 h-10 border-4 border-[#171717] border-t-transparent rounded-full animate-spin" />
-              <span className="font-display text-xl text-[#171717] uppercase tracking-wider">
-                Carregando criações da Forja...
-              </span>
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center justify-center gap-2.5 py-2.5 px-5 rounded-full bg-[#DCD6C8] border border-[#D0C9B8] text-xs font-bold uppercase tracking-wider text-[#525252] max-w-sm mx-auto shadow-sm">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#EA580C] animate-ping" />
+                <span>Conectando à bancada do Chico...</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 md:gap-8">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <div key={i} className="flex flex-col animate-pulse select-none">
+                    <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-[#D8D2C4] border border-black/5">
+                      <div className="absolute top-3 left-3 w-8 h-3.5 rounded bg-[#C9C2B2]" />
+                      <div className="absolute top-3 right-3 w-20 h-4 rounded bg-[#C9C2B2]" />
+                      <div className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-[#C9C2B2]" />
+                    </div>
+                    <div className="pt-3 pb-1 flex flex-col gap-2">
+                      <div className="flex justify-between items-center">
+                        <div className="w-20 h-3 rounded bg-[#D0C9B8]" />
+                        <div className="w-12 h-3 rounded bg-[#D0C9B8]" />
+                      </div>
+                      <div className="w-3/4 h-6 rounded bg-[#D0C9B8]" />
+                      <div className="mt-1 pt-2 border-t border-black/5 flex items-end justify-between">
+                        <div className="flex flex-col gap-1">
+                          <div className="w-14 h-2.5 rounded bg-[#D0C9B8]" />
+                          <div className="w-20 h-6 rounded bg-[#D0C9B8]" />
+                        </div>
+                        <div className="w-16 h-4 rounded bg-[#D0C9B8]" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : loadError && filteredProducts.length === 0 ? (
             <div className="py-20 flex flex-col items-center justify-center text-center max-w-md mx-auto gap-4">

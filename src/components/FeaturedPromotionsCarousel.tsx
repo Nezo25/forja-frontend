@@ -122,17 +122,27 @@ export function FeaturedPromotionsCarousel({
 
   if (productSlots.length === 0 && products.length === 0) {
     return (
-      <div className="relative w-full max-w-md aspect-[4/5] rounded-2xl overflow-hidden bg-[#1E1E1E] border border-[#2E2E2E] shadow-2xl flex flex-col items-center justify-center p-6 text-center select-none">
-        <div className="w-10 h-10 border-3 border-[#EA580C] border-t-transparent rounded-full animate-spin mb-4" />
-        <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-orange-400 mb-1">
-          OFICINA DA FORJA
-        </span>
-        <h4 className="font-display text-2xl text-white uppercase tracking-wider mb-2">
-          Organizando a Bancada
-        </h4>
-        <p className="text-xs text-[#737373] max-w-xs">
-          Preparando as peças e ofertas da semana para você...
-        </p>
+      <div className="relative w-full max-w-md aspect-[4/5] rounded-2xl overflow-hidden bg-[#1E1E1E] border border-[#2E2E2E] shadow-2xl flex flex-col justify-between p-6 animate-pulse select-none">
+        <div className="flex items-center justify-between">
+          <div className="w-28 h-5 rounded-full bg-orange-500/20 border border-orange-500/30" />
+          <div className="w-12 h-5 rounded-full bg-white/10" />
+        </div>
+        <div className="flex flex-col items-center justify-center text-center my-auto py-6">
+          <div className="w-9 h-9 border-2 border-[#EA580C] border-t-transparent rounded-full animate-spin mb-4" />
+          <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-orange-400 mb-1">
+            OFICINA DA FORJA
+          </span>
+          <h4 className="font-display text-2xl text-white uppercase tracking-wider mb-2">
+            Conectando à Bancada
+          </h4>
+          <p className="text-xs text-[#737373] max-w-xs">
+            Buscando criações e destaques artesanais...
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <div className="w-24 h-4 rounded bg-white/10" />
+          <div className="w-40 h-7 rounded bg-white/10" />
+        </div>
       </div>
     );
   }
