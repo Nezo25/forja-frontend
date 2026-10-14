@@ -221,7 +221,7 @@ export default function Home() {
           </div>
 
           {/* Product Grid */}
-          {isLoading ? (
+          {isLoading && filteredProducts.length === 0 ? (
             <div className="py-24 flex flex-col items-center justify-center text-center gap-4">
               <div className="w-10 h-10 border-4 border-[#171717] border-t-transparent rounded-full animate-spin" />
               <span className="font-display text-xl text-[#171717] uppercase tracking-wider">

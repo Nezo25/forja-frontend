@@ -224,7 +224,6 @@ export function isFakeMockProduct(p: any): boolean {
     'dialga lendario'
   ];
   if (fakeNames.includes(nameLower)) return true;
-  if (p.image && typeof p.image === 'string' && p.image.includes('placehold.co')) return true;
   return false;
 }
 
@@ -235,10 +234,6 @@ export function getStoredProducts(): Product[] {
       const parsed = JSON.parse(local);
       if (Array.isArray(parsed) && parsed.length > 0) {
         const clean = parsed.filter(p => !isFakeMockProduct(p));
-        // Se houver resquícios de testes antigos ou mocks no aparelho, higieniza o cache
-        if (clean.length !== parsed.length) {
-          localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(clean));
-        }
         if (clean.length > 0) {
           return consolidateProducts(clean.map(sanitizeProduct));
         }
@@ -247,7 +242,8 @@ export function getStoredProducts(): Product[] {
   } catch (e) {
     console.error('Erro ao ler produtos:', e);
   }
-  return []; // NUNCA retorna produtos fictícios!
+  // Se o cache local estiver vazio (primeiro acesso, Safari privado, etc), usa o catálogo real da oficina
+  return products.length > 0 ? consolidateProducts(products.map(sanitizeProduct)) : [];
 }
 
 export function saveProductsToStorage(productsList: Product[]): void {
