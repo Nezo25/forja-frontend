@@ -1,6 +1,6 @@
 const getBaseUrl = () => {
   const custom = typeof window !== 'undefined' ? localStorage.getItem('forja_api_url') : null;
-  const root = custom || import.meta.env.VITE_API_URL || 'https://forja-backend-1.onrender.com';
+  const root = custom || import.meta.env.VITE_API_URL || 'https://srv2072247.hstgr.cloud';
   const clean = root.trim().replace(/\/+$/, '');
   if (clean.endsWith('/api/v1')) return clean;
   return `${clean}/api/v1`;
@@ -13,9 +13,8 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
 
   const token = typeof window !== 'undefined' ? sessionStorage.getItem('__adm_token') : null;
   
-  // AbortController para evitar requests infinitos no Safari, ajustado para 90s devido ao cold start do Render Free
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 segundos
+  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 segundos
 
   try {
     const response = await fetch(url, {
@@ -53,7 +52,7 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   } catch (error: any) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
-      throw new Error('O servidor do Render estava hibernando e acabou de acordar. Por favor, clique novamente no botão!');
+      throw new Error('Tempo limite de conexão esgotado. Verifique sua conexão com a internet.');
     }
     throw error;
   }
